@@ -20,3 +20,5 @@ void font_set_size_custom(font_t *font, int8_t mul, int8_t div);
 void font_set_align(font_t *font, int horz, int vert);
 void font_draw_string(SDL_Renderer *renderer, int xc, int yc, const font_t *font, const char *s);
 int font_get_string_width(const font_t *font, const char *s);
+int font_get_string_height(const font_t *font, const char *s);
+void font_align_string(const font_t *font, int *xc, int *yc, const char *s);

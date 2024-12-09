@@ -4,7 +4,7 @@
 
 int font_bgi_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *font, char ch);
 int font_bgi_get_char_width(const font_t *font, char ch);
-void font_bgi_align_string(const font_t *font, int *xc, int *yc, const char *s);
+int font_bgi_get_line_height(const font_t *font);
 
 font_t *font_bgi_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) {
 	int header_pos = 0;
@@ -20,10 +20,10 @@ font_t *font_bgi_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) 
 	// allocate memory
 	font_t *font = NULL;
 	MALLOC(font, sizeof(*font), return NULL);
-	font->type				  = FONT_TYPE_BGI;
-	font->func.draw_char	  = font_bgi_draw_char;
-	font->func.get_char_width = font_bgi_get_char_width;
-	font->func.align_string	  = font_bgi_align_string;
+	font->type				   = FONT_TYPE_BGI;
+	font->func.draw_char	   = font_bgi_draw_char;
+	font->func.get_char_width  = font_bgi_get_char_width;
+	font->func.get_line_height = font_bgi_get_line_height;
 
 	// read font header
 	FSEEK(file, header_pos, SEEK_SET, goto error);
@@ -70,6 +70,10 @@ int font_bgi_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *fon
 	uint16_t stroke_offs		  = font->bgi.offsets[ch - font->bgi.stroke_hdr.char_start];
 	const bgi_stroke_data_t *data = &font->bgi.strokes[stroke_offs / sizeof(bgi_stroke_data_t)];
 
+	// compensate for stroke offset
+	xc += 1;
+	yc += SCALE(font->bgi.stroke_hdr.origin_ascender);
+
 	int x = xc, y = yc;
 	while (true) {
 		/* 0 - stop; 1 - scan; 2 - move; 3 - draw */
@@ -105,20 +109,6 @@ int font_bgi_get_char_width(const font_t *font, char ch) {
 	return SCALE(font->bgi.widths[ch - font->bgi.stroke_hdr.char_start]);
 }
 
-void font_bgi_align_string(const font_t *font, int *xc, int *yc, const char *s) {
-	if (font->align_horz != FONT_ALIGN_LEFT) {
-		int width = font_get_string_width(font, s);
-		if (font->align_horz == FONT_ALIGN_RIGHT) {
-			*xc -= width;
-		} else {
-			*xc -= width / 2;
-			*xc += 1; // why?
-		}
-	}
-	if (font->align_vert == FONT_ALIGN_TOP) {
-		*yc += SCALE(font->bgi.stroke_hdr.origin_ascender);
-	} else if (font->align_vert == FONT_ALIGN_CENTER) {
-		*yc += SCALE(font->bgi.stroke_hdr.origin_ascender) / 2;
-		*yc -= SCALE(font->bgi.stroke_hdr.origin_descender) / 2; // why?
-	}
+int font_bgi_get_line_height(const font_t *font) {
+	return SCALE(font->bgi.stroke_hdr.origin_ascender - font->bgi.stroke_hdr.origin_descender);
 }

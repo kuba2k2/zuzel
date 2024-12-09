@@ -4,16 +4,16 @@
 
 int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *font, char ch);
 int font_bmp_get_char_width(const font_t *font, char ch);
-void font_bmp_align_string(const font_t *font, int *xc, int *yc, const char *s);
+int font_bmp_get_line_height(const font_t *font);
 
 font_t *font_bmp_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) {
 	// allocate memory
 	font_t *font = NULL;
 	MALLOC(font, sizeof(*font), return NULL);
-	font->type				  = FONT_TYPE_BMP;
-	font->func.draw_char	  = font_bmp_draw_char;
-	font->func.get_char_width = font_bmp_get_char_width;
-	font->func.align_string	  = font_bmp_align_string;
+	font->type				   = FONT_TYPE_BMP;
+	font->func.draw_char	   = font_bmp_draw_char;
+	font->func.get_char_width  = font_bmp_get_char_width;
+	font->func.get_line_height = font_bmp_get_line_height;
 
 	// read font header
 	FSEEK(file, 2, SEEK_SET, goto error);
@@ -45,7 +45,7 @@ error:
 int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *font, char ch) {
 	int width  = font->bmp.font_hdr.width;
 	int height = font->bmp.font_hdr.height;
-	SDL_Point points[SCALE(width * height)];
+	SDL_Point points[SCALE(width * height) * 2];
 	SDL_Point *point = points;
 
 	uint8_t *data = font->bmp.data[ch - font->bmp.font_hdr.char_start];
@@ -90,7 +90,7 @@ int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *fon
 		}
 		prev_sy = sy + 1;
 		// advance to the next line
-		byte	= *data++;
+		byte = *data++;
 	}
 
 	SDL_RenderDrawPoints(renderer, points, (int)(point - points));
@@ -102,18 +102,6 @@ int font_bmp_get_char_width(const font_t *font, char ch) {
 	return SCALE(font->bmp.font_hdr.width);
 }
 
-void font_bmp_align_string(const font_t *font, int *xc, int *yc, const char *s) {
-	if (font->align_horz != FONT_ALIGN_LEFT) {
-		int width = font_get_string_width(font, s);
-		if (font->align_horz == FONT_ALIGN_RIGHT) {
-			*xc -= width;
-		} else {
-			*xc -= width / 2;
-		}
-	}
-	if (font->align_vert == FONT_ALIGN_BOTTOM) {
-		*yc -= SCALE(font->bmp.font_hdr.height);
-	} else if (font->align_vert == FONT_ALIGN_CENTER) {
-		*yc -= SCALE(font->bmp.font_hdr.height) / 2;
-	}
+int font_bmp_get_line_height(const font_t *font) {
+	return SCALE(font->bmp.font_hdr.height);
 }

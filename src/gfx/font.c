@@ -35,8 +35,6 @@ font_t *font_load_from_file(const char *filename) {
 	if (font == NULL)
 		goto error;
 
-
-
 	// set default settings
 	font->scale[0]	 = 1;
 	font->scale[1]	 = 1;
@@ -71,10 +69,17 @@ void font_set_align(font_t *font, int horz, int vert) {
 }
 
 void font_draw_string(SDL_Renderer *renderer, int xc, int yc, const font_t *font, const char *s) {
-	font->func.align_string(font, &xc, &yc, s);
+	int xc_init = xc;
+	font_align_string(font, &xc, &yc, s);
 	char ch;
 	while ((ch = *s++) != '\0') {
-		xc += font->func.draw_char(renderer, xc, yc, font, ch);
+		if (ch == '\n') {
+			yc += font->func.get_line_height(font) + SCALE(1); // + line spacing
+			xc = xc_init;
+			font_align_string(font, &xc, NULL, s);
+		} else {
+			xc += font->func.draw_char(renderer, xc, yc, font, ch);
+		}
 	}
 }
 
@@ -82,7 +87,39 @@ int font_get_string_width(const font_t *font, const char *s) {
 	char ch;
 	int total_width = 0;
 	while ((ch = *s++) != '\0') {
+		if (ch == '\n')
+			return total_width;
 		total_width += font->func.get_char_width(font, ch);
 	}
 	return total_width;
+}
+
+int font_get_string_height(const font_t *font, const char *s) {
+	char ch;
+	int line_height	 = font->func.get_line_height(font);
+	int total_height = line_height;
+	while ((ch = *s++) != '\0') {
+		if (ch == '\n')
+			total_height += line_height + SCALE(1); // + line spacing
+	}
+	return total_height;
+}
+
+void font_align_string(const font_t *font, int *xc, int *yc, const char *s) {
+	if (xc != NULL && font->align_horz != FONT_ALIGN_LEFT) {
+		int width = font_get_string_width(font, s);
+		if (font->align_horz == FONT_ALIGN_RIGHT) {
+			*xc -= width;
+		} else {
+			*xc -= width / 2;
+		}
+	}
+	if (yc != NULL && font->align_vert != FONT_ALIGN_TOP) {
+		int height = font_get_string_height(font, s);
+		if (font->align_vert == FONT_ALIGN_BOTTOM) {
+			*yc -= height;
+		} else {
+			*yc -= height / 2;
+		}
+	}
 }

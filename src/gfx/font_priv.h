@@ -11,7 +11,7 @@ font_t *font_bmp_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len);
 
 typedef int (*font_draw_char_t)(SDL_Renderer *renderer, int xc, int yc, const font_t *font, char ch);
 typedef int (*font_get_char_width_t)(const font_t *font, char ch);
-typedef void (*font_align_string_t)(const font_t *font, int *xc, int *yc, const char *s);
+typedef int (*font_get_line_height_t)(const font_t *font);
 
 typedef struct __attribute__((packed)) {
 	uint8_t header_start;
@@ -80,7 +80,7 @@ struct font_s {
 	struct {
 		font_draw_char_t draw_char;
 		font_get_char_width_t get_char_width;
-		font_align_string_t align_string;
+		font_get_line_height_t get_line_height;
 	} func;
 
 	// runtime settings
