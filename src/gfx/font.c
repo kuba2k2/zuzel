@@ -26,6 +26,8 @@ font_t *font_load_from_file(const char *filename) {
 	font_t *font = NULL;
 	if (memcmp(buf, "PK", 2) == 0) {
 		font = font_bgi_load_from_file(file, buf, sizeof(buf));
+	} else if (memcmp(buf, "BF", 2) == 0) {
+		font = font_bmp_load_from_file(file, buf, sizeof(buf));
 	} else {
 		LT_E("Font signature invalid (%02x %02x)", buf[0], buf[1]);
 		goto error;
