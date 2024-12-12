@@ -23,3 +23,8 @@
 #ifndef SETTINGS_FILE
 #define SETTINGS_FILE "settings.json"
 #endif
+
+// Graphics module
+#ifndef GFX_MAX_FONTS
+#define GFX_MAX_FONTS 10
+#endif

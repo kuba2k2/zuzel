@@ -4,7 +4,27 @@
 
 #include "font.h"
 
+static const int8_t CHAR_SCALE[10][2] = {
+	{00, 00}, // apply custom scale coefficients
+	{03, 05},
+	{02, 03},
+	{03, 04},
+	{01, 01}, // default size
+	{04, 03},
+	{05, 03},
+	{02, 01},
+	{05, 02},
+	{03, 01}
+};
+
 #define SCALE(var) ((var) * font->scale[0] / font->scale[1])
+
+#define FONT_ALIGN_TOP	  0
+#define FONT_ALIGN_MIDDLE 1
+#define FONT_ALIGN_BOTTOM 2
+#define FONT_ALIGN_LEFT	  0
+#define FONT_ALIGN_CENTER 1
+#define FONT_ALIGN_RIGHT  2
 
 font_t *font_bgi_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len);
 font_t *font_bmp_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len);
