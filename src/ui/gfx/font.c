@@ -139,7 +139,7 @@ int gfx_get_text_height(const font_t *font, const char *s) {
 }
 
 static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) {
-	if (font->align_horz != FONT_ALIGN_LEFT != 0) {
+	if (font->align_horz != FONT_ALIGN_LEFT) {
 		int width = gfx_get_text_width(font, s);
 		if (FONT->align_horz == FONT_ALIGN_RIGHT) {
 			*xc -= width;

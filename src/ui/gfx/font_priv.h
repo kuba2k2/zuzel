@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "font.h"
+#include "gfx.h"
 
 static const int8_t CHAR_SCALE[10][2] = {
 	{00, 00}, // apply custom scale coefficients

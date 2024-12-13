@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 add_compile_options(-fdata-sections -ffunction-sections)
 add_link_options(-Wl,--gc-sections)
 
-file(GLOB SOURCES "src/*.c" "src/*/*.c")
+file(GLOB SOURCES "src/*.c" "src/*/*.c" "src/*/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 set(SDL_STATIC ON CACHE INTERNAL "")
