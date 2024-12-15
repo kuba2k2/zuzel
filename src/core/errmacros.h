@@ -40,6 +40,12 @@
 
 #define SDL_ERROR(func, err)                                                                                           \
 	do {                                                                                                               \
-		LT_E(func "failed; SDL_Error: %s", SDL_GetError());                                                            \
+		LT_F(func " failed; SDL_Error: %s", SDL_GetError());                                                           \
+		err;                                                                                                           \
+	} while (0)
+
+#define LT_ERR(level, err, ...)                                                                                        \
+	do {                                                                                                               \
+		LT_##level(__VA_ARGS__);                                                                                       \
 		err;                                                                                                           \
 	} while (0)

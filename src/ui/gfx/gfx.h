@@ -33,8 +33,7 @@
 #define FONT_ALIGN_RIGHT_MIDDLE	 0x21
 #define FONT_ALIGN_RIGHT_BOTTOM	 0x22
 
-struct font_s;
-typedef struct font_s font_t;
+typedef struct font_t font_t;
 
 // gfx.c
 void gfx_set_color(SDL_Renderer *renderer, int color);

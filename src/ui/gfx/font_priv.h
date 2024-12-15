@@ -79,7 +79,7 @@ typedef enum {
 	FONT_TYPE_BMP = 2,
 } font_type_t;
 
-struct font_s {
+typedef struct font_t {
 	font_type_t type;
 
 	union {
@@ -107,4 +107,4 @@ struct font_s {
 	int8_t scale[2];
 	int align_horz;
 	int align_vert;
-};
+} font_t;
