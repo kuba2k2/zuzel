@@ -4,22 +4,22 @@
 
 #include "include.h"
 
-#define GFX_COLOR_BLACK			 0
-#define GFX_COLOR_BLUE			 1
-#define GFX_COLOR_GREEN			 2
-#define GFX_COLOR_CYAN			 3
-#define GFX_COLOR_RED			 4
-#define GFX_COLOR_MAGENTA		 5
-#define GFX_COLOR_YELLOW		 6
-#define GFX_COLOR_WHITE			 7
-#define GFX_COLOR_BRIGHT_BLACK	 8
-#define GFX_COLOR_BRIGHT_BLUE	 9
-#define GFX_COLOR_BRIGHT_GREEN	 10
-#define GFX_COLOR_BRIGHT_CYAN	 11
-#define GFX_COLOR_BRIGHT_RED	 12
-#define GFX_COLOR_BRIGHT_MAGENTA 13
-#define GFX_COLOR_BRIGHT_YELLOW	 14
-#define GFX_COLOR_BRIGHT_WHITE	 15
+#define GFX_COLOR_BLACK			 0x000000
+#define GFX_COLOR_BLUE			 0x0000AA
+#define GFX_COLOR_GREEN			 0x00AA00
+#define GFX_COLOR_CYAN			 0x00AAAA
+#define GFX_COLOR_RED			 0xAA0000
+#define GFX_COLOR_MAGENTA		 0xAA00AA
+#define GFX_COLOR_YELLOW		 0xAAAA00
+#define GFX_COLOR_WHITE			 0xAAAAAA
+#define GFX_COLOR_BRIGHT_BLACK	 0x555555
+#define GFX_COLOR_BRIGHT_BLUE	 0x5555FF
+#define GFX_COLOR_BRIGHT_GREEN	 0x55FF55
+#define GFX_COLOR_BRIGHT_CYAN	 0x55FFFF
+#define GFX_COLOR_BRIGHT_RED	 0xFF5555
+#define GFX_COLOR_BRIGHT_MAGENTA 0xFF55FF
+#define GFX_COLOR_BRIGHT_YELLOW	 0xFFFF55
+#define GFX_COLOR_BRIGHT_WHITE	 0xFFFFFF
 
 #define FONT_SIZE_DEFAULT 4
 
@@ -36,8 +36,7 @@
 typedef struct font_t font_t;
 
 // gfx.c
-void gfx_set_color(SDL_Renderer *renderer, int color);
-void gfx_set_color_alpha(SDL_Renderer *renderer, int color, int alpha);
+void gfx_set_color(SDL_Renderer *renderer, unsigned int color);
 void gfx_draw_rect_points(SDL_Renderer *renderer, SDL_Rect *rects, int count, int width);
 void gfx_draw_half_circle(SDL_Renderer *renderer, int cx, int cy, int angle, int radius, int width);
 void gfx_draw_line(SDL_Renderer *renderer, int x1, int y1, int x2, int y2, int width);

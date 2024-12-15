@@ -3,41 +3,19 @@
 #include "gfx.h"
 
 /**
- * Change rendering color.
+ * Change the rendering color.
  *
  * @param renderer SDL renderer
- * @param color color index, 0..15 (VGA)
+ * @param color color in ARGB8888 format
  */
-void gfx_set_color(SDL_Renderer *renderer, int color) {
-	gfx_set_color_alpha(renderer, color, 0xFF);
-}
-
-/**
- * Change rendering color, make it translucent.
- *
- * @param renderer SDL renderer
- * @param color color index, 0..15 (VGA)
- * @param alpha alpha channel value, 0..255
- */
-void gfx_set_color_alpha(SDL_Renderer *renderer, int color, int alpha) {
-	if (color <= 0b111) {
-		SDL_SetRenderDrawColor(
-			renderer,
-			0xAA * ((color >> 2) & 1),
-			0xAA * ((color >> 1) & 1),
-			0xAA * ((color >> 0) & 1),
-			alpha
-		);
-	} else {
-		color &= 0b111;
-		SDL_SetRenderDrawColor(
-			renderer,
-			0x55 + 0xAA * ((color >> 2) & 1),
-			0x55 + 0xAA * ((color >> 1) & 1),
-			0x55 + 0xAA * ((color >> 0) & 1),
-			alpha
-		);
-	}
+void gfx_set_color(SDL_Renderer *renderer, unsigned int color) {
+	unsigned int a = (color >> 24) & 0xFF;
+	unsigned int r = (color >> 16) & 0xFF;
+	unsigned int g = (color >> 8) & 0xFF;
+	unsigned int b = (color >> 0) & 0xFF;
+	if (a == 0x00)
+		a = 0xFF;
+	SDL_SetRenderDrawColor(renderer, r, g, b, a);
 }
 
 /**
