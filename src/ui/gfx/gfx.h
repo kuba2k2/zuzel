@@ -4,6 +4,8 @@
 
 #include "include.h"
 
+#include "view.h"
+
 #define GFX_COLOR_BLACK			 0x000000
 #define GFX_COLOR_BLUE			 0x0000AA
 #define GFX_COLOR_GREEN			 0x00AA00
