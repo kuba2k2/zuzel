@@ -45,6 +45,6 @@ font_t *gfx_load_font(int index, const char *filename);
 font_t *gfx_get_font(int index);
 font_t *gfx_set_text_font(int index);
 void gfx_set_text_style(int index, int size, int align);
-int gfx_get_text_width(const char *s);
+int gfx_get_text_width(const char *s, bool first_line);
 int gfx_get_text_height(const char *s);
 void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s);

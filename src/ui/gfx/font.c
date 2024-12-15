@@ -101,30 +101,34 @@ void gfx_set_text_style(int index, int size, int align) {
 }
 
 /**
- * Calculate the width of the text. If multiline, only the first line is calculated.
+ * Calculate the width of the text. If multiline, the maximum width is returned, unless 'first_line' is true.
  *
- * @param font font handle
  * @param s string to calculate
+ * @param first_line whether to calculate the first line's width only
  * @return width of the text, in pixels
  */
-int gfx_get_text_width(const char *s) {
+int gfx_get_text_width(const char *s, bool first_line) {
 	font_t *font = FONT;
 	if (font == NULL)
 		return 0;
 	char ch;
+	int max_width	= 0;
 	int total_width = 0;
 	while ((ch = *s++) != '\0') {
-		if (ch == '\n')
-			return total_width;
+		if (ch == '\n') {
+			if (first_line)
+				return total_width;
+			max_width	= max(max_width, total_width);
+			total_width = 0;
+		}
 		total_width += font->func.get_char_width(font, ch);
 	}
-	return total_width;
+	return max(max_width, total_width);
 }
 
 /**
  * Calculate the height of the text. If multiline, the total height is calculated.
  *
- * @param font font handle
  * @param s string to calculate
  * @return height of the text, in pixels
  */
@@ -146,7 +150,7 @@ static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) 
 	if (font == NULL)
 		return;
 	if (font->align & (GFX_ALIGN_RIGHT | GFX_ALIGN_CENTER_HORIZONTAL)) {
-		int width = gfx_get_text_width(s);
+		int width = gfx_get_text_width(s, true);
 		if (font->align & GFX_ALIGN_RIGHT) {
 			*xc -= width;
 		} else {
