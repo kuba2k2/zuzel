@@ -21,17 +21,16 @@
 #define GFX_COLOR_BRIGHT_YELLOW	 0xFFFF55
 #define GFX_COLOR_BRIGHT_WHITE	 0xFFFFFF
 
-#define FONT_SIZE_DEFAULT 4
+#define GFX_ALIGN_LEFT				0x01
+#define GFX_ALIGN_RIGHT				0x02
+#define GFX_ALIGN_TOP				0x04
+#define GFX_ALIGN_BOTTOM			0x08
+#define GFX_ALIGN_CENTER_HORIZONTAL 0x10
+#define GFX_ALIGN_CENTER_VERTICAL	0x20
+#define GFX_ALIGN_DEFAULT			(GFX_ALIGN_LEFT | GFX_ALIGN_TOP)
+#define GFX_ALIGN_CENTER			(GFX_ALIGN_CENTER_HORIZONTAL | GFX_ALIGN_CENTER_VERTICAL)
 
-#define FONT_ALIGN_LEFT_TOP		 0x00
-#define FONT_ALIGN_LEFT_MIDDLE	 0x01
-#define FONT_ALIGN_LEFT_BOTTOM	 0x02
-#define FONT_ALIGN_CENTER_TOP	 0x10
-#define FONT_ALIGN_CENTER_MIDDLE 0x11
-#define FONT_ALIGN_CENTER_BOTTOM 0x12
-#define FONT_ALIGN_RIGHT_TOP	 0x20
-#define FONT_ALIGN_RIGHT_MIDDLE	 0x21
-#define FONT_ALIGN_RIGHT_BOTTOM	 0x22
+#define FONT_SIZE_DEFAULT 4
 
 typedef struct font_t font_t;
 
@@ -46,6 +45,6 @@ font_t *gfx_load_font(int index, const char *filename);
 font_t *gfx_get_font(int index);
 font_t *gfx_set_text_font(int index);
 void gfx_set_text_style(int index, int size, int align);
-int gfx_get_text_width(const font_t *font, const char *s);
-int gfx_get_text_height(const font_t *font, const char *s);
+int gfx_get_text_width(const char *s);
+int gfx_get_text_height(const char *s);
 void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s);

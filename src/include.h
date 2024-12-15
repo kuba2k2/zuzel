@@ -11,6 +11,7 @@
 #include <time.h>
 
 #include <SDL2/SDL.h>
+#include <utlist.h>
 
 #ifdef __WIN32__
 #include <winsock2.h>

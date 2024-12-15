@@ -37,10 +37,9 @@ font_t *gfx_load_font(int index, const char *filename) {
 		goto error;
 
 	// set default settings
-	font->scale[0]	 = 1;
-	font->scale[1]	 = 1;
-	font->align_horz = FONT_ALIGN_LEFT;
-	font->align_vert = FONT_ALIGN_TOP;
+	font->scale[0] = 1;
+	font->scale[1] = 1;
+	font->align	   = GFX_ALIGN_DEFAULT;
 
 	FONTS[index] = font;
 	if (FONT == NULL)
@@ -84,7 +83,7 @@ font_t *gfx_set_text_font(int index) {
  *
  * @param index font index
  * @param size font size index (1..9), 4: default
- * @param align font alignment mode (FONT_ALIGN_<HORIZONTAL>_<VERTICAL>)
+ * @param align font alignment modes (GFX_ALIGN_*)
  */
 void gfx_set_text_style(int index, int size, int align) {
 	font_t *font = gfx_set_text_font(index);
@@ -98,8 +97,7 @@ void gfx_set_text_style(int index, int size, int align) {
 		LT_W("Font size %d not within bounds 1..9", size);
 	}
 	// set alignment
-	font->align_horz = align >> 4;
-	font->align_vert = align & 0x0F;
+	font->align = align;
 }
 
 /**
@@ -109,7 +107,10 @@ void gfx_set_text_style(int index, int size, int align) {
  * @param s string to calculate
  * @return width of the text, in pixels
  */
-int gfx_get_text_width(const font_t *font, const char *s) {
+int gfx_get_text_width(const char *s) {
+	font_t *font = FONT;
+	if (font == NULL)
+		return 0;
 	char ch;
 	int total_width = 0;
 	while ((ch = *s++) != '\0') {
@@ -127,7 +128,10 @@ int gfx_get_text_width(const font_t *font, const char *s) {
  * @param s string to calculate
  * @return height of the text, in pixels
  */
-int gfx_get_text_height(const font_t *font, const char *s) {
+int gfx_get_text_height(const char *s) {
+	font_t *font = FONT;
+	if (font == NULL)
+		return 0;
 	char ch;
 	int line_height	 = font->func.get_line_height(font);
 	int total_height = line_height;
@@ -139,17 +143,19 @@ int gfx_get_text_height(const font_t *font, const char *s) {
 }
 
 static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) {
-	if (font->align_horz != FONT_ALIGN_LEFT) {
-		int width = gfx_get_text_width(font, s);
-		if (FONT->align_horz == FONT_ALIGN_RIGHT) {
+	if (font == NULL)
+		return;
+	if (font->align & (GFX_ALIGN_RIGHT | GFX_ALIGN_CENTER_HORIZONTAL)) {
+		int width = gfx_get_text_width(s);
+		if (font->align & GFX_ALIGN_RIGHT) {
 			*xc -= width;
 		} else {
 			*xc -= width / 2;
 		}
 	}
-	if (yc != NULL && font->align_vert != FONT_ALIGN_TOP) {
-		int height = gfx_get_text_height(font, s);
-		if (font->align_vert == FONT_ALIGN_BOTTOM) {
+	if (yc != NULL && font->align & (GFX_ALIGN_BOTTOM | GFX_ALIGN_CENTER_VERTICAL)) {
+		int height = gfx_get_text_height(s);
+		if (font->align & GFX_ALIGN_BOTTOM) {
 			*yc -= height;
 		} else {
 			*yc -= height / 2;
@@ -167,7 +173,9 @@ static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) 
  */
 void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s) {
 	font_t *font = FONT;
-	int xc_init	 = xc;
+	if (font == NULL)
+		return;
+	int xc_init = xc;
 	gfx_text_align(font, &xc, &yc, s);
 	char ch;
 	while ((ch = *s++) != '\0') {
