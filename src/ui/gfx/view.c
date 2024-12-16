@@ -113,15 +113,86 @@ void gfx_view_draw(SDL_Renderer *renderer, view_t *views) {
 	}
 }
 
-bool gfx_view_on_keydown(view_t *views, SDL_Event *e);
-
-bool gfx_view_on_event(view_t *views, SDL_Event *e) {
-	bool ret;
-	switch (e->type) {
-		case SDL_KEYDOWN:
-			ret = gfx_view_on_keydown(views, e);
-			LT_D("Event SDL_KEYDOWN = %d", ret);
-			return ret;
+static bool gfx_view_on_key_down(view_t *views, view_t *focused, SDL_Event *e) {
+	view_t *focusable = NULL;
+	if (e->key.keysym.sym == SDLK_DOWN || e->key.keysym.sym == SDLK_TAB)
+		GFX_VIEW_FIND(
+			focused == NULL ? views : focused,
+			focusable,
+			next,
+			// can be same if nothing is focused
+			focused == NULL,
+			GFX_VIEW_IS_ACTIVE(focusable)
+		);
+	else if (e->key.keysym.sym == SDLK_UP)
+		GFX_VIEW_FIND(
+			focused == NULL ? views : focused,
+			focusable,
+			prev,
+			// can be same if nothing is focused
+			focused == NULL,
+			GFX_VIEW_IS_ACTIVE(focusable)
+		);
+	if (focusable != NULL) {
+		if (focused != NULL) {
+			focused->is_focused = false;
+			if (focused->event.focus != NULL)
+				focused->event.focus(focused, e);
+		}
+		focusable->is_focused = true;
+		if (focusable->event.focus != NULL)
+			focusable->event.focus(focusable, e);
+		return true;
 	}
 	return false;
+}
+
+static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *e) {
+	int x = e->motion.x;
+	int y = e->motion.y;
+
+	view_t *focusable = NULL;
+	view_t *view	  = views;
+	while (view != NULL) {
+		if (GFX_VIEW_IS_ACTIVE(view) && GFX_VIEW_IN_BOX(view, x, y))
+			focusable = view;
+		view = gfx_view_find_next(view);
+	}
+
+	if (focusable != focused) {
+		if (focused != NULL) {
+			focused->is_focused = false;
+			if (focused->event.focus != NULL)
+				focused->event.focus(focused, e);
+		}
+		if (focusable != NULL) {
+			focusable->is_focused = true;
+			if (focusable->event.focus != NULL)
+				focusable->event.focus(focusable, e);
+		}
+		return true;
+	}
+	return false;
+}
+
+bool gfx_view_on_event(view_t *views, SDL_Event *e) {
+	view_t *focused;
+	GFX_VIEW_FIND(views, focused, next, true, focused->is_focused);
+
+	bool ret = false;
+	switch (e->type) {
+		case SDL_KEYDOWN:
+			ret = gfx_view_on_key_down(views, focused, e);
+			LT_D("Event SDL_KEYDOWN(...) = %d", ret);
+			break;
+		case SDL_MOUSEMOTION:
+			ret = gfx_view_on_mouse_motion(views, focused, e);
+			LT_D("Event SDL_MOUSEMOTION(x=%d, y=%d) = %d", e->motion.x, e->motion.y, ret);
+			break;
+	}
+
+	if (!ret && focused != NULL && focused->on_event)
+		ret = focused->on_event(focused, e);
+
+	return ret;
 }

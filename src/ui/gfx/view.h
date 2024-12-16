@@ -12,7 +12,7 @@ typedef void (*view_inflate_t)(view_t *view, cJSON *json);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
 typedef void (*view_draw_t)(SDL_Renderer *renderer, view_t *view);
-typedef void (*view_on_event_t)(view_t *view, SDL_Event *event);
+typedef bool (*view_on_event_t)(view_t *view, SDL_Event *event);
 
 typedef enum {
 	VIEW_TYPE_FRAME	 = 0,
@@ -32,12 +32,13 @@ typedef struct view_text_t {
 
 typedef struct view_t {
 	// view type
-	char *id;				//!< Freeform view ID/name (view-owned)
-	view_type_t type;		//!< Type of the view
-	view_inflate_t inflate; //!< View inflater (parameter deserialization)
-	view_measure_t measure; //!< View bounding box measurement function
-	view_layout_t layout;	//!< Layout positioning function (optional)
-	view_draw_t draw;		//!< Renderer function
+	char *id;				  //!< Freeform view ID/name (view-owned)
+	view_type_t type;		  //!< Type of the view
+	view_inflate_t inflate;	  //!< View inflater (parameter deserialization)
+	view_measure_t measure;	  //!< View bounding box measurement function
+	view_layout_t layout;	  //!< Layout positioning function (optional)
+	view_draw_t draw;		  //!< Renderer function
+	view_on_event_t on_event; //!< Event processor function
 
 	// positioning
 	int w, h;			//!< Width/height specification (exact in pixels, or VIEW_MATCH_PARENT/VIEW_WRAP_CONTENT)
@@ -50,7 +51,6 @@ typedef struct view_t {
 	bool is_gone;	   //!< Whether the view should be ignored in layout
 	bool is_invisible; //!< Whether the view should be ignored in drawing
 	bool is_disabled;  //!< Whether the view is disabled
-	bool is_hovered;   //!< Whether the view is hovered over
 	bool is_focused;   //!< Whether the view is focused
 	bool is_focusable; //!< Whether the view can be focused
 
@@ -74,9 +74,10 @@ typedef struct view_t {
 
 	// event handlers
 	struct {
+		// sent by view core
+		view_on_event_t focus; //!< On focus change
+		// sent by specific views
 		view_on_event_t accept; //!< On click/Enter keypress
-		view_on_event_t hover;	//!< On mouse hover
-		view_on_event_t focus;	//!< On focus/mouse click
 		view_on_event_t change; //!< On value change
 	} event;
 
@@ -120,3 +121,5 @@ view_t *gfx_view_make_text(view_t *parent);
 	} while (0)
 
 #define GFX_VIEW_IS_ACTIVE(view) (!view->is_gone && !view->is_invisible && !view->is_disabled && view->is_focusable)
+#define GFX_VIEW_IN_BOX(view, x, y)                                                                                    \
+	(x >= view->rect.x && x <= view->rect.x + view->rect.w && y >= view->rect.y && y <= view->rect.y + view->rect.h)
