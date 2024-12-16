@@ -15,10 +15,11 @@ typedef void (*view_draw_t)(SDL_Renderer *renderer, view_t *view);
 typedef void (*view_on_event_t)(view_t *view, SDL_Event *event);
 
 typedef enum {
-	VIEW_TYPE_BOX	 = 0,
-	VIEW_TYPE_TEXT	 = 1,
-	VIEW_TYPE_BUTTON = 2,
-	VIEW_TYPE_INPUT	 = 3,
+	VIEW_TYPE_FRAME	 = 0,
+	VIEW_TYPE_BOX	 = 1,
+	VIEW_TYPE_TEXT	 = 2,
+	VIEW_TYPE_BUTTON = 3,
+	VIEW_TYPE_INPUT	 = 4,
 } view_type_t;
 
 typedef struct view_text_t {
@@ -54,6 +55,10 @@ typedef struct view_t {
 
 	// view-specific properties
 	union {
+		struct {
+			struct view_t *children;
+		} frame;
+
 		struct {
 			bool is_horizontal;
 			int gravity;
@@ -96,6 +101,7 @@ void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h)
 void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, int size, int align);
 
 // view_*.c
+view_t *gfx_view_make_frame();
 view_t *gfx_view_make_box();
 view_t *gfx_view_make_text();
 

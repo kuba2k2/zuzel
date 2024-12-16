@@ -22,7 +22,9 @@ view_t *gfx_view_inflate(cJSON *json) {
 	view_t *view = NULL;
 	cJSON *type	 = cJSON_GetObjectItem(json, "type");
 
-	if (strcmp(type->valuestring, "box") == 0)
+	if (strcmp(type->valuestring, "frame") == 0)
+		view = gfx_view_make_frame();
+	else if (strcmp(type->valuestring, "box") == 0)
 		view = gfx_view_make_box();
 	else if (strcmp(type->valuestring, "text") == 0)
 		view = gfx_view_make_text();
