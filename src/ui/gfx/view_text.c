@@ -6,7 +6,7 @@ static void gfx_view_inflate_text(view_t *text, cJSON *json);
 static void gfx_view_measure_text(view_t *text);
 static void gfx_view_draw_text(SDL_Renderer *renderer, view_t *text);
 
-view_t *gfx_view_make_text() {
+view_t *gfx_view_make_text(view_t *parent) {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
@@ -17,6 +17,7 @@ view_t *gfx_view_make_text() {
 	view->data.text.color = GFX_COLOR_BRIGHT_WHITE;
 	view->data.text.size  = FONT_SIZE_DEFAULT;
 	view->data.text.align = GFX_ALIGN_DEFAULT;
+	view->parent		  = parent;
 
 	return view;
 }

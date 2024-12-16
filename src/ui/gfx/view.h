@@ -57,13 +57,7 @@ typedef struct view_t {
 	// view-specific properties
 	union {
 		struct {
-			struct view_t *children;
-		} frame;
-
-		struct {
 			bool is_horizontal;
-			int gravity;
-			struct view_t *children;
 		} box;
 
 		view_text_t text;
@@ -86,12 +80,18 @@ typedef struct view_t {
 		view_on_event_t change; //!< On value change
 	} event;
 
-	// next sibling
-	struct view_t *next;
+	// child views (if supported)
+	struct view_t *children;
+	// parent view
+	struct view_t *parent;
+
+	// doubly-linked list siblings
+	// note: head's 'prev' points to the last item
+	struct view_t *prev, *next;
 } view_t;
 
 // view.c
-view_t *gfx_view_inflate(cJSON *json);
+view_t *gfx_view_inflate(cJSON *json, view_t *parent);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
 void gfx_view_draw(SDL_Renderer *renderer, view_t *views);
@@ -102,9 +102,9 @@ void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h)
 void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, int size, int align);
 
 // view_*.c
-view_t *gfx_view_make_frame();
-view_t *gfx_view_make_box();
-view_t *gfx_view_make_text();
+view_t *gfx_view_make_frame(view_t *parent);
+view_t *gfx_view_make_box(view_t *parent);
+view_t *gfx_view_make_text(view_t *parent);
 
 #define GFX_VIEW_ADD(views, type, width, height, params, ...)                                                          \
 	do {                                                                                                               \
@@ -112,5 +112,5 @@ view_t *gfx_view_make_text();
 		view->w		 = width;                                                                                          \
 		view->h		 = height;                                                                                         \
 		__VA_ARGS__;                                                                                                   \
-		LL_APPEND(views, view);                                                                                        \
+		DL_APPEND(views, view);                                                                                        \
 	} while (0)

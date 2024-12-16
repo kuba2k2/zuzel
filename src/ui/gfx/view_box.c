@@ -7,7 +7,7 @@ static void gfx_view_measure_box(view_t *box);
 static void gfx_view_layout_box(view_t *box);
 static void gfx_view_draw_box(SDL_Renderer *renderer, view_t *box);
 
-view_t *gfx_view_make_box() {
+view_t *gfx_view_make_box(view_t *parent) {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
@@ -16,15 +16,16 @@ view_t *gfx_view_make_box() {
 	view->measure = gfx_view_measure_box;
 	view->layout  = gfx_view_layout_box;
 	view->draw	  = gfx_view_draw_box;
+	view->parent  = parent;
 
 	return view;
 }
 
 static void gfx_view_inflate_box(view_t *box, cJSON *json) {
 	json_read_bool(json, "is_horizontal", &box->data.box.is_horizontal);
-	if (box->data.box.children != NULL)
+	if (box->children != NULL)
 		LT_ERR(E, return, "Box children already inflated");
-	box->data.box.children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"));
+	box->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), box);
 }
 
 static void gfx_view_measure_box(view_t *box) {
@@ -37,7 +38,7 @@ static void gfx_view_measure_box(view_t *box) {
 	int child_size_known = 0;
 
 	int weight_sum = 0;
-	LL_FOREACH(box->data.box.children, child) {
+	DL_FOREACH(box->children, child) {
 		if (child->is_gone)
 			continue;
 		if ((is_horizontal ? child->w : child->h) != VIEW_MATCH_PARENT || box_size == 0) {
@@ -67,7 +68,7 @@ static void gfx_view_measure_box(view_t *box) {
 	// only recalculate weighted child views if there is anything to recalculate
 	if (weight_sum != 0) {
 		int free_size = box_size - child_size_known;
-		LL_FOREACH(box->data.box.children, child) {
+		DL_FOREACH(box->children, child) {
 			if (child->is_gone)
 				continue;
 			if ((is_horizontal ? child->w : child->h) != VIEW_MATCH_PARENT)
@@ -98,7 +99,7 @@ static void gfx_view_layout_box(view_t *box) {
 	int box_h = box->rect.h;
 	int pos	  = 0;
 
-	LL_FOREACH(box->data.box.children, child) {
+	DL_FOREACH(box->children, child) {
 		if (child->is_gone)
 			continue;
 		if (is_horizontal) {
@@ -112,5 +113,5 @@ static void gfx_view_layout_box(view_t *box) {
 }
 
 static void gfx_view_draw_box(SDL_Renderer *renderer, view_t *box) {
-	gfx_view_draw(renderer, box->data.box.children);
+	gfx_view_draw(renderer, box->children);
 }
