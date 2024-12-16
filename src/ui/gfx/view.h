@@ -95,22 +95,28 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
 void gfx_view_draw(SDL_Renderer *renderer, view_t *views);
+bool gfx_view_on_event(view_t *views, SDL_Event *e);
 
 // view_utils.c
 void gfx_view_measure_one(view_t *view, int parent_w, int parent_h);
 void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h);
 void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, int size, int align);
+view_t *gfx_view_find_prev(view_t *view);
+view_t *gfx_view_find_next(view_t *view);
 
 // view_*.c
 view_t *gfx_view_make_frame(view_t *parent);
 view_t *gfx_view_make_box(view_t *parent);
 view_t *gfx_view_make_text(view_t *parent);
 
-#define GFX_VIEW_ADD(views, type, width, height, params, ...)                                                          \
+#define GFX_VIEW_FIND(start, item, direction, same, check)                                                             \
 	do {                                                                                                               \
-		view_t *view = gfx_view_make_##type params;                                                                    \
-		view->w		 = width;                                                                                          \
-		view->h		 = height;                                                                                         \
-		__VA_ARGS__;                                                                                                   \
-		DL_APPEND(views, view);                                                                                        \
+		item = start;                                                                                                  \
+		if (!(same) || !(check)) {                                                                                     \
+			do {                                                                                                       \
+				item = gfx_view_find_##direction(item);                                                                \
+			} while (item != NULL && !(check));                                                                        \
+		}                                                                                                              \
 	} while (0)
+
+#define GFX_VIEW_IS_ACTIVE(view) (!view->is_gone && !view->is_invisible && !view->is_disabled && view->is_focusable)

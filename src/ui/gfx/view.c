@@ -43,6 +43,7 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 	json_read_bool(json, "is_gone", &view->is_gone);
 	json_read_bool(json, "is_invisible", &view->is_invisible);
 	json_read_bool(json, "is_disabled", &view->is_disabled);
+	json_read_bool(json, "is_focusable", &view->is_focusable);
 
 	// read margins (m: all, mh: horizontal, mv: vertical)
 	json_read_int(json, "m", &view->ml);
@@ -60,6 +61,14 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 		view->inflate(view, json);
 	else
 		LT_W("View '%s' does not provide 'inflate' function", view->id);
+
+	if (parent == NULL) {
+		// set default focus to the first (focusable) view
+		view_t *focusable;
+		GFX_VIEW_FIND(view, focusable, next, true, GFX_VIEW_IS_ACTIVE(focusable));
+		if (focusable != NULL)
+			focusable->is_focused = true;
+	}
 
 	return view;
 }
@@ -102,4 +111,17 @@ void gfx_view_draw(SDL_Renderer *renderer, view_t *views) {
 		gfx_set_color(renderer, 0x7FFF0000);
 		gfx_draw_rect(renderer, view->rect.x, view->rect.y, view->rect.w, view->rect.h, false);
 	}
+}
+
+bool gfx_view_on_keydown(view_t *views, SDL_Event *e);
+
+bool gfx_view_on_event(view_t *views, SDL_Event *e) {
+	bool ret;
+	switch (e->type) {
+		case SDL_KEYDOWN:
+			ret = gfx_view_on_keydown(views, e);
+			LT_D("Event SDL_KEYDOWN = %d", ret);
+			return ret;
+	}
+	return false;
 }

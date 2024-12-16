@@ -76,3 +76,26 @@ void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, in
 	text->size	= size;
 	text->align = align;
 }
+
+view_t *gfx_view_find_prev(view_t *view) {
+	if (view->prev != NULL && view->prev->next == view)
+		view = view->prev;
+	else if (view->parent != NULL && view->parent->prev != NULL && view->parent->prev->next == view->parent)
+		view = view->parent->prev;
+	else
+		view = NULL;
+	if (view != NULL && view->children != NULL)
+		view = view->children->prev;
+	return view;
+}
+
+view_t *gfx_view_find_next(view_t *view) {
+	if (view->children != NULL)
+		return view->children;
+	else if (view->next != NULL)
+		return view->next;
+	else if (view->parent != NULL)
+		return view->parent->next;
+	else
+		return NULL;
+}
