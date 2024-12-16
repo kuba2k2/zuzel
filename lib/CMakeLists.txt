@@ -1,14 +1,23 @@
 cmake_minimum_required(VERSION 3.20)
 
+set(ENABLE_CJSON_UNINSTALL OFF)
+set(ENABLE_CJSON_TEST OFF)
+set(ENABLE_TARGET_EXPORT OFF)
+set(BUILD_SHARED_AND_STATIC_LIBS ON)
+add_subdirectory(cjson)
+target_include_directories(cjson-static INTERFACE "cjson/")
+target_compile_options(cjson-static PRIVATE -Wno-float-conversion)
+
 set(SDL_AUDIO OFF)
 set(SDL_POWER OFF)
 set(SDL_SENSOR OFF)
 set(SDL_VIDEO OFF)
 set(SDL_LOADSO OFF)
 set(SDL_ATOMIC OFF)
-
-set(SDL_STATIC ON CACHE INTERNAL "")
-set(SDL_CMAKE_DEBUG_POSTFIX "" CACHE INTERNAL "")
+set(SDL_STATIC ON)
+set(SDL_CMAKE_DEBUG_POSTFIX "")
+set(SDL2_DISABLE_INSTALL ON)
+set(SDL2_DISABLE_UNINSTALL ON)
 add_subdirectory(sdl)
 
 add_library(uthash INTERFACE)

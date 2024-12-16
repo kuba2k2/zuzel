@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(zuzel C)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 add_compile_options(-fdata-sections -ffunction-sections)
 add_link_options(-Wl,--gc-sections)
