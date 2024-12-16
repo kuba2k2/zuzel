@@ -4,10 +4,11 @@
 
 #include "include.h"
 
+#define VIEW_WRAP_CONTENT (0)
 #define VIEW_MATCH_PARENT (-1)
-#define VIEW_WRAP_CONTENT (-2)
 
 typedef struct view_t view_t;
+typedef void (*view_inflate_t)(view_t *view, cJSON *json);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
 typedef void (*view_draw_t)(SDL_Renderer *renderer, view_t *view);
@@ -20,8 +21,8 @@ typedef enum {
 	VIEW_TYPE_INPUT	 = 3,
 } view_type_t;
 
-typedef struct {
-	const char *text;	//!< Text to be displayed
+typedef struct view_text_t {
+	char *text;			//!< Text to be displayed (view-owned)
 	unsigned int color; //!< Color of the text (ARGB8888)
 	int font;			//!< Font index
 	int size;			//!< Font size
@@ -30,8 +31,9 @@ typedef struct {
 
 typedef struct view_t {
 	// view type
-	const char *id;			//!< Freeform view ID/name
+	char *id;				//!< Freeform view ID/name (view-owned)
 	view_type_t type;		//!< Type of the view
+	view_inflate_t inflate; //!< View inflater (parameter deserialization)
 	view_measure_t measure; //!< View bounding box measurement function
 	view_layout_t layout;	//!< Layout positioning function (optional)
 	view_draw_t draw;		//!< Renderer function
@@ -83,6 +85,7 @@ typedef struct view_t {
 } view_t;
 
 // view.c
+view_t *gfx_view_inflate(cJSON *json);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
 void gfx_view_draw(SDL_Renderer *renderer, view_t *views);
@@ -93,8 +96,8 @@ void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h)
 void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, int size, int align);
 
 // view_*.c
-view_t *gfx_view_make_box(bool is_horizontal);
-view_t *gfx_view_make_text(const char *text);
+view_t *gfx_view_make_box();
+view_t *gfx_view_make_text();
 
 #define GFX_VIEW_ADD(views, type, width, height, params, ...)                                                          \
 	do {                                                                                                               \

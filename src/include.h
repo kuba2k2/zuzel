@@ -23,6 +23,7 @@
 #include "core/errmacros.h"
 #include "core/logger.h"
 #include "core/settings.h"
+#include "core/utils.h"
 
 #include "game/game.h"
 

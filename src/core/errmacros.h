@@ -37,6 +37,13 @@
 			err;                                                                                                       \
 		}                                                                                                              \
 	} while (0)
+#define FTELL(file, into, err)                                                                                         \
+	do {                                                                                                               \
+		if ((into = ftell(file)) < 0) {                                                                                \
+			LT_E("File tell failed");                                                                                  \
+			err;                                                                                                       \
+		}                                                                                                              \
+	} while (0)
 
 #define SDL_ERROR(func, err)                                                                                           \
 	do {                                                                                                               \

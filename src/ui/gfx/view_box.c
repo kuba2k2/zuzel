@@ -2,21 +2,29 @@
 
 #include "view.h"
 
+static void gfx_view_inflate_box(view_t *box, cJSON *json);
 static void gfx_view_measure_box(view_t *box);
 static void gfx_view_layout_box(view_t *box);
 static void gfx_view_draw_box(SDL_Renderer *renderer, view_t *box);
 
-view_t *gfx_view_make_box(bool is_horizontal) {
+view_t *gfx_view_make_box() {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
-	view->type					 = VIEW_TYPE_BOX;
-	view->measure				 = gfx_view_measure_box;
-	view->layout				 = gfx_view_layout_box;
-	view->draw					 = gfx_view_draw_box;
-	view->data.box.is_horizontal = is_horizontal;
+	view->type	  = VIEW_TYPE_BOX;
+	view->inflate = gfx_view_inflate_box;
+	view->measure = gfx_view_measure_box;
+	view->layout  = gfx_view_layout_box;
+	view->draw	  = gfx_view_draw_box;
 
 	return view;
+}
+
+static void gfx_view_inflate_box(view_t *box, cJSON *json) {
+	json_read_bool(json, "is_horizontal", &box->data.box.is_horizontal);
+	if (box->data.box.children != NULL)
+		LT_ERR(E, return, "Box children already inflated");
+	box->data.box.children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"));
 }
 
 static void gfx_view_measure_box(view_t *box) {
@@ -92,7 +100,7 @@ static void gfx_view_layout_box(view_t *box) {
 
 	LL_FOREACH(box->data.box.children, child) {
 		if (child->is_gone)
-			return;
+			continue;
 		if (is_horizontal) {
 			gfx_view_layout_one(child, box_x + pos, box_y, box_w - pos, box_h);
 			pos += child->rect.w;

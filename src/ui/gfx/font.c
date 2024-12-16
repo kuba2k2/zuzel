@@ -109,7 +109,7 @@ void gfx_set_text_style(int index, int size, int align) {
  */
 int gfx_get_text_width(const char *s, bool first_line) {
 	font_t *font = FONT;
-	if (font == NULL)
+	if (s == NULL || font == NULL)
 		return 0;
 	char ch;
 	int max_width	= 0;
@@ -134,7 +134,7 @@ int gfx_get_text_width(const char *s, bool first_line) {
  */
 int gfx_get_text_height(const char *s) {
 	font_t *font = FONT;
-	if (font == NULL)
+	if (s == NULL || font == NULL)
 		return 0;
 	char ch;
 	int line_height	 = font->func.get_line_height(font);
@@ -147,7 +147,7 @@ int gfx_get_text_height(const char *s) {
 }
 
 static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) {
-	if (font == NULL)
+	if (s == NULL || font == NULL)
 		return;
 	if (font->align & (GFX_ALIGN_RIGHT | GFX_ALIGN_CENTER_HORIZONTAL)) {
 		int width = gfx_get_text_width(s, true);
@@ -177,7 +177,7 @@ static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) 
  */
 void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s) {
 	font_t *font = FONT;
-	if (font == NULL)
+	if (s == NULL || font == NULL)
 		return;
 	int xc_init = xc;
 	gfx_text_align(font, &xc, &yc, s);

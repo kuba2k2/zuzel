@@ -2,23 +2,27 @@
 
 #include "view.h"
 
+static void gfx_view_inflate_text(view_t *text, cJSON *json);
 static void gfx_view_measure_text(view_t *text);
 static void gfx_view_draw_text(SDL_Renderer *renderer, view_t *text);
 
-view_t *gfx_view_make_text(const char *text) {
+view_t *gfx_view_make_text() {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
 	view->type			  = VIEW_TYPE_TEXT;
+	view->inflate		  = gfx_view_inflate_text;
 	view->measure		  = gfx_view_measure_text;
 	view->draw			  = gfx_view_draw_text;
-	view->data.text.text  = text;
 	view->data.text.color = GFX_COLOR_BRIGHT_WHITE;
-	view->data.text.font  = 0;
 	view->data.text.size  = FONT_SIZE_DEFAULT;
 	view->data.text.align = GFX_ALIGN_DEFAULT;
 
 	return view;
+}
+
+static void gfx_view_inflate_text(view_t *text, cJSON *json) {
+	json_read_gfx_view_text(json, "text", &text->data.text);
 }
 
 static void gfx_view_measure_text(view_t *text) {
