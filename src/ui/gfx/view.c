@@ -43,6 +43,18 @@ view_t *gfx_view_inflate(cJSON *json) {
 	json_read_bool(json, "is_invisible", &view->is_invisible);
 	json_read_bool(json, "is_disabled", &view->is_disabled);
 
+	// read margins (m: all, mh: horizontal, mv: vertical)
+	json_read_int(json, "m", &view->ml);
+	view->mt = view->ml;
+	json_read_int(json, "mh", &view->ml);
+	view->mr = view->ml;
+	json_read_int(json, "mv", &view->mt);
+	view->mb = view->mt;
+	json_read_int(json, "ml", &view->ml);
+	json_read_int(json, "mr", &view->mr);
+	json_read_int(json, "mt", &view->mt);
+	json_read_int(json, "mb", &view->mb);
+
 	if (view->inflate != NULL)
 		view->inflate(view, json);
 	else
@@ -86,7 +98,7 @@ void gfx_view_draw(SDL_Renderer *renderer, view_t *views) {
 		else
 			LT_W("View '%s' does not provide 'draw' function", view->id);
 		// draw the bounding box
-		gfx_set_color(renderer, 0xFF0000);
-		SDL_RenderDrawRect(renderer, &view->rect);
+		gfx_set_color(renderer, 0x7FFF0000);
+		gfx_draw_rect(renderer, view->rect.x, view->rect.y, view->rect.w, view->rect.h, false);
 	}
 }

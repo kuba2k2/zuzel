@@ -41,6 +41,7 @@ void gfx_set_color(SDL_Renderer *renderer, unsigned int color);
 void gfx_draw_rect_points(SDL_Renderer *renderer, SDL_Rect *rects, int count, int width);
 void gfx_draw_half_circle(SDL_Renderer *renderer, int cx, int cy, int angle, int radius, int width);
 void gfx_draw_line(SDL_Renderer *renderer, int x1, int y1, int x2, int y2, int width);
+void gfx_draw_rect(SDL_Renderer *renderer, int x, int y, int w, int h, bool fill);
 
 // font.c
 font_t *gfx_load_font(int index, const char *filename);

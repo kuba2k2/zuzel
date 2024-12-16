@@ -32,6 +32,10 @@ void gfx_view_measure_one(view_t *view, int parent_w, int parent_h) {
 		view->measure(view);
 	else
 		LT_W("View '%s' does not provide 'measure' function", view->id);
+
+	// add margins
+	view->rect.w += view->ml + view->mr;
+	view->rect.h += view->mt + view->mb;
 }
 
 void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h) {
@@ -54,6 +58,12 @@ void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h)
 	// add parent view's offset
 	view->rect.x += x;
 	view->rect.y += y;
+
+	// add margins
+	view->rect.x += view->ml;
+	view->rect.y += view->mt;
+	view->rect.w -= view->ml + view->mr;
+	view->rect.h -= view->mt + view->mb;
 
 	// let the view reposition its children, knowing its final X/Y position
 	if (view->layout != NULL)

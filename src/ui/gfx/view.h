@@ -40,10 +40,11 @@ typedef struct view_t {
 	view_draw_t draw;		//!< Renderer function
 
 	// positioning
-	int w, h;	   //!< Width/height specification (exact in pixels, or VIEW_MATCH_PARENT/VIEW_WRAP_CONTENT)
-	int gravity;   //!< Gravity of this view within the parent view
-	int weight;	   //!< Weight of this view within the parent view (VIEW_TYPE_BOX only)
-	SDL_Rect rect; //!< Bounding box (calculated during layout)
+	int w, h;			//!< Width/height specification (exact in pixels, or VIEW_MATCH_PARENT/VIEW_WRAP_CONTENT)
+	int ml, mr, mt, mb; //!< Margins: left/right/top/bottom
+	int gravity;		//!< Gravity of this view within the parent view
+	int weight;			//!< Weight of this view within the parent view (VIEW_TYPE_BOX only)
+	SDL_Rect rect;		//!< Bounding box (calculated during layout)
 
 	// common properties
 	bool is_gone;	   //!< Whether the view should be ignored in layout

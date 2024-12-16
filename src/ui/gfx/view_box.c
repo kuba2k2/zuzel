@@ -103,10 +103,10 @@ static void gfx_view_layout_box(view_t *box) {
 			continue;
 		if (is_horizontal) {
 			gfx_view_layout_one(child, box_x + pos, box_y, box_w - pos, box_h);
-			pos += child->rect.w;
+			pos += child->rect.w + child->ml + child->mr;
 		} else {
 			gfx_view_layout_one(child, box_x, box_y + pos, box_w, box_h - pos);
-			pos += child->rect.h;
+			pos += child->rect.h + child->mt + child->mb;
 		}
 	}
 }

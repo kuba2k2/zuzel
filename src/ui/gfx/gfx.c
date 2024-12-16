@@ -137,3 +137,11 @@ void gfx_draw_line(SDL_Renderer *renderer, int x1, int y1, int x2, int y2, int w
 
 	gfx_draw_rect_points(renderer, rects, count, width);
 }
+
+void gfx_draw_rect(SDL_Renderer *renderer, int x, int y, int w, int h, bool fill) {
+	SDL_Rect rect = {.x = x, .y = y, .w = w, .h = h};
+	if (fill)
+		SDL_RenderFillRect(renderer, &rect);
+	else
+		SDL_RenderDrawRect(renderer, &rect);
+}
