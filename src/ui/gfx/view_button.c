@@ -14,6 +14,7 @@ view_t *gfx_view_make_button(view_t *parent) {
 	view->inflate				  = gfx_view_inflate_button;
 	view->measure				  = gfx_view_measure_button;
 	view->draw					  = gfx_view_draw_button;
+	view->is_focusable			  = true;
 	view->data.button.text.color  = 0xE0E0E0;
 	view->data.button.text.size	  = FONT_SIZE_DEFAULT;
 	view->data.button.bg_color	  = 0x707070;

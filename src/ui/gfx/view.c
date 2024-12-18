@@ -66,14 +66,6 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 	else
 		LT_W("View '%s' does not provide 'inflate' function", view->id);
 
-	if (parent == NULL) {
-		// set default focus to the first (focusable) view
-		view_t *focusable;
-		GFX_VIEW_FIND(view, focusable, next, true, GFX_VIEW_IS_ACTIVE(focusable));
-		if (focusable != NULL)
-			focusable->is_focused = true;
-	}
-
 	return view;
 }
 
