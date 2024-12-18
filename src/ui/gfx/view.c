@@ -2,6 +2,8 @@
 
 #include "view.h"
 
+bool gfx_view_bounding_box = false;
+
 view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 	if (json == NULL)
 		return NULL;
@@ -110,8 +112,10 @@ void gfx_view_draw(SDL_Renderer *renderer, view_t *views) {
 		else
 			LT_W("View '%s' does not provide 'draw' function", view->id);
 		// draw the bounding box
-		gfx_set_color(renderer, 0x7FFF0000);
-		gfx_draw_rect(renderer, view->rect.x, view->rect.y, view->rect.w, view->rect.h, false);
+		if (gfx_view_bounding_box) {
+			gfx_set_color(renderer, 0x7FFF0000);
+			gfx_draw_rect(renderer, view->rect.x, view->rect.y, view->rect.w, view->rect.h, false);
+		}
 	}
 }
 

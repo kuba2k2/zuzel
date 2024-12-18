@@ -101,6 +101,7 @@ typedef struct view_t {
 } view_t;
 
 // view.c
+extern bool gfx_view_bounding_box;
 view_t *gfx_view_inflate(cJSON *json, view_t *parent);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
