@@ -52,6 +52,7 @@ int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *fon
 	int byte	  = *data++;
 
 	int prev_sx = 0, prev_sy = 0;
+	bool scale_2x = font->scale[0] == 2 && font->scale[1] == 1;
 	for (int y = 0; y < height; y++) {
 		int sy = SCALE(y);
 		for (int x = 0; x < width; x++) {
@@ -64,25 +65,34 @@ int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *fon
 			// check if pixel is enabled
 			if (byte & (0x80 >> bit)) {
 				// draw a point for the pixel
-				point->x = xc + sx;
-				point->y = yc + sy;
-				point++;
-				if (x != sx || y != sy) {
-					// perform "scaling" by tracing a path from the previous adjacent pixel
-					for (int px = prev_sx; px < sx; px++) {
-						point->x = xc + px;
-						point->y = yc + sy;
+				if (scale_2x) {
+					// optimize drawing 2x scaled fonts
+					for (int i = 0; i < 4; i++) {
+						point->x = xc + sx + (i & 1);
+						point->y = yc + sy + (i >> 1);
 						point++;
-						for (int py = prev_sy; py < sy; py++) {
+					}
+				} else {
+					point->x = xc + sx;
+					point->y = yc + sy;
+					point++;
+					if (x != sx || y != sy) {
+						// perform "scaling" by tracing a path from the previous adjacent pixel
+						for (int px = prev_sx; px < sx; px++) {
 							point->x = xc + px;
+							point->y = yc + sy;
+							point++;
+							for (int py = prev_sy; py < sy; py++) {
+								point->x = xc + px;
+								point->y = yc + py;
+								point++;
+							}
+						}
+						for (int py = prev_sy; py < sy; py++) {
+							point->x = xc + sx;
 							point->y = yc + py;
 							point++;
 						}
-					}
-					for (int py = prev_sy; py < sy; py++) {
-						point->x = xc + sx;
-						point->y = yc + py;
-						point++;
 					}
 				}
 			}
