@@ -99,3 +99,36 @@ view_t *gfx_view_find_next(view_t *view) {
 	else
 		return NULL;
 }
+
+view_t *gfx_view_find_by_id(view_t *views, const char *id) {
+	while (views != NULL && (views->id == NULL || strcmp(views->id, id) != 0)) {
+		views = gfx_view_find_next(views);
+	}
+	return views;
+}
+
+char *gfx_view_make_id(view_t *view) {
+	const char *type_str = "view";
+	switch (view->type) {
+		case VIEW_TYPE_FRAME:
+			type_str = "frame";
+			break;
+		case VIEW_TYPE_BOX:
+			type_str = "box";
+			break;
+		case VIEW_TYPE_TEXT:
+			type_str = "text";
+			break;
+		case VIEW_TYPE_BUTTON:
+			type_str = "button";
+			break;
+		case VIEW_TYPE_INPUT:
+			type_str = "input";
+			break;
+	}
+
+	static int counter = 0;
+	char buf[32];
+	sprintf(buf, "%s%03d", type_str, ++counter);
+	return strdup(buf);
+}

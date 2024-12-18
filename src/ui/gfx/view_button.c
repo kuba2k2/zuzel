@@ -27,6 +27,7 @@ view_t *gfx_view_make_button(view_t *parent) {
 	view->data.button.fg_focused  = 0xFFFFA0;
 	view->parent				  = parent;
 
+	view->id = gfx_view_make_id(view);
 	return view;
 }
 

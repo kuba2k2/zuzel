@@ -115,6 +115,8 @@ void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h)
 void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, int size, int align);
 view_t *gfx_view_find_prev(view_t *view);
 view_t *gfx_view_find_next(view_t *view);
+view_t *gfx_view_find_by_id(view_t *views, const char *id);
+char *gfx_view_make_id(view_t *view);
 
 // view_*.c
 view_t *gfx_view_make_frame(view_t *parent);

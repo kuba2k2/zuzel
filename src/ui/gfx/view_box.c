@@ -18,6 +18,7 @@ view_t *gfx_view_make_box(view_t *parent) {
 	view->draw	  = gfx_view_draw_box;
 	view->parent  = parent;
 
+	view->id = gfx_view_make_id(view);
 	return view;
 }
 

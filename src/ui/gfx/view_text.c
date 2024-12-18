@@ -19,6 +19,7 @@ view_t *gfx_view_make_text(view_t *parent) {
 	view->data.text.align = GFX_ALIGN_DEFAULT;
 	view->parent		  = parent;
 
+	view->id = gfx_view_make_id(view);
 	return view;
 }
 
