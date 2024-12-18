@@ -12,7 +12,7 @@ typedef void (*view_inflate_t)(view_t *view, cJSON *json);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
 typedef void (*view_draw_t)(SDL_Renderer *renderer, view_t *view);
-typedef bool (*view_on_event_t)(view_t *view, SDL_Event *event);
+typedef bool (*view_on_event_t)(view_t *view, SDL_Event *e);
 
 typedef enum {
 	VIEW_TYPE_FRAME	 = 0,
@@ -53,6 +53,7 @@ typedef struct view_t {
 	bool is_disabled;  //!< Whether the view is disabled
 	bool is_focused;   //!< Whether the view is focused
 	bool is_focusable; //!< Whether the view can be focused
+	bool in_event;	   //!< Whether the view should capture all events, regardless of its focus state
 
 	// view-specific properties
 	union {
@@ -86,7 +87,7 @@ typedef struct view_t {
 		// sent by view core
 		view_on_event_t focus; //!< On focus change
 		// sent by specific views
-		view_on_event_t accept; //!< On click/Enter keypress
+		view_on_event_t press;	//!< On press (mouse click/Enter key)
 		view_on_event_t change; //!< On value change
 	} event;
 

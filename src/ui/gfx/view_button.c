@@ -5,6 +5,7 @@
 static void gfx_view_inflate_button(view_t *button, cJSON *json);
 static void gfx_view_measure_button(view_t *button);
 static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button);
+static bool gfx_view_on_event_button(view_t *view, SDL_Event *e);
 
 view_t *gfx_view_make_button(view_t *parent) {
 	view_t *view;
@@ -14,6 +15,7 @@ view_t *gfx_view_make_button(view_t *parent) {
 	view->inflate				  = gfx_view_inflate_button;
 	view->measure				  = gfx_view_measure_button;
 	view->draw					  = gfx_view_draw_button;
+	view->on_event				  = gfx_view_on_event_button;
 	view->is_focusable			  = true;
 	view->data.button.text.color  = 0xE0E0E0;
 	view->data.button.text.size	  = FONT_SIZE_DEFAULT;
@@ -131,4 +133,28 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 							 : button->data.button.text.color
 	);
 	gfx_draw_text(renderer, x + whalf, y + hhalf, button->data.button.text.text);
+}
+
+static bool gfx_view_on_event_button(view_t *view, SDL_Event *e) {
+	switch (e->type) {
+		case SDL_KEYDOWN:
+			// send a 'press' event on Enter keypress
+			if (e->key.keysym.sym == SDLK_RETURN && view->event.press)
+				return view->event.press(view, e);
+			break;
+
+		case SDL_MOUSEBUTTONDOWN:
+			// capture all events if mouse grabs the button
+			view->in_event = true;
+			return true;
+
+		case SDL_MOUSEBUTTONUP:
+			// disable the capture once it releases the button
+			view->in_event = false;
+			// only send a 'press' event if the button is still focused
+			if (view->is_focused && view->event.press)
+				return view->event.press(view, e);
+			break;
+	}
+	return false;
 }

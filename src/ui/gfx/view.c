@@ -157,7 +157,11 @@ static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *
 		view = gfx_view_find_next(view);
 	}
 
-	if (focusable != focused) {
+	// only send events if:
+	// - the new focused view is different from the previous one
+	// - the new focused view is the same, but not focused
+	//   (happens if the view uses 'in_event = true')
+	if (focusable != focused || (focusable != NULL && !focusable->is_focused)) {
 		if (focused != NULL) {
 			focused->is_focused = false;
 			if (focused->event.focus != NULL)
@@ -175,17 +179,16 @@ static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *
 
 bool gfx_view_on_event(view_t *views, SDL_Event *e) {
 	view_t *focused;
-	GFX_VIEW_FIND(views, focused, next, true, focused->is_focused);
+	GFX_VIEW_FIND(views, focused, next, true, focused->is_focused || focused->in_event);
 
 	bool ret = false;
 	switch (e->type) {
 		case SDL_KEYDOWN:
 			ret = gfx_view_on_key_down(views, focused, e);
-			LT_D("Event SDL_KEYDOWN(...) = %d", ret);
 			break;
+
 		case SDL_MOUSEMOTION:
 			ret = gfx_view_on_mouse_motion(views, focused, e);
-			LT_D("Event SDL_MOUSEMOTION(x=%d, y=%d) = %d", e->motion.x, e->motion.y, ret);
 			break;
 	}
 
