@@ -64,6 +64,12 @@ typedef struct view_t {
 
 		struct {
 			view_text_t text;
+			unsigned int bg_color;
+			unsigned int bg_disabled;
+			unsigned int bg_focused;
+			unsigned int fg_shadow;
+			unsigned int fg_disabled;
+			unsigned int fg_focused;
 		} button;
 
 		struct {

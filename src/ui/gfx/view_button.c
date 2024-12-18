@@ -10,19 +10,31 @@ view_t *gfx_view_make_button(view_t *parent) {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
-	view->type					 = VIEW_TYPE_BUTTON;
-	view->inflate				 = gfx_view_inflate_button;
-	view->measure				 = gfx_view_measure_button;
-	view->draw					 = gfx_view_draw_button;
-	view->data.button.text.color = GFX_COLOR_BRIGHT_WHITE;
-	view->data.button.text.size	 = FONT_SIZE_DEFAULT;
-	view->parent				 = parent;
+	view->type					  = VIEW_TYPE_BUTTON;
+	view->inflate				  = gfx_view_inflate_button;
+	view->measure				  = gfx_view_measure_button;
+	view->draw					  = gfx_view_draw_button;
+	view->data.button.text.color  = 0xE0E0E0;
+	view->data.button.text.size	  = FONT_SIZE_DEFAULT;
+	view->data.button.bg_color	  = 0x707070;
+	view->data.button.bg_focused  = 0x7E88BF;
+	view->data.button.bg_disabled = 0x2A2A2A;
+	view->data.button.fg_shadow	  = 0x383838;
+	view->data.button.fg_disabled = 0xA0A0A0;
+	view->data.button.fg_focused  = 0xFFFFA0;
+	view->parent				  = parent;
 
 	return view;
 }
 
 static void gfx_view_inflate_button(view_t *button, cJSON *json) {
 	json_read_gfx_view_text(json, "text", &button->data.button.text);
+	json_read_gfx_color(json, "bg_color", &button->data.button.bg_color);
+	json_read_gfx_color(json, "bg_focus", &button->data.button.bg_focused);
+	json_read_gfx_color(json, "bg_disabled", &button->data.button.bg_disabled);
+	json_read_gfx_color(json, "fg_shadow", &button->data.button.fg_shadow);
+	json_read_gfx_color(json, "fg_focus", &button->data.button.fg_focused);
+	json_read_gfx_color(json, "fg_disabled", &button->data.button.fg_disabled);
 }
 
 static void gfx_view_measure_button(view_t *button) {
@@ -65,7 +77,12 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 	h -= 4;
 
 	// draw the button body (main background color)
-	gfx_set_color(renderer, button->is_disabled ? 0x2A2A2A : button->is_focused ? 0x7E88BF : 0x707070);
+	gfx_set_color(
+		renderer,
+		button->is_disabled	 ? button->data.button.bg_disabled
+		: button->is_focused ? button->data.button.bg_focused
+							 : button->data.button.bg_color
+	);
 	gfx_draw_rect(renderer, x, y, w, h, true);
 
 	// draw the face texture
@@ -97,8 +114,20 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 	gfx_draw_rect(renderer, x + w - 4, y, 4, h, true);
 	gfx_draw_rect(renderer, x, y + h - 4, w - 4, 4, true);
 
-	// finally, draw the text
-	gfx_set_color(renderer, button->data.button.text.color);
 	gfx_set_text_style(button->data.button.text.font, button->data.button.text.size, GFX_ALIGN_CENTER);
-	gfx_draw_text(renderer, x + w / 2, y + h / 2, button->data.button.text.text);
+
+	// if not disabled, draw the text shadow
+	if (!button->is_disabled) {
+		gfx_set_color(renderer, button->data.button.fg_shadow);
+		gfx_draw_text(renderer, x + whalf + 2, y + hhalf + 2, button->data.button.text.text);
+	}
+
+	// finally, draw the text
+	gfx_set_color(
+		renderer,
+		button->is_disabled	 ? button->data.button.fg_disabled
+		: button->is_focused ? button->data.button.fg_focused
+							 : button->data.button.text.color
+	);
+	gfx_draw_text(renderer, x + whalf, y + hhalf, button->data.button.text.text);
 }
