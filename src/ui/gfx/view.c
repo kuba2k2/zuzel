@@ -28,6 +28,8 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 		view = gfx_view_make_box(parent);
 	else if (strcmp(type->valuestring, "text") == 0)
 		view = gfx_view_make_text(parent);
+	else if (strcmp(type->valuestring, "button") == 0)
+		view = gfx_view_make_button(parent);
 	else
 		LT_ERR(E, return NULL, "Unknown view type '%s'", type->valuestring);
 

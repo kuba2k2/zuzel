@@ -61,7 +61,10 @@ typedef struct view_t {
 		} box;
 
 		view_text_t text;
-		view_text_t button;
+
+		struct {
+			view_text_t text;
+		} button;
 
 		struct {
 			view_text_t label;
@@ -109,6 +112,7 @@ view_t *gfx_view_find_next(view_t *view);
 view_t *gfx_view_make_frame(view_t *parent);
 view_t *gfx_view_make_box(view_t *parent);
 view_t *gfx_view_make_text(view_t *parent);
+view_t *gfx_view_make_button(view_t *parent);
 
 #define GFX_VIEW_FIND(start, item, direction, same, check)                                                             \
 	do {                                                                                                               \

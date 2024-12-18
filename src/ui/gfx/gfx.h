@@ -51,3 +51,10 @@ void gfx_set_text_style(int index, int size, int align);
 int gfx_get_text_width(const char *s, bool first_line);
 int gfx_get_text_height(const char *s);
 void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s);
+
+// textures.c
+void texture_load(SDL_Renderer *renderer, SDL_Texture **texture, int width, int height, const uint8_t *data);
+extern SDL_Texture *texture_button_face;
+extern const int texture_button_face_width;
+extern const int texture_button_face_height;
+extern const uint8_t texture_button_face_data[];
