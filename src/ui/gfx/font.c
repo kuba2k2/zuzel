@@ -174,11 +174,12 @@ static void gfx_text_align(const font_t *font, int *xc, int *yc, const char *s) 
  * @param xc X anchor
  * @param yc Y anchor
  * @param s string to draw
+ * @return the new cursor X position
  */
-void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s) {
+int gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s) {
 	font_t *font = FONT;
 	if (s == NULL || font == NULL)
-		return;
+		return xc;
 	int xc_init = xc;
 	gfx_text_align(font, &xc, &yc, s);
 	char ch;
@@ -191,4 +192,5 @@ void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s) {
 			xc += font->func.draw_char(renderer, xc, yc, font, ch);
 		}
 	}
+	return xc;
 }

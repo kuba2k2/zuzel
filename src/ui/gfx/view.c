@@ -34,6 +34,8 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 		view = gfx_view_make_button(parent);
 	else if (strcmp(type->valuestring, "slider") == 0)
 		view = gfx_view_make_slider(parent);
+	else if (strcmp(type->valuestring, "input") == 0)
+		view = gfx_view_make_input(parent);
 	else
 		LT_ERR(E, return NULL, "Unknown view type '%s'", type->valuestring);
 
@@ -183,23 +185,27 @@ static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *
 }
 
 bool gfx_view_on_event(view_t *views, SDL_Event *e) {
-	view_t *focused;
-	GFX_VIEW_FIND(views, focused, next, true, focused->in_event);
-	if (focused == NULL)
-		GFX_VIEW_FIND(views, focused, next, true, focused->is_focused);
-
 	bool ret = false;
+
+	view_t *in_event;
+	GFX_VIEW_FIND(views, in_event, next, true, in_event->in_event);
+	view_t *focused;
+	GFX_VIEW_FIND(views, focused, next, true, focused->is_focused);
+
+	if (in_event != NULL && in_event->on_event)
+		ret = in_event->on_event(in_event, e);
+
 	switch (e->type) {
 		case SDL_KEYDOWN:
-			ret = gfx_view_on_key_down(views, focused, e);
+			ret = ret || gfx_view_on_key_down(views, focused, e);
 			break;
 
 		case SDL_MOUSEMOTION:
-			ret = gfx_view_on_mouse_motion(views, focused, e);
+			ret = gfx_view_on_mouse_motion(views, focused, e) || ret;
 			break;
 	}
 
-	if (focused != NULL && focused->on_event && (!ret || focused->in_event))
+	if (focused != NULL && focused->on_event && !ret)
 		ret = focused->on_event(focused, e);
 
 	return ret;

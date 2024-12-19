@@ -83,11 +83,11 @@ typedef struct view_t {
 		} slider;
 
 		struct {
-			view_text_t label;
+			view_text_t text;
 			view_text_t placeholder;
-			view_text_t value;
 			int max_length;
-			char *new_value;
+			char *value;
+			int pos;
 		} input;
 	} data;
 
@@ -133,6 +133,7 @@ view_t *gfx_view_make_box(view_t *parent);
 view_t *gfx_view_make_text(view_t *parent);
 view_t *gfx_view_make_button(view_t *parent);
 view_t *gfx_view_make_slider(view_t *parent);
+view_t *gfx_view_make_input(view_t *parent);
 
 #define GFX_VIEW_FIND(start, item, direction, same, check)                                                             \
 	do {                                                                                                               \
@@ -145,5 +146,5 @@ view_t *gfx_view_make_slider(view_t *parent);
 	} while (0)
 
 #define GFX_VIEW_IS_ACTIVE(view) (!view->is_gone && !view->is_invisible && !view->is_disabled && view->is_focusable)
-#define GFX_VIEW_IN_BOX(view, x, y)                                                                                    \
-	(x >= view->rect.x && x <= view->rect.x + view->rect.w && y >= view->rect.y && y <= view->rect.y + view->rect.h)
+#define GFX_VIEW_IN_BOX(view, _x, _y)                                                                                  \
+	(_x >= view->rect.x && _x <= view->rect.x + view->rect.w && _y >= view->rect.y && _y <= view->rect.y + view->rect.h)

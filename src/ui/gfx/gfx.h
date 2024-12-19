@@ -50,7 +50,7 @@ font_t *gfx_set_text_font(int index);
 void gfx_set_text_style(int index, int size, int align);
 int gfx_get_text_width(const char *s, bool first_line);
 int gfx_get_text_height(const char *s);
-void gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s);
+int gfx_draw_text(SDL_Renderer *renderer, int xc, int yc, const char *s);
 
 // textures.c
 void texture_load(SDL_Renderer *renderer, SDL_Texture **texture, int width, int height, const uint8_t *data);

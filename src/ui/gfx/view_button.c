@@ -147,7 +147,7 @@ static bool gfx_view_on_event_button(view_t *button, SDL_Event *e) {
 		case SDL_MOUSEBUTTONDOWN:
 			// capture all events if mouse grabs the button
 			button->in_event = true;
-			return true;
+			break;
 
 		case SDL_MOUSEBUTTONUP:
 			// only send a 'press' event if the button is still focused
