@@ -162,24 +162,29 @@ static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *
 	// - the new focused view is the same, but not focused
 	//   (happens if the view uses 'in_event = true')
 	if (focusable != focused || (focusable != NULL && !focusable->is_focused)) {
-		if (focused != NULL) {
+		bool ret = false;
+		if (focused != NULL && focused->is_focused == true) {
 			focused->is_focused = false;
 			if (focused->event.focus != NULL)
 				focused->event.focus(focused, e);
+			ret = true;
 		}
-		if (focusable != NULL) {
+		if (focusable != NULL && focusable->is_focused == false) {
 			focusable->is_focused = true;
 			if (focusable->event.focus != NULL)
 				focusable->event.focus(focusable, e);
+			ret = true;
 		}
-		return true;
+		return ret;
 	}
 	return false;
 }
 
 bool gfx_view_on_event(view_t *views, SDL_Event *e) {
 	view_t *focused;
-	GFX_VIEW_FIND(views, focused, next, true, focused->is_focused || focused->in_event);
+	GFX_VIEW_FIND(views, focused, next, true, focused->in_event);
+	if (focused == NULL)
+		GFX_VIEW_FIND(views, focused, next, true, focused->is_focused);
 
 	bool ret = false;
 	switch (e->type) {
@@ -192,7 +197,7 @@ bool gfx_view_on_event(view_t *views, SDL_Event *e) {
 			break;
 	}
 
-	if (!ret && focused != NULL && focused->on_event)
+	if (focused != NULL && focused->on_event && (!ret || focused->in_event))
 		ret = focused->on_event(focused, e);
 
 	return ret;
