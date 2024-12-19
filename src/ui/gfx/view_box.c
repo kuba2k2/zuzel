@@ -81,6 +81,11 @@ static void gfx_view_measure_box(view_t *box) {
 				child->rect.h = child->weight * free_size / weight_sum;
 				gfx_view_measure_one(child, box->rect.w, child->rect.h);
 			}
+			// update maximum known size in the non-layout direction
+			if (is_horizontal)
+				child_size_max = max(child_size_max, child->rect.h);
+			else
+				child_size_max = max(child_size_max, child->rect.w);
 		}
 	}
 
