@@ -110,18 +110,18 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 		}
 	}
 
-	// add bezels
-	gfx_set_color(renderer, 0x55FFFFFF);
-	gfx_draw_rect(renderer, x, y, w - 4, 2, false);
-	gfx_draw_rect(renderer, x, y, 2, h - 4, false);
-	gfx_set_color(renderer, 0x55000000);
-	gfx_draw_rect(renderer, x + w - 4, y, 4, h, true);
-	gfx_draw_rect(renderer, x, y + h - 4, w - 4, 4, true);
-
 	gfx_set_text_style(button->data.button.text.font, button->data.button.text.size, GFX_ALIGN_CENTER);
 
-	// if not disabled, draw the text shadow
 	if (!button->is_disabled) {
+		// add bezels if not disabled
+		gfx_set_color(renderer, 0x55FFFFFF);
+		gfx_draw_rect(renderer, x, y, w - 4, 2, false);
+		gfx_draw_rect(renderer, x, y, 2, h - 4, false);
+		gfx_set_color(renderer, 0x55000000);
+		gfx_draw_rect(renderer, x + w - 4, y, 4, h, true);
+		gfx_draw_rect(renderer, x, y + h - 4, w - 4, 4, true);
+
+		// draw the text shadow
 		gfx_set_color(renderer, button->data.button.fg_shadow);
 		gfx_draw_text(renderer, x + whalf + 2, y + hhalf + 2, button->data.button.text.text);
 	}

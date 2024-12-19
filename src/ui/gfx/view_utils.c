@@ -9,7 +9,7 @@ void gfx_view_measure_one(view_t *view, int parent_w, int parent_h) {
 	else if (view->w != VIEW_MATCH_PARENT)
 		view->rect.w = view->w;
 	else if (parent_w != 0)
-		view->rect.w = parent_w;
+		view->rect.w = parent_w - view->ml - view->mr;
 	else {
 		LT_W("View '%s' has unknown parent width", view->id);
 		view->rect.w = 0;
@@ -21,7 +21,7 @@ void gfx_view_measure_one(view_t *view, int parent_w, int parent_h) {
 	else if (view->h != VIEW_MATCH_PARENT)
 		view->rect.h = view->h;
 	else if (parent_h != 0)
-		view->rect.h = parent_h;
+		view->rect.h = parent_h - view->mt - view->mb;
 	else {
 		LT_W("View '%s' has unknown parent height", view->id);
 		view->rect.h = 0;
