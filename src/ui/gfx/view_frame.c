@@ -2,7 +2,7 @@
 
 #include "view.h"
 
-static void gfx_view_inflate_frame(view_t *frame, cJSON *json);
+static void gfx_view_inflate_frame(view_t *frame, cJSON *json, const view_inflate_on_event_t *on_event);
 static void gfx_view_free_frame(view_t *frame);
 static void gfx_view_measure_frame(view_t *frame);
 static void gfx_view_layout_frame(view_t *frame);
@@ -24,10 +24,10 @@ view_t *gfx_view_make_frame(view_t *parent) {
 	return view;
 }
 
-static void gfx_view_inflate_frame(view_t *frame, cJSON *json) {
+static void gfx_view_inflate_frame(view_t *frame, cJSON *json, const view_inflate_on_event_t *on_event) {
 	if (frame->children != NULL)
 		LT_ERR(E, return, "Frame children already inflated");
-	frame->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), frame);
+	frame->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), frame, on_event);
 }
 
 static void gfx_view_free_frame(view_t *frame) {

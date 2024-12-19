@@ -4,7 +4,7 @@
 
 bool gfx_view_bounding_box = false;
 
-view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
+view_t *gfx_view_inflate(cJSON *json, view_t *parent, const view_inflate_on_event_t *on_event) {
 	if (json == NULL)
 		return NULL;
 
@@ -12,7 +12,7 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 		view_t *views = NULL;
 		cJSON *item;
 		cJSON_ArrayForEach(item, json) {
-			view_t *view = gfx_view_inflate(item, parent);
+			view_t *view = gfx_view_inflate(item, parent, on_event);
 			if (view != NULL)
 				DL_APPEND(views, view);
 		}
@@ -42,7 +42,6 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 	if (view == NULL)
 		LT_ERR(E, return NULL, "Created view '%s' is NULL", type->valuestring);
 
-	view->parent = parent;
 	json_read_string(json, "id", &view->id);
 	json_read_gfx_size(json, "w", &view->w);
 	json_read_gfx_size(json, "h", &view->h);
@@ -65,8 +64,13 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 	json_read_int(json, "mt", &view->mt);
 	json_read_int(json, "mb", &view->mb);
 
+	// read event handlers
+	json_read_gfx_view_on_event(json, "on_focus", &view->event.focus, on_event);
+	json_read_gfx_view_on_event(json, "on_press", &view->event.press, on_event);
+	json_read_gfx_view_on_event(json, "on_change", &view->event.change, on_event);
+
 	if (view->inflate != NULL)
-		view->inflate(view, json);
+		view->inflate(view, json, on_event);
 	else
 		LT_W("View '%s' does not provide 'inflate' function", view->id);
 

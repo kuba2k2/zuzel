@@ -2,7 +2,7 @@
 
 #include "view.h"
 
-static void gfx_view_inflate_input(view_t *input, cJSON *json);
+static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflate_on_event_t *on_event);
 static void gfx_view_free_input(view_t *input);
 static void gfx_view_measure_input(view_t *input);
 static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input);
@@ -30,7 +30,7 @@ view_t *gfx_view_make_input(view_t *parent) {
 	return view;
 }
 
-static void gfx_view_inflate_input(view_t *input, cJSON *json) {
+static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflate_on_event_t *on_event) {
 	json_read_gfx_view_text(json, "text", &input->data.input.text);
 	json_read_gfx_view_text(json, "placeholder", &input->data.input.placeholder);
 	json_read_int(json, "max_length", &input->data.input.max_length);

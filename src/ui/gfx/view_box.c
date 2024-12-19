@@ -2,7 +2,7 @@
 
 #include "view.h"
 
-static void gfx_view_inflate_box(view_t *box, cJSON *json);
+static void gfx_view_inflate_box(view_t *box, cJSON *json, const view_inflate_on_event_t *on_event);
 static void gfx_view_free_box(view_t *box);
 static void gfx_view_measure_box(view_t *box);
 static void gfx_view_layout_box(view_t *box);
@@ -24,11 +24,11 @@ view_t *gfx_view_make_box(view_t *parent) {
 	return view;
 }
 
-static void gfx_view_inflate_box(view_t *box, cJSON *json) {
+static void gfx_view_inflate_box(view_t *box, cJSON *json, const view_inflate_on_event_t *on_event) {
 	json_read_bool(json, "is_horizontal", &box->data.box.is_horizontal);
 	if (box->children != NULL)
 		LT_ERR(E, return, "Box children already inflated");
-	box->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), box);
+	box->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), box, on_event);
 }
 
 static void gfx_view_free_box(view_t *box) {

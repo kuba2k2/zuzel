@@ -4,6 +4,8 @@
 
 #include "include.h"
 
+#include "structs.h"
+
 typedef struct game_t game_t;
 
 game_t *game_init();

@@ -2,6 +2,13 @@
 
 #include "view.h"
 
+view_t *gfx_view_inflate_from_file(const char *filename, view_t *parent, const view_inflate_on_event_t *on_event) {
+	cJSON *json	  = file_read_json(filename);
+	view_t *views = gfx_view_inflate(json, parent, on_event);
+	cJSON_Delete(json);
+	return views;
+}
+
 void gfx_view_measure_one(view_t *view, int parent_w, int parent_h) {
 	// set rect width based on the spec
 	if (view->w == VIEW_WRAP_CONTENT)

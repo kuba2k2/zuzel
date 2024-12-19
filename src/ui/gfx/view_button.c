@@ -2,7 +2,7 @@
 
 #include "view.h"
 
-static void gfx_view_inflate_button(view_t *button, cJSON *json);
+static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_inflate_on_event_t *on_event);
 static void gfx_view_free_button(view_t *button);
 static void gfx_view_measure_button(view_t *button);
 static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button);
@@ -40,7 +40,7 @@ static void gfx_view_free_button(view_t *button) {
 	free(button);
 }
 
-static void gfx_view_inflate_button(view_t *button, cJSON *json) {
+static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_inflate_on_event_t *on_event) {
 	json_read_gfx_view_text(json, "text", &button->data.button.text);
 	json_read_gfx_color(json, "bg_color", &button->data.button.bg_color);
 	json_read_gfx_color(json, "bg_focus", &button->data.button.bg_focused);

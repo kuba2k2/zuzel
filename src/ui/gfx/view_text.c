@@ -2,7 +2,7 @@
 
 #include "view.h"
 
-static void gfx_view_inflate_text(view_t *text, cJSON *json);
+static void gfx_view_inflate_text(view_t *text, cJSON *json, const view_inflate_on_event_t *on_event);
 static void gfx_view_free_text(view_t *text);
 static void gfx_view_measure_text(view_t *text);
 static void gfx_view_draw_text(SDL_Renderer *renderer, view_t *text);
@@ -25,7 +25,7 @@ view_t *gfx_view_make_text(view_t *parent) {
 	return view;
 }
 
-static void gfx_view_inflate_text(view_t *text, cJSON *json) {
+static void gfx_view_inflate_text(view_t *text, cJSON *json, const view_inflate_on_event_t *on_event) {
 	json_read_gfx_view_text(json, "text", &text->data.text);
 }
 

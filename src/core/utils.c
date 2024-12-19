@@ -139,3 +139,16 @@ void json_read_gfx_view_text(cJSON *json, const char *key, view_text_t *value) {
 	json_read_int(item, "size", &value->size);
 	json_read_gfx_align(item, "align", &value->align);
 }
+
+void json_read_gfx_view_on_event(cJSON *json, const char *key, void *value, const view_inflate_on_event_t *on_event) {
+	cJSON *item = cJSON_GetObjectItem(json, key);
+	if (!cJSON_IsString(item) || value == NULL)
+		return;
+	while (on_event != NULL && on_event->name != NULL) {
+		if (strcmp(item->valuestring, on_event->name) == 0) {
+			*(view_on_event_t *)value = on_event->func;
+			return;
+		}
+		on_event++;
+	}
+}

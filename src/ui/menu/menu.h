@@ -4,6 +4,8 @@
 
 #include "include.h"
 
+#include "structs.h"
+
 typedef struct menu_t menu_t;
 
 menu_t *menu_init(SDL_Renderer *renderer);

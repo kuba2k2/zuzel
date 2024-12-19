@@ -8,7 +8,9 @@
 #define VIEW_MATCH_PARENT (-1)
 
 typedef struct view_t view_t;
-typedef void (*view_inflate_t)(view_t *view, cJSON *json);
+typedef struct view_inflate_on_event_t view_inflate_on_event_t;
+
+typedef void (*view_inflate_t)(view_t *view, cJSON *json, const view_inflate_on_event_t *on_event);
 typedef void (*view_free_t)(view_t *views);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
@@ -31,6 +33,11 @@ typedef struct view_text_t {
 	int size;			//!< Font size
 	int align;			//!< Font alignment
 } view_text_t;
+
+typedef struct view_inflate_on_event_t {
+	const char *name;
+	view_on_event_t func;
+} view_inflate_on_event_t;
 
 typedef struct view_t {
 	// view type
@@ -114,7 +121,7 @@ typedef struct view_t {
 
 // view.c
 extern bool gfx_view_bounding_box;
-view_t *gfx_view_inflate(cJSON *json, view_t *parent);
+view_t *gfx_view_inflate(cJSON *json, view_t *parent, const view_inflate_on_event_t *on_event);
 void gfx_view_free(view_t *views);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
@@ -122,6 +129,7 @@ void gfx_view_draw(SDL_Renderer *renderer, view_t *views);
 bool gfx_view_on_event(view_t *views, SDL_Event *e);
 
 // view_utils.c
+view_t *gfx_view_inflate_from_file(const char *filename, view_t *parent, const view_inflate_on_event_t *on_event);
 void gfx_view_measure_one(view_t *view, int parent_w, int parent_h);
 void gfx_view_layout_one(view_t *view, int x, int y, int parent_w, int parent_h);
 void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, int size, int align);

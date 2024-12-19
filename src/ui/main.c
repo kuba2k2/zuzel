@@ -32,6 +32,7 @@ int SDL_main(int argc, char *argv[]) {
 	if (renderer == NULL)
 		SDL_ERROR("SDL_CreateRenderer()", ret = 1; goto free_window);
 	SDL_RenderSetScale(renderer, (float)SETTINGS->screen.scale, (float)SETTINGS->screen.scale);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 	game_t *game = NULL;
 

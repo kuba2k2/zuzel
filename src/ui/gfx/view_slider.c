@@ -2,7 +2,7 @@
 
 #include "view.h"
 
-static void gfx_view_inflate_slider(view_t *slider, cJSON *json);
+static void gfx_view_inflate_slider(view_t *slider, cJSON *json, const view_inflate_on_event_t *on_event);
 static void gfx_view_free_slider(view_t *slider);
 static void gfx_view_measure_slider(view_t *slider);
 static void gfx_view_draw_slider(SDL_Renderer *renderer, view_t *slider);
@@ -31,13 +31,13 @@ view_t *gfx_view_make_slider(view_t *parent) {
 	return view;
 }
 
-static void gfx_view_inflate_slider(view_t *slider, cJSON *json) {
+static void gfx_view_inflate_slider(view_t *slider, cJSON *json, const view_inflate_on_event_t *on_event) {
 	view_t *button = slider->data.slider.button;
 	if (button == NULL)
 		return;
 
 	if (button->inflate != NULL)
-		button->inflate(button, cJSON_GetObjectItem(json, "button"));
+		button->inflate(button, cJSON_GetObjectItem(json, "button"), NULL);
 	json_read_gfx_view_text(json, "text", &slider->data.slider.text);
 	json_read_int(json, "value", &slider->data.slider.value);
 	json_read_int(json, "min", &slider->data.slider.min);
