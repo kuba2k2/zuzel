@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_box(view_t *box, cJSON *json);
+static void gfx_view_free_box(view_t *box);
 static void gfx_view_measure_box(view_t *box);
 static void gfx_view_layout_box(view_t *box);
 static void gfx_view_draw_box(SDL_Renderer *renderer, view_t *box);
@@ -13,6 +14,7 @@ view_t *gfx_view_make_box(view_t *parent) {
 
 	view->type	  = VIEW_TYPE_BOX;
 	view->inflate = gfx_view_inflate_box;
+	view->free	  = gfx_view_free_box;
 	view->measure = gfx_view_measure_box;
 	view->layout  = gfx_view_layout_box;
 	view->draw	  = gfx_view_draw_box;
@@ -27,6 +29,13 @@ static void gfx_view_inflate_box(view_t *box, cJSON *json) {
 	if (box->children != NULL)
 		LT_ERR(E, return, "Box children already inflated");
 	box->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), box);
+}
+
+static void gfx_view_free_box(view_t *box) {
+	if (box == NULL)
+		return;
+	gfx_view_free(box->children);
+	free(box);
 }
 
 static void gfx_view_measure_box(view_t *box) {

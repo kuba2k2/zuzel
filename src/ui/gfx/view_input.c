@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_input(view_t *input, cJSON *json);
+static void gfx_view_free_input(view_t *input);
 static void gfx_view_measure_input(view_t *input);
 static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input);
 static bool gfx_view_on_event_input(view_t *input, SDL_Event *e);
@@ -13,6 +14,7 @@ view_t *gfx_view_make_input(view_t *parent) {
 
 	view->type						   = VIEW_TYPE_BUTTON;
 	view->inflate					   = gfx_view_inflate_input;
+	view->free						   = gfx_view_free_input;
 	view->measure					   = gfx_view_measure_input;
 	view->draw						   = gfx_view_draw_input;
 	view->on_event					   = gfx_view_on_event_input;
@@ -38,6 +40,15 @@ static void gfx_view_inflate_input(view_t *input, cJSON *json) {
 		strncpy(input->data.input.value, input->data.input.text.text, input->data.input.max_length);
 		input->data.input.pos = strlen(input->data.input.value);
 	}
+}
+
+static void gfx_view_free_input(view_t *input) {
+	if (input == NULL)
+		return;
+	free(input->data.input.text.text);
+	free(input->data.input.placeholder.text);
+	free(input->data.input.value);
+	free(input);
 }
 
 static void gfx_view_measure_input(view_t *input) {

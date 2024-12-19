@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_frame(view_t *frame, cJSON *json);
+static void gfx_view_free_frame(view_t *frame);
 static void gfx_view_measure_frame(view_t *frame);
 static void gfx_view_layout_frame(view_t *frame);
 static void gfx_view_draw_frame(SDL_Renderer *renderer, view_t *frame);
@@ -13,6 +14,7 @@ view_t *gfx_view_make_frame(view_t *parent) {
 
 	view->type	  = VIEW_TYPE_FRAME;
 	view->inflate = gfx_view_inflate_frame;
+	view->free	  = gfx_view_free_frame;
 	view->measure = gfx_view_measure_frame;
 	view->layout  = gfx_view_layout_frame;
 	view->draw	  = gfx_view_draw_frame;
@@ -26,6 +28,13 @@ static void gfx_view_inflate_frame(view_t *frame, cJSON *json) {
 	if (frame->children != NULL)
 		LT_ERR(E, return, "Frame children already inflated");
 	frame->children = gfx_view_inflate(cJSON_GetObjectItem(json, "children"), frame);
+}
+
+static void gfx_view_free_frame(view_t *frame) {
+	if (frame == NULL)
+		return;
+	gfx_view_free(frame->children);
+	free(frame);
 }
 
 static void gfx_view_measure_frame(view_t *frame) {

@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_slider(view_t *slider, cJSON *json);
+static void gfx_view_free_slider(view_t *slider);
 static void gfx_view_measure_slider(view_t *slider);
 static void gfx_view_draw_slider(SDL_Renderer *renderer, view_t *slider);
 static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e);
@@ -13,6 +14,7 @@ view_t *gfx_view_make_slider(view_t *parent) {
 
 	view->type					 = VIEW_TYPE_SLIDER;
 	view->inflate				 = gfx_view_inflate_slider;
+	view->free					 = gfx_view_free_slider;
 	view->measure				 = gfx_view_measure_slider;
 	view->draw					 = gfx_view_draw_slider;
 	view->on_event				 = gfx_view_on_event_slider;
@@ -40,6 +42,14 @@ static void gfx_view_inflate_slider(view_t *slider, cJSON *json) {
 	json_read_int(json, "value", &slider->data.slider.value);
 	json_read_int(json, "min", &slider->data.slider.min);
 	json_read_int(json, "max", &slider->data.slider.max);
+}
+
+static void gfx_view_free_slider(view_t *slider) {
+	if (slider == NULL)
+		return;
+	gfx_view_free(slider->data.slider.button);
+	free(slider->data.slider.text.text);
+	free(slider);
 }
 
 static void gfx_view_measure_slider(view_t *slider) {

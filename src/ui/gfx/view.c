@@ -73,6 +73,17 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent) {
 	return view;
 }
 
+void gfx_view_free(view_t *views) {
+	view_t *view, *tmp;
+	DL_FOREACH_SAFE(views, view, tmp) {
+		DL_DELETE(views, view);
+		if (view->free != NULL)
+			view->free(view);
+		else
+			LT_W("View '%s' does not provide 'free' function", view->id);
+	}
+}
+
 void gfx_view_measure(view_t *views) {
 	int screen_w = SETTINGS->screen.width;
 	int screen_h = SETTINGS->screen.height;

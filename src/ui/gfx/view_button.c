@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_button(view_t *button, cJSON *json);
+static void gfx_view_free_button(view_t *button);
 static void gfx_view_measure_button(view_t *button);
 static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button);
 static bool gfx_view_on_event_button(view_t *button, SDL_Event *e);
@@ -13,6 +14,7 @@ view_t *gfx_view_make_button(view_t *parent) {
 
 	view->type					  = VIEW_TYPE_BUTTON;
 	view->inflate				  = gfx_view_inflate_button;
+	view->free					  = gfx_view_free_button;
 	view->measure				  = gfx_view_measure_button;
 	view->draw					  = gfx_view_draw_button;
 	view->on_event				  = gfx_view_on_event_button;
@@ -29,6 +31,13 @@ view_t *gfx_view_make_button(view_t *parent) {
 
 	view->id = gfx_view_make_id(view);
 	return view;
+}
+
+static void gfx_view_free_button(view_t *button) {
+	if (button == NULL)
+		return;
+	free(button->data.button.text.text);
+	free(button);
 }
 
 static void gfx_view_inflate_button(view_t *button, cJSON *json) {

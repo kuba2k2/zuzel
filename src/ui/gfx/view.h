@@ -9,6 +9,7 @@
 
 typedef struct view_t view_t;
 typedef void (*view_inflate_t)(view_t *view, cJSON *json);
+typedef void (*view_free_t)(view_t *views);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
 typedef void (*view_draw_t)(SDL_Renderer *renderer, view_t *view);
@@ -36,6 +37,7 @@ typedef struct view_t {
 	char *id;				  //!< Freeform view ID/name (view-owned)
 	view_type_t type;		  //!< Type of the view
 	view_inflate_t inflate;	  //!< View inflater (parameter deserialization)
+	view_free_t free;		  //!< Function to free/release the views (recursively)
 	view_measure_t measure;	  //!< View bounding box measurement function
 	view_layout_t layout;	  //!< Layout positioning function (optional)
 	view_draw_t draw;		  //!< Renderer function
@@ -113,6 +115,7 @@ typedef struct view_t {
 // view.c
 extern bool gfx_view_bounding_box;
 view_t *gfx_view_inflate(cJSON *json, view_t *parent);
+void gfx_view_free(view_t *views);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
 void gfx_view_draw(SDL_Renderer *renderer, view_t *views);
