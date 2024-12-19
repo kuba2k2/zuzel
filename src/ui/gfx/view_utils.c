@@ -122,6 +122,9 @@ char *gfx_view_make_id(view_t *view) {
 		case VIEW_TYPE_BUTTON:
 			type_str = "button";
 			break;
+		case VIEW_TYPE_SLIDER:
+			type_str = "slider";
+			break;
 		case VIEW_TYPE_INPUT:
 			type_str = "input";
 			break;

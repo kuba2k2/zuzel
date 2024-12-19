@@ -19,7 +19,8 @@ typedef enum {
 	VIEW_TYPE_BOX	 = 1,
 	VIEW_TYPE_TEXT	 = 2,
 	VIEW_TYPE_BUTTON = 3,
-	VIEW_TYPE_INPUT	 = 4,
+	VIEW_TYPE_SLIDER = 4,
+	VIEW_TYPE_INPUT	 = 5,
 } view_type_t;
 
 typedef struct view_text_t {
@@ -74,6 +75,14 @@ typedef struct view_t {
 		} button;
 
 		struct {
+			view_text_t text;
+			int value;
+			int min;
+			int max;
+			view_t *button;
+		} slider;
+
+		struct {
 			view_text_t label;
 			view_text_t placeholder;
 			view_text_t value;
@@ -123,6 +132,7 @@ view_t *gfx_view_make_frame(view_t *parent);
 view_t *gfx_view_make_box(view_t *parent);
 view_t *gfx_view_make_text(view_t *parent);
 view_t *gfx_view_make_button(view_t *parent);
+view_t *gfx_view_make_slider(view_t *parent);
 
 #define GFX_VIEW_FIND(start, item, direction, same, check)                                                             \
 	do {                                                                                                               \

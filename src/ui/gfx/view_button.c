@@ -5,7 +5,7 @@
 static void gfx_view_inflate_button(view_t *button, cJSON *json);
 static void gfx_view_measure_button(view_t *button);
 static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button);
-static bool gfx_view_on_event_button(view_t *view, SDL_Event *e);
+static bool gfx_view_on_event_button(view_t *button, SDL_Event *e);
 
 view_t *gfx_view_make_button(view_t *parent) {
 	view_t *view;
@@ -115,11 +115,11 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 	if (!button->is_disabled) {
 		// add bezels if not disabled
 		gfx_set_color(renderer, 0x55FFFFFF);
-		gfx_draw_rect(renderer, x, y, w - 4, 2, false);
-		gfx_draw_rect(renderer, x, y, 2, h - 4, false);
+		gfx_draw_rect(renderer, x, y, w, 2, false);
+		gfx_draw_rect(renderer, x, y + 2, 2, h - 2, false);
 		gfx_set_color(renderer, 0x55000000);
-		gfx_draw_rect(renderer, x + w - 4, y, 4, h, true);
-		gfx_draw_rect(renderer, x, y + h - 4, w - 4, 4, true);
+		gfx_draw_rect(renderer, x + w - 2, y, 2, h, true);
+		gfx_draw_rect(renderer, x, y + h - 4, w - 2, 4, true);
 
 		// draw the text shadow
 		gfx_set_color(renderer, button->data.button.fg_shadow);
@@ -136,25 +136,25 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 	gfx_draw_text(renderer, x + whalf, y + hhalf, button->data.button.text.text);
 }
 
-static bool gfx_view_on_event_button(view_t *view, SDL_Event *e) {
+static bool gfx_view_on_event_button(view_t *button, SDL_Event *e) {
 	switch (e->type) {
 		case SDL_KEYDOWN:
 			// send a 'press' event on Enter keypress
-			if (e->key.keysym.sym == SDLK_RETURN && view->event.press)
-				return view->event.press(view, e);
+			if (e->key.keysym.sym == SDLK_RETURN && button->event.press)
+				return button->event.press(button, e);
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
 			// capture all events if mouse grabs the button
-			view->in_event = true;
+			button->in_event = true;
 			return true;
 
 		case SDL_MOUSEBUTTONUP:
 			// only send a 'press' event if the button is still focused
-			if (view->in_event && view->is_focused && view->event.press)
-				return view->event.press(view, e);
+			if (button->in_event && button->is_focused && button->event.press)
+				return button->event.press(button, e);
 			// disable the capture
-			view->in_event = false;
+			button->in_event = false;
 			break;
 	}
 	return false;
