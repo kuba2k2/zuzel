@@ -6,7 +6,7 @@ static void gfx_view_inflate_slider(view_t *slider, cJSON *json, const view_infl
 static void gfx_view_free_slider(view_t *slider);
 static void gfx_view_measure_slider(view_t *slider);
 static void gfx_view_draw_slider(SDL_Renderer *renderer, view_t *slider);
-static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e);
+static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e, void *param);
 
 view_t *gfx_view_make_slider(view_t *parent) {
 	view_t *view;
@@ -108,7 +108,7 @@ static void gfx_view_draw_slider(SDL_Renderer *renderer, view_t *slider) {
 	gfx_draw_text(renderer, x + whalf, y + hhalf, slider->data.slider.text.text);
 }
 
-static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e) {
+static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e, void *param) {
 	int min	  = slider->data.slider.min;
 	int max	  = slider->data.slider.max;
 	int value = slider->data.slider.value;
@@ -158,7 +158,7 @@ static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e) {
 	if (slider->data.slider.value != value) {
 		slider->data.slider.value = value;
 		if (slider->event.change != NULL)
-			slider->event.change(slider, e);
+			slider->event.change(slider, e, param);
 	}
 
 	return true;

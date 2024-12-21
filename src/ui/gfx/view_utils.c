@@ -142,3 +142,16 @@ char *gfx_view_make_id(view_t *view) {
 	sprintf(buf, "%s%03d", type_str, ++counter);
 	return strdup(buf);
 }
+
+void gfx_view_set_event_param(view_t *views, const char *id, void *param) {
+	if (id == NULL) {
+		while (views != NULL) {
+			views->event.param = param;
+			views			   = gfx_view_find_next(views);
+		}
+	} else {
+		view_t *view = gfx_view_find_by_id(views, id);
+		if (view != NULL)
+			view->event.param = param;
+	}
+}

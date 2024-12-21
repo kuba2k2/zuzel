@@ -6,13 +6,13 @@ static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflat
 static void gfx_view_free_input(view_t *input);
 static void gfx_view_measure_input(view_t *input);
 static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input);
-static bool gfx_view_on_event_input(view_t *input, SDL_Event *e);
+static bool gfx_view_on_event_input(view_t *input, SDL_Event *e, void *param);
 
 view_t *gfx_view_make_input(view_t *parent) {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
-	view->type						   = VIEW_TYPE_BUTTON;
+	view->type						   = VIEW_TYPE_INPUT;
 	view->inflate					   = gfx_view_inflate_input;
 	view->free						   = gfx_view_free_input;
 	view->measure					   = gfx_view_measure_input;
@@ -122,7 +122,7 @@ static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input) {
 	}
 }
 
-static bool gfx_view_on_event_input(view_t *input, SDL_Event *e) {
+static bool gfx_view_on_event_input(view_t *input, SDL_Event *e, void *param) {
 	if (e->type == SDL_MOUSEBUTTONDOWN) {
 		if (GFX_VIEW_IN_BOX(input, e->button.x, e->button.y)) {
 			// start capturing events on click inside the input
@@ -212,7 +212,7 @@ static bool gfx_view_on_event_input(view_t *input, SDL_Event *e) {
 	}
 
 	if (changed && input->event.change != NULL)
-		input->event.change(input, e);
+		input->event.change(input, e, param);
 
 	return true;
 }

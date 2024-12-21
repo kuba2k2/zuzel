@@ -15,7 +15,7 @@ typedef void (*view_free_t)(view_t *views);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
 typedef void (*view_draw_t)(SDL_Renderer *renderer, view_t *view);
-typedef bool (*view_on_event_t)(view_t *view, SDL_Event *e);
+typedef bool (*view_on_event_t)(view_t *view, SDL_Event *e, void *param);
 
 typedef enum {
 	VIEW_TYPE_FRAME	 = 0,
@@ -107,6 +107,8 @@ typedef struct view_t {
 		// sent by specific views
 		view_on_event_t press;	//!< On press (mouse click/Enter key)
 		view_on_event_t change; //!< On value change
+		// user data
+		void *param;
 	} event;
 
 	// child views (if supported)
@@ -137,6 +139,7 @@ view_t *gfx_view_find_prev(view_t *view);
 view_t *gfx_view_find_next(view_t *view);
 view_t *gfx_view_find_by_id(view_t *views, const char *id);
 char *gfx_view_make_id(view_t *view);
+void gfx_view_set_event_param(view_t *views, const char *id, void *param);
 
 // view_*.c
 view_t *gfx_view_make_frame(view_t *parent);
@@ -159,3 +162,6 @@ view_t *gfx_view_make_input(view_t *parent);
 #define GFX_VIEW_IS_ACTIVE(view) (!view->is_gone && !view->is_invisible && !view->is_disabled && view->is_focusable)
 #define GFX_VIEW_IN_BOX(view, _x, _y)                                                                                  \
 	(_x >= view->rect.x && _x <= view->rect.x + view->rect.w && _y >= view->rect.y && _y <= view->rect.y + view->rect.h)
+
+#define GFX_VIEW_ON_EVENT(_func) {.name = #_func, .func = (view_on_event_t)_func}
+#define GFX_VIEW_ON_EVENT_END()	 {.name = NULL, .func = NULL}

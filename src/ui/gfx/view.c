@@ -154,11 +154,11 @@ static bool gfx_view_on_key_down(view_t *views, view_t *focused, SDL_Event *e) {
 		if (focused != NULL) {
 			focused->is_focused = false;
 			if (focused->event.focus != NULL)
-				focused->event.focus(focused, e);
+				focused->event.focus(focused, e, focused->event.param);
 		}
 		focusable->is_focused = true;
 		if (focusable->event.focus != NULL)
-			focusable->event.focus(focusable, e);
+			focusable->event.focus(focusable, e, focusable->event.param);
 		return true;
 	}
 	return false;
@@ -185,13 +185,13 @@ static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *
 		if (focused != NULL && focused->is_focused == true) {
 			focused->is_focused = false;
 			if (focused->event.focus != NULL)
-				focused->event.focus(focused, e);
+				focused->event.focus(focused, e, focused->event.param);
 			ret = true;
 		}
 		if (focusable != NULL && focusable->is_focused == false) {
 			focusable->is_focused = true;
 			if (focusable->event.focus != NULL)
-				focusable->event.focus(focusable, e);
+				focusable->event.focus(focusable, e, focusable->event.param);
 			ret = true;
 		}
 		return ret;
@@ -208,7 +208,7 @@ bool gfx_view_on_event(view_t *views, SDL_Event *e) {
 	GFX_VIEW_FIND(views, focused, next, true, focused->is_focused);
 
 	if (in_event != NULL && in_event->on_event)
-		ret = in_event->on_event(in_event, e);
+		ret = in_event->on_event(in_event, e, in_event->event.param);
 
 	switch (e->type) {
 		case SDL_KEYDOWN:
@@ -221,7 +221,7 @@ bool gfx_view_on_event(view_t *views, SDL_Event *e) {
 	}
 
 	if (focused != NULL && focused->on_event && !ret)
-		ret = focused->on_event(focused, e);
+		ret = focused->on_event(focused, e, focused->event.param);
 
 	return ret;
 }

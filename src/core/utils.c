@@ -151,4 +151,6 @@ void json_read_gfx_view_on_event(cJSON *json, const char *key, void *value, cons
 		}
 		on_event++;
 	}
+	if (on_event != NULL && on_event->name == NULL)
+		LT_W("Missing view event handler '%s'", item->valuestring);
 }
