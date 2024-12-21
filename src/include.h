@@ -26,7 +26,8 @@
 #include "core/utils.h"
 
 #include "game/game.h"
+#include "net/net.h"
 
 #include "ui/gfx/gfx.h"
-#include "ui/menu/menu.h"
 #include "ui/race/race.h"
+#include "ui/ui.h"

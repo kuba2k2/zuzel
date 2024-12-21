@@ -26,38 +26,23 @@ int SDL_main(int argc, char *argv[]) {
 		SDL_WINDOW_SHOWN
 	);
 	if (window == NULL)
-		SDL_ERROR("SDL_CreateWindow()", ret = 1; goto quit);
+		SDL_ERROR("SDL_CreateWindow()", ret = 2; goto quit);
 
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	if (renderer == NULL)
-		SDL_ERROR("SDL_CreateRenderer()", ret = 1; goto free_window);
+		SDL_ERROR("SDL_CreateRenderer()", ret = 3; goto free_window);
 	SDL_RenderSetScale(renderer, (float)SETTINGS->screen.scale, (float)SETTINGS->screen.scale);
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-	game_t *game = NULL;
+	ui_t *ui = ui_init(renderer);
+	if (ui == NULL)
+		LT_ERR(F, ret = 4; goto free_renderer, "UI initialization failed");
 
-	menu_t *menu = menu_init(renderer);
-	if (menu == NULL)
-		LT_ERR(F, ret = 1; goto free_renderer, "Menu initialization failed");
+	ret = ui_run(ui);
+	if (ret != 0)
+		LT_ERR(F, , "UI function failed, ret=%d", ret);
 
-	while (1) {
-		if ((ret = menu_run(menu, &game)) != 0)
-			LT_ERR(F, ret = 1; goto free_menu, "Menu function failed, ret=%d", ret);
-
-		if (game == NULL)
-			// menu exited successfully, quitting application
-			break;
-
-		race_t *race = race_init(renderer, game);
-		if (race == NULL)
-			LT_ERR(F, ret = 1; goto free_menu, "Race initialization failed");
-		if ((ret = race_run(race)) != 0)
-			LT_ERR(F, ret = 1; race_free(race); goto free_menu, "Race function failed, ret=%d", ret);
-		race_free(race);
-	}
-
-free_menu:
-	menu_free(menu);
+	ui_free(ui);
 free_renderer:
 	SDL_DestroyRenderer(renderer);
 free_window:
