@@ -9,6 +9,7 @@ add_compile_options(-fdata-sections -ffunction-sections)
 add_link_options(-Wl,--gc-sections)
 
 add_subdirectory("lib/")
+add_subdirectory("res/")
 add_subdirectory("src/")
 
 function(print_all_targets DIR)
