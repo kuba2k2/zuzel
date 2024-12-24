@@ -56,3 +56,17 @@
 		LT_##level(__VA_ARGS__);                                                                                       \
 		err;                                                                                                           \
 	} while (0)
+
+#if WIN32
+#define SOCK_ERROR(func, err)                                                                                          \
+	do {                                                                                                               \
+		LT_F(func " failed; WSAGetLastError: %d", WSAGetLastError());                                                  \
+		err;                                                                                                           \
+	} while (0)
+#else
+#define SOCK_ERROR(func, err)                                                                                          \
+	do {                                                                                                               \
+		LT_F(func " failed; errno: %s", sys_errlist[errno]);                                                           \
+		err;                                                                                                           \
+	} while (0)
+#endif

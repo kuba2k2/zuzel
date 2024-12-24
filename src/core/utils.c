@@ -2,6 +2,33 @@
 
 #include "utils.h"
 
+void hexdump(const void *buf, size_t len) {
+	uint16_t pos = 0;
+	while (pos < len) {
+		// print hex offset
+		printf("%06x ", pos);
+		// calculate current line width
+		uint8_t lineWidth = min(16, len - pos);
+		// print hexadecimal representation
+		for (uint8_t i = 0; i < lineWidth; i++) {
+			if (i % 8 == 0) {
+				putchar(' ');
+			}
+			printf("%02x ", ((const char *)buf)[pos + i]);
+		}
+		// print ascii representation
+		putchar(' ');
+		putchar('|');
+		for (uint8_t i = 0; i < lineWidth; i++) {
+			char c = ((const char *)buf)[pos + i];
+			putchar((c >= 0x20 && c <= 0x7f) ? c : '.');
+		}
+		puts("|\r");
+		pos += lineWidth;
+	}
+	fflush(stdout);
+}
+
 char *file_read_data(const char *filename) {
 	FILE *file;
 	FOPEN(file, filename, "rb", return NULL);

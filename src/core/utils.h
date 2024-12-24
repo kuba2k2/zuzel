@@ -7,6 +7,7 @@
 typedef struct view_text_t view_text_t;
 typedef struct view_inflate_on_event_t view_inflate_on_event_t;
 
+void hexdump(const void *buf, size_t len);
 char *file_read_data(const char *filename);
 cJSON *file_read_json(const char *filename);
 void json_read_string(cJSON *json, const char *key, char **value);
