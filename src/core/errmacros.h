@@ -4,8 +4,6 @@
 
 #include "include.h"
 
-#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2 * !!(condition)]))
-
 #define MALLOC(ptr, size, err)                                                                                         \
 	do {                                                                                                               \
 		ptr = malloc(size);                                                                                            \

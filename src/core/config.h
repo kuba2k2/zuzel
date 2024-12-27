@@ -24,7 +24,10 @@
 #define SETTINGS_FILE "settings.json"
 #endif
 
-// Graphics module
-#ifndef GFX_MAX_FONTS
+// Constant game settings
+
 #define GFX_MAX_FONTS 10
-#endif
+
+#define GAME_NAME_LEN	32
+#define GAME_KEY_LEN	6
+#define PLAYER_NAME_LEN 32

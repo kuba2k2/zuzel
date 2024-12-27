@@ -2,6 +2,10 @@
 
 #pragma once
 
+#define STRUCT_PADDING(field, len) char _padding_##field[4 - (len) % 4]
+#define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
+#define SDL_WITH_MUTEX(m)		   for (volatile int i = SDL_LockMutex(m) * 0; i < 1; SDL_UnlockMutex(m), i++)
+
 #include "include.h"
 
 typedef struct view_text_t view_text_t;
