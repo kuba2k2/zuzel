@@ -53,7 +53,7 @@ typedef struct net_t {
 	bool stop;				 //!< Whether the thread should stop gracefully
 } net_t;
 
-// net.c
+// pkt.c
 net_err_t net_pkt_recv(net_endpoint_t *endpoint);
 net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt);
 
