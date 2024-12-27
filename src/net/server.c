@@ -46,7 +46,8 @@ static int net_server_listen(void *param) {
 		.sin_port	= htons(1234),
 		.sin_addr	= {{{0}}},
 	};
-	server->endpoint.addr = saddr;
+	server->endpoint.addr	 = saddr;
+	server->endpoint.use_ssl = false;
 	if (net_endpoint_listen(&server->endpoint) != NET_ERR_OK)
 		goto cleanup;
 
@@ -66,13 +67,19 @@ static int net_server_listen(void *param) {
 				LT_W("Server: connection closed during accept()");
 				continue;
 			}
+			if (err == NET_ERR_ACCEPT) {
+				// fail on accept() errors
+				LT_E("Server: stopping on error");
+				goto cleanup;
+			}
 			if (server->stop) {
 				// stop requested, exit without error
 				LT_I("Server: stopping gracefully");
 				break;
 			}
-			// fail on actual errors
-			goto cleanup;
+			// disconnect the client on any other error
+			LT_E("Server: client connection failed");
+			continue;
 		}
 
 		// connection was received

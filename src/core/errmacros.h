@@ -70,3 +70,9 @@
 		err;                                                                                                           \
 	} while (0)
 #endif
+
+#define SSL_ERROR(func, err)                                                                                           \
+	do {                                                                                                               \
+		LT_F(func " failed; SSL error: %s", ERR_error_string(ERR_get_error(), NULL));                                  \
+		err;                                                                                                           \
+	} while (0)

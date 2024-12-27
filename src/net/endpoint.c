@@ -9,6 +9,13 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 	WSAStartup(MAKEWORD(2, 0), &wsa_data);
 #endif
 
+	if (endpoint->use_ssl) {
+		SSL_load_error_strings();
+		SSL_library_init();
+		if ((endpoint->ssl_ctx = SSL_CTX_new(TLS_server_method())) == NULL)
+			SSL_ERROR("SSL_CTX_new()", ret = NET_ERR_SSL_CTX; goto cleanup);
+	}
+
 	int sfd = (int)socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sfd == INVALID_SOCKET)
 		SOCK_ERROR("socket()", ret = NET_ERR_SOCKET; goto cleanup);
@@ -61,6 +68,16 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 		goto cleanup;
 	}
 
+	if (endpoint->use_ssl) {
+		client->use_ssl = true;
+		if ((client->ssl = SSL_new(endpoint->ssl_ctx)) == NULL)
+			SSL_ERROR("SSL_new()", ret = NET_ERR_SSL; goto cleanup);
+		if (SSL_set_fd(client->ssl, client->fd) != 1)
+			SSL_ERROR("SSL_set_fd()", ret = NET_ERR_SSL; goto cleanup);
+		if (SSL_accept(client->ssl) != 1)
+			SSL_ERROR("SSL_accept()", ret = NET_ERR_SSL_ACCEPT; goto cleanup);
+	}
+
 	return NET_ERR_OK;
 
 cleanup:
@@ -69,14 +86,35 @@ cleanup:
 }
 
 void net_endpoint_close(net_endpoint_t *endpoint) {
-	closesocket(endpoint->fd);
+	if (endpoint->ssl != NULL) {
+		SSL_shutdown(endpoint->ssl);
+		SSL_free(endpoint->ssl);
+		endpoint->ssl = NULL;
+	}
+
+	if (endpoint->ssl_ctx != NULL) {
+		SSL_CTX_free(endpoint->ssl_ctx);
+		endpoint->ssl_ctx = NULL;
+	}
+
+	if (endpoint->fd > 0) {
+		closesocket(endpoint->fd);
+		endpoint->fd = 0;
+	}
+
 #if WIN32
 	WSACleanup();
 #endif
 }
 
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len) {
-	int recv_len = recv(endpoint->fd, buf, (int)*len, 0);
+	int recv_len;
+	if (!endpoint->use_ssl) {
+		recv_len = recv(endpoint->fd, buf, (int)*len, 0);
+	} else {
+		recv_len = SSL_read(endpoint->ssl, buf, (int)*len);
+	}
+
 	if (recv_len == 0)
 		// connection closed
 		return NET_ERR_CLIENT_CLOSED;
@@ -89,7 +127,13 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 }
 
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len) {
-	int send_len = send(endpoint->fd, buf, (int)len, 0);
+	int send_len;
+	if (!endpoint->use_ssl) {
+		send_len = send(endpoint->fd, buf, (int)len, 0);
+	} else {
+		send_len = SSL_write(endpoint->ssl, buf, (int)len);
+	}
+
 	if (send_len == -1)
 		// send error
 		SOCK_ERROR("send()", return NET_ERR_SEND);

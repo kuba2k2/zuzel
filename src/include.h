@@ -14,6 +14,7 @@
 #include <cJSON.h>
 #include <utlist.h>
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #ifdef __WIN32__
 #include <winsock2.h>

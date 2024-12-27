@@ -19,6 +19,10 @@ typedef enum {
 	NET_ERR_ACCEPT,		   //!< accept() failed
 	NET_ERR_RECV,		   //!< recv() failed
 	NET_ERR_SEND,		   //!< send() failed
+	NET_ERR_SSL_CTX,	   //!< SSL_CTX_new() failed
+	NET_ERR_SSL_CERT,	   //!< SSL_CTX_use_*_file() failed
+	NET_ERR_SSL,		   //!< SSL_new() failed
+	NET_ERR_SSL_ACCEPT,	   //!< SSL_accept() failed
 	NET_ERR_PKT_PROTOCOL,  //!< Packet protocol invalid
 	NET_ERR_PKT_TYPE,	   //!< Packet type invalid
 	NET_ERR_PKT_LENGTH,	   //!< Packet length invalid
@@ -29,6 +33,10 @@ typedef enum {
 typedef struct net_endpoint_t {
 	struct sockaddr_in addr; //!< Endpoint address
 	int fd;					 //!< Socket descriptor
+
+	bool use_ssl;	  //!< Whether to use SSL for this connection
+	SSL_CTX *ssl_ctx; //!< OpenSSL context (optional)
+	SSL *ssl;		  //!< OpenSSL socket (optional)
 
 	struct {
 		pkt_t pkt;	 //!< Received packet
