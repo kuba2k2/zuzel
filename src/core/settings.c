@@ -8,6 +8,7 @@ void settings_load() {
 	SETTINGS->screen.width	= 640;
 	SETTINGS->screen.height = 480;
 	SETTINGS->screen.scale	= 1;
+	strcpy(SETTINGS->player_name, "Player");
 }
 
 bool settings_save() {

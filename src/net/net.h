@@ -19,6 +19,7 @@ typedef enum {
 	NET_ERR_ACCEPT,		   //!< accept() failed
 	NET_ERR_RECV,		   //!< recv() failed
 	NET_ERR_SEND,		   //!< send() failed
+	NET_ERR_SELECT,		   //!< select() failed
 	NET_ERR_SSL_CTX,	   //!< SSL_CTX_new() failed
 	NET_ERR_SSL_CERT,	   //!< SSL_CTX_use_*_file() failed
 	NET_ERR_SSL,		   //!< SSL_new() failed
@@ -34,6 +35,7 @@ typedef enum {
 typedef struct net_endpoint_t {
 	struct sockaddr_in addr; //!< Endpoint address
 	int fd;					 //!< Socket descriptor
+	int pipe[2];			 //!< Pipe descriptor
 	void *event;			 //!< Socket event (Windows only)
 
 	bool use_ssl;	  //!< Whether to use SSL for this connection
@@ -55,6 +57,8 @@ typedef struct net_t {
 	bool stop;				 //!< Whether the thread should stop gracefully
 } net_t;
 
+typedef net_err_t (*net_select_cb_t)(net_endpoint_t *endpoint, void *param);
+
 // pkt.c
 net_err_t net_pkt_recv(net_endpoint_t *endpoint);
 net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt);
@@ -65,6 +69,7 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 void net_endpoint_close(net_endpoint_t *endpoint);
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len);
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len);
+net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_select_cb_t cb, void *param);
 
 // server.c
 net_t *net_server_start();

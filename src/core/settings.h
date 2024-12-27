@@ -12,6 +12,8 @@ typedef struct {
 		int height;
 		int scale;
 	} screen;
+
+	char player_name[PLAYER_NAME_LEN + 1];
 } settings_t;
 
 void settings_load();

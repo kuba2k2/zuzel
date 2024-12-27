@@ -157,3 +157,45 @@ net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned 
 
 	return NET_ERR_OK;
 }
+
+#if WIN32
+net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_select_cb_t cb, void *param) {
+	net_endpoint_t *endpoint_list[WSA_MAXIMUM_WAIT_EVENTS];
+	void *event_list[WSA_MAXIMUM_WAIT_EVENTS];
+	int num_events = 0;
+	int mask	   = FD_READ | FD_CLOSE;
+
+	SDL_WITH_MUTEX(mutex) {
+		net_endpoint_t *endpoint;
+		DL_FOREACH(endpoints, endpoint) {
+			endpoint_list[num_events] = endpoint;
+			event_list[num_events]	  = endpoint->event;
+			if (endpoint->fd != 0)
+				// call WSAEventSelect() on sockets only (not on pipes)
+				WSAEventSelect(endpoint->fd, endpoint->event, mask);
+			num_events++;
+		}
+	}
+
+	int ret = WSAWaitForMultipleEvents(num_events, event_list, false, 5000, true);
+	if (ret == WSA_WAIT_FAILED)
+		SOCK_ERROR("WSAWaitForMultipleEvents()", return NET_ERR_SELECT);
+	if (ret == WSA_WAIT_IO_COMPLETION)
+		return NET_ERR_OK;
+	if (ret == WSA_WAIT_TIMEOUT)
+		return NET_ERR_OK;
+	if (cb == NULL)
+		return NET_ERR_OK;
+
+	int index				 = ret - WSA_WAIT_EVENT_0;
+	net_endpoint_t *endpoint = endpoint_list[index];
+
+	WSANETWORKEVENTS network_events;
+	WSAEnumNetworkEvents(endpoint->fd, event_list[index], &network_events);
+
+	if (network_events.lNetworkEvents & mask)
+		return cb(endpoint, param);
+
+	return NET_ERR_OK;
+}
+#endif

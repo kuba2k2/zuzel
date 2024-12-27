@@ -135,12 +135,26 @@ static int net_server_accept(net_t *net) {
 			continue;
 
 		// valid packet received, process it and send a response
-		if (net_server_respond(&net->endpoint, &net->endpoint.recv.pkt) != NET_ERR_OK)
-			break;
+		ret = net_server_respond(&net->endpoint, &net->endpoint.recv.pkt);
+		if (ret == NET_ERR_OK)
+			continue;
+		if (ret == NET_ERR_OK_PACKET) {
+			// endpoint handed over to game thread
+			LT_I(
+				"Server: connection with %s:%d handed to game thread",
+				inet_ntoa(net->endpoint.addr.sin_addr),
+				ntohs(net->endpoint.addr.sin_port)
+			);
+			// exit without closing the connection
+			goto exit_thread;
+		}
+		// break on other errors
+		break;
 	}
 
 	// disconnect the client
 	net_endpoint_close(&net->endpoint);
+exit_thread:
 	// free the client's structure
 	free(net);
 	return 0;
@@ -159,8 +173,19 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 
 		case PKT_GAME_LIST:
 			return NET_ERR_OK;
-		case PKT_GAME_NEW:
-			return NET_ERR_OK;
+
+		case PKT_GAME_NEW: {
+			game_t *game = game_init();
+			SDL_WITH_MUTEX(game->mutex) {
+				// duplicate the endpoint, as it's owned by net_server_accept()
+				net_endpoint_t *item;
+				MALLOC(item, sizeof(*item), return NET_ERR_MALLOC);
+				memcpy(item, endpoint, sizeof(*item));
+				DL_APPEND(game->endpoints, item);
+			}
+			return NET_ERR_OK_PACKET;
+		}
+
 		case PKT_GAME_JOIN:
 			return NET_ERR_OK;
 
