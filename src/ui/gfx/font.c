@@ -6,29 +6,38 @@ static font_t *FONTS[GFX_MAX_FONTS] = {0};
 static font_t *FONT					= NULL;
 
 /**
- * Load a font file to the memory.
+ * Load a font from a file or byte array.
  *
  * @param index destination index of the font
  * @param filename file to load from
  * @return font_t* if successful, NULL otherwise
  */
-font_t *gfx_load_font(int index, const char *filename) {
+font_t *gfx_load_font(int index, const char *filename, const uint8_t *data) {
+	if (filename == NULL && data == NULL) {
+		LT_E("Either filename or data has to be specified");
+		return NULL;
+	}
 	if (FONTS[index] != NULL) {
 		LT_E("Font at index %d already loaded", index);
-		return false;
+		return NULL;
 	}
-	FILE *file;
-	FOPEN(file, filename, "rb", return NULL);
+	FILE *file = NULL;
+	if (filename != NULL)
+		FOPEN(file, filename, "rb", return NULL);
 
 	// read font signature
 	uint8_t buf[256];
-	FREAD(file, buf, sizeof(buf), goto error);
+	if (file != NULL)
+		FREAD(file, buf, sizeof(buf), goto error);
+	else
+		memcpy(buf, data, sizeof(buf));
+
 	// check the header, read data depending on type
 	font_t *font = NULL;
 	if (memcmp(buf, "PK", 2) == 0) {
-		font = font_bgi_load_from_file(file, buf, sizeof(buf));
+		font = font_bgi_load(file, data, buf, sizeof(buf));
 	} else if (memcmp(buf, "BF", 2) == 0) {
-		font = font_bmp_load_from_file(file, buf, sizeof(buf));
+		font = font_bmp_load(file, data, buf, sizeof(buf));
 	} else {
 		LT_E("Font signature invalid (%02x %02x)", buf[0], buf[1]);
 		goto error;
@@ -45,11 +54,13 @@ font_t *gfx_load_font(int index, const char *filename) {
 	if (FONT == NULL)
 		FONT = font;
 
-	fclose(file);
+	if (file != NULL)
+		fclose(file);
 	return font;
 
 error:
-	fclose(file);
+	if (file != NULL)
+		fclose(file);
 	return NULL;
 }
 

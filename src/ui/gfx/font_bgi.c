@@ -6,7 +6,7 @@ int font_bgi_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *fon
 int font_bgi_get_char_width(const font_t *font, char ch);
 int font_bgi_get_line_height(const font_t *font);
 
-font_t *font_bgi_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) {
+font_t *font_bgi_load(FILE *file, const uint8_t *data, const uint8_t *hdr, size_t hdr_len) {
 	int header_pos = 0;
 	for (; header_pos < hdr_len; header_pos++) {
 		if (hdr[header_pos] == 0x1A)
@@ -25,27 +25,54 @@ font_t *font_bgi_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) 
 	font->func.get_char_width  = font_bgi_get_char_width;
 	font->func.get_line_height = font_bgi_get_line_height;
 
-	// read font header
-	FSEEK(file, header_pos, SEEK_SET, goto error);
-	FREAD(file, &font->bgi.font_hdr, sizeof(font->bgi.font_hdr), goto error);
-	// read stroke header
-	FSEEK(file, font->bgi.font_hdr.header_size, SEEK_SET, goto error);
-	FREAD(file, &font->bgi.stroke_hdr, sizeof(font->bgi.stroke_hdr), goto error);
-	// read character stroke offsets
-	size_t offsets_size = font->bgi.stroke_hdr.char_count * sizeof(*font->bgi.offsets);
-	MALLOC(font->bgi.offsets, offsets_size, goto error);
-	FREAD(file, font->bgi.offsets, offsets_size, goto error);
-	// read character widths
-	size_t widths_size = font->bgi.stroke_hdr.char_count * sizeof(*font->bgi.widths);
-	MALLOC(font->bgi.widths, widths_size, goto error);
-	FREAD(file, font->bgi.widths, widths_size, goto error);
-	// read stroke data
-	size_t data_size = font->bgi.font_hdr.font_size;
-	data_size -= sizeof(font->bgi.stroke_hdr);
-	data_size -= offsets_size;
-	data_size -= widths_size;
-	MALLOC(font->bgi.strokes, data_size, goto error);
-	FREAD(file, font->bgi.strokes, data_size, goto error);
+	if (file != NULL) {
+		// read font header
+		FSEEK(file, header_pos, SEEK_SET, goto error);
+		FREAD(file, &font->bgi.font_hdr, sizeof(font->bgi.font_hdr), goto error);
+		// read stroke header
+		FSEEK(file, font->bgi.font_hdr.header_size, SEEK_SET, goto error);
+		FREAD(file, &font->bgi.stroke_hdr, sizeof(font->bgi.stroke_hdr), goto error);
+		// read character stroke offsets
+		size_t offsets_size = font->bgi.stroke_hdr.char_count * sizeof(*font->bgi.offsets);
+		MALLOC(font->bgi.offsets, offsets_size, goto error);
+		FREAD(file, font->bgi.offsets, offsets_size, goto error);
+		// read character widths
+		size_t widths_size = font->bgi.stroke_hdr.char_count * sizeof(*font->bgi.widths);
+		MALLOC(font->bgi.widths, widths_size, goto error);
+		FREAD(file, font->bgi.widths, widths_size, goto error);
+		// read stroke data
+		size_t data_size = font->bgi.font_hdr.font_size;
+		data_size -= sizeof(font->bgi.stroke_hdr);
+		data_size -= offsets_size;
+		data_size -= widths_size;
+		MALLOC(font->bgi.strokes, data_size, goto error);
+		FREAD(file, font->bgi.strokes, data_size, goto error);
+	} else {
+		// read font header
+		const uint8_t *font_hdr = &data[header_pos];
+		memcpy(&font->bgi.font_hdr, font_hdr, sizeof(font->bgi.font_hdr));
+		// read stroke header
+		const uint8_t *stroke_hdr = &data[font->bgi.font_hdr.header_size];
+		memcpy(&font->bgi.stroke_hdr, stroke_hdr, sizeof(font->bgi.stroke_hdr));
+		// read character stroke offsets
+		size_t offsets_size	   = font->bgi.stroke_hdr.char_count * sizeof(*font->bgi.offsets);
+		const uint8_t *offsets = stroke_hdr + sizeof(font->bgi.stroke_hdr);
+		MALLOC(font->bgi.offsets, offsets_size, goto error);
+		memcpy(font->bgi.offsets, offsets, offsets_size);
+		// read character widths
+		size_t widths_size	  = font->bgi.stroke_hdr.char_count * sizeof(*font->bgi.widths);
+		const uint8_t *widths = offsets + offsets_size;
+		MALLOC(font->bgi.widths, widths_size, goto error);
+		memcpy(font->bgi.widths, widths, widths_size);
+		// read stroke data
+		size_t data_size = font->bgi.font_hdr.font_size;
+		data_size -= sizeof(font->bgi.stroke_hdr);
+		data_size -= offsets_size;
+		data_size -= widths_size;
+		const uint8_t *strokes = widths + widths_size;
+		MALLOC(font->bgi.strokes, data_size, goto error);
+		memcpy(font->bgi.strokes, strokes, data_size);
+	}
 
 	LT_I(
 		"Loaded BGI font '%c%c%c%c' with %u characters",

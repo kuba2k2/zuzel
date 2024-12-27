@@ -6,7 +6,7 @@ int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *fon
 int font_bmp_get_char_width(const font_t *font, char ch);
 int font_bmp_get_line_height(const font_t *font);
 
-font_t *font_bmp_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) {
+font_t *font_bmp_load(FILE *file, const uint8_t *data, const uint8_t *hdr, size_t hdr_len) {
 	// allocate memory
 	font_t *font = NULL;
 	MALLOC(font, sizeof(*font), return NULL);
@@ -15,15 +15,26 @@ font_t *font_bmp_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len) 
 	font->func.get_char_width  = font_bmp_get_char_width;
 	font->func.get_line_height = font_bmp_get_line_height;
 
-	// read font header
-	FSEEK(file, 2, SEEK_SET, goto error);
-	FREAD(file, &font->bmp.font_hdr, sizeof(font->bmp.font_hdr), goto error);
-	// read character data
-	size_t line_size = (font->bmp.font_hdr.width - 1) / 8 + 1;
-	size_t char_size = font->bmp.font_hdr.height * line_size;
-	size_t data_size = font->bmp.font_hdr.char_count * char_size;
-	MALLOC(font->bmp.data, data_size, goto error);
-	FREAD(file, font->bmp.data, data_size, goto error);
+	if (file != NULL) {
+		// read font header
+		FSEEK(file, 2, SEEK_SET, goto error);
+		FREAD(file, &font->bmp.font_hdr, sizeof(font->bmp.font_hdr), goto error);
+		// read character data
+		size_t line_size = (font->bmp.font_hdr.width - 1) / 8 + 1;
+		size_t char_size = font->bmp.font_hdr.height * line_size;
+		size_t data_size = font->bmp.font_hdr.char_count * char_size;
+		MALLOC(font->bmp.data, data_size, goto error);
+		FREAD(file, font->bmp.data, data_size, goto error);
+	} else {
+		// read font header
+		memcpy(&font->bmp.font_hdr, &data[2], sizeof(font->bmp.font_hdr));
+		// read character data
+		size_t line_size = (font->bmp.font_hdr.width - 1) / 8 + 1;
+		size_t char_size = font->bmp.font_hdr.height * line_size;
+		size_t data_size = font->bmp.font_hdr.char_count * char_size;
+		MALLOC(font->bmp.data, data_size, goto error);
+		memcpy(font->bmp.data, &data[2 + sizeof(font->bmp.font_hdr)], data_size);
+	}
 
 	LT_I(
 		"Loaded bitmap font '%c%c%c%c' with %u characters",

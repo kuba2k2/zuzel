@@ -19,8 +19,8 @@ static const int8_t CHAR_SCALE[10][2] = {
 
 #define SCALE(var) ((var) * font->scale[0] / font->scale[1])
 
-font_t *font_bgi_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len);
-font_t *font_bmp_load_from_file(FILE *file, const uint8_t *hdr, size_t hdr_len);
+font_t *font_bgi_load(FILE *file, const uint8_t *data, const uint8_t *hdr, size_t hdr_len);
+font_t *font_bmp_load(FILE *file, const uint8_t *data, const uint8_t *hdr, size_t hdr_len);
 
 typedef int (*font_draw_char_t)(SDL_Renderer *renderer, int xc, int yc, const font_t *font, char ch);
 typedef int (*font_get_char_width_t)(const font_t *font, char ch);

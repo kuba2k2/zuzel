@@ -44,7 +44,7 @@ void gfx_draw_line(SDL_Renderer *renderer, int x1, int y1, int x2, int y2, int w
 void gfx_draw_rect(SDL_Renderer *renderer, int x, int y, int w, int h, bool fill);
 
 // font.c
-font_t *gfx_load_font(int index, const char *filename);
+font_t *gfx_load_font(int index, const char *filename, const uint8_t *data);
 font_t *gfx_get_font(int index);
 font_t *gfx_set_text_font(int index);
 void gfx_set_text_style(int index, int size, int align);

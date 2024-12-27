@@ -2,6 +2,7 @@
 
 #include "ui.h"
 
+#include "font_res.h"
 #include "ui_res.h"
 
 // menu_main.c
@@ -27,6 +28,7 @@ ui_t *ui_init(SDL_Renderer *renderer) {
 	ui_t *ui;
 	MALLOC(ui, sizeof(*ui), return NULL);
 
+	// initialize SDL for the UI
 	ui->renderer = renderer;
 	ui->texture	 = SDL_CreateTexture(
 		 ui->renderer,
@@ -38,6 +40,12 @@ ui_t *ui_init(SDL_Renderer *renderer) {
 	if (ui->texture == NULL)
 		SDL_ERROR("SDL_CreateTexture()", goto free_menu);
 	SDL_SetTextureBlendMode(ui->texture, SDL_BLENDMODE_BLEND);
+
+	// load all used fonts
+	gfx_load_font(0, NULL, FONT_BIOS_BFN);
+	gfx_load_font(1, NULL, FONT_SIMP_CHR);
+	gfx_load_font(2, NULL, FONT_TSCR_CHR);
+	gfx_load_font(3, NULL, FONT_SANS_CHR);
 
 	// inflate views for all UI states
 	for (ui_state_t state = UI_STATE_MENU_MAIN; state < UI_STATE_MAX; state++) {
