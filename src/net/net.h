@@ -53,6 +53,8 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt);
 net_err_t net_endpoint_listen(net_endpoint_t *endpoint);
 net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *client);
 void net_endpoint_close(net_endpoint_t *endpoint);
+net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len);
+net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len);
 
 // server.c
 net_t *net_server_start();

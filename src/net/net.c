@@ -56,21 +56,17 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 	// calculate total received length
 	unsigned int total_len = endpoint->recv.buf - endpoint->recv.start;
 	// calculate bytes remaining to receive
-	unsigned int remain_len;
+	unsigned int recv_len;
 	if (total_len < sizeof(pkt->hdr))
 		// finish receiving the header first
-		remain_len = sizeof(pkt->hdr) - total_len;
+		recv_len = sizeof(pkt->hdr) - total_len;
 	else
 		// receive until the end of the packet
-		remain_len = pkt->hdr.len - total_len;
+		recv_len = pkt->hdr.len - total_len;
 
-	int recv_len = recv(endpoint->fd, endpoint->recv.buf, (int)remain_len, 0);
-	if (recv_len == 0)
-		// connection closed
-		return NET_ERR_CLIENT_CLOSED;
-	if (recv_len == -1)
-		// recv error
-		SOCK_ERROR("recv()", return NET_ERR_RECV);
+	net_err_t err;
+	if ((err = net_endpoint_recv(endpoint, endpoint->recv.buf, &recv_len)) != NET_ERR_OK)
+		return err;
 
 	// recv successful
 	endpoint->recv.buf += recv_len;
@@ -123,13 +119,9 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
 	pkt->hdr.protocol = NET_PROTOCOL;
 	pkt->hdr.len	  = pkt_len_list[pkt->hdr.type];
 
-	int send_len = send(endpoint->fd, (const char *)pkt, (int)pkt->hdr.len, 0);
-	if (send_len == -1)
-		// send error
-		SOCK_ERROR("send()", return NET_ERR_SEND);
-	if (send_len != pkt->hdr.len)
-		// send length error
-		SOCK_ERROR("send() length", return NET_ERR_SEND);
+	net_err_t err;
+	if ((err = net_endpoint_send(endpoint, (const char *)pkt, pkt->hdr.len)) != NET_ERR_OK)
+		return err;
 
 	LT_D("Packet %s sent (%d bytes)", pkt_name_list[pkt->hdr.type], pkt->hdr.len);
 	hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));

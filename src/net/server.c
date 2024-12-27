@@ -28,7 +28,7 @@ void net_server_stop() {
 	if (server == NULL)
 		return;
 	server->stop = true;
-	closesocket(server->endpoint.fd);
+	net_endpoint_close(&server->endpoint);
 }
 
 static int net_server_listen(void *param) {
@@ -108,19 +108,19 @@ cleanup:
 }
 
 static int net_server_accept(net_t *net) {
-	struct sockaddr_in caddr = net->endpoint.addr;
-
-#if WIN32
-	WSADATA wsa_data;
-	WSAStartup(MAKEWORD(2, 0), &wsa_data);
-#endif
+	if (net == NULL)
+		return -1;
 
 	while (1) {
 		net_err_t ret = net_pkt_recv(&net->endpoint);
 		if (ret == NET_ERR_RECV)
 			break;
 		if (ret == NET_ERR_CLIENT_CLOSED) {
-			LT_I("Server: connection closed from %s:%d", inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
+			LT_I(
+				"Server: connection closed from %s:%d",
+				inet_ntoa(net->endpoint.addr.sin_addr),
+				ntohs(net->endpoint.addr.sin_port)
+			);
 			break;
 		}
 		if (ret != NET_ERR_OK_PACKET)
@@ -132,11 +132,10 @@ static int net_server_accept(net_t *net) {
 			break;
 	}
 
-	closesocket(net->endpoint.fd);
+	// disconnect the client
+	net_endpoint_close(&net->endpoint);
+	// free the client's structure
 	free(net);
-#if WIN32
-	WSACleanup();
-#endif
 	return 0;
 }
 

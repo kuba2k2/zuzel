@@ -74,3 +74,28 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 	WSACleanup();
 #endif
 }
+
+net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len) {
+	int recv_len = recv(endpoint->fd, buf, (int)*len, 0);
+	if (recv_len == 0)
+		// connection closed
+		return NET_ERR_CLIENT_CLOSED;
+	if (recv_len == -1)
+		// recv error
+		SOCK_ERROR("recv()", return NET_ERR_RECV);
+
+	*len = recv_len;
+	return NET_ERR_OK;
+}
+
+net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len) {
+	int send_len = send(endpoint->fd, buf, (int)len, 0);
+	if (send_len == -1)
+		// send error
+		SOCK_ERROR("send()", return NET_ERR_SEND);
+	if (send_len != len)
+		// send length error
+		SOCK_ERROR("send() length", return NET_ERR_SEND);
+
+	return NET_ERR_OK;
+}
