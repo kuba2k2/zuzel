@@ -7,6 +7,7 @@
 #include "events.h"
 
 typedef struct view_t view_t;
+typedef struct net_t net_t;
 
 typedef enum {
 	UI_STATE_MENU_MAIN = 0,

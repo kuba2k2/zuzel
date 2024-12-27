@@ -85,7 +85,7 @@ int ui_run(ui_t *ui) {
 			case SDL_QUIT:
 				return 0;
 
-			case SDL_KEYDOWN:
+			case SDL_KEYUP:
 				if (e.key.keysym.sym == SDLK_F1)
 					gfx_view_bounding_box = !gfx_view_bounding_box;
 				continue;
