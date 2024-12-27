@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <fcntl.h>
+#include <io.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -12,9 +14,9 @@
 
 #include <SDL2/SDL.h>
 #include <cJSON.h>
-#include <utlist.h>
-#include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <utlist.h>
 
 #ifdef __WIN32__
 #include <winsock2.h>

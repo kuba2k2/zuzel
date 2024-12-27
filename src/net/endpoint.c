@@ -35,6 +35,9 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 
 	// server started successfully, fill net_endpoint_t*
 	endpoint->fd = sfd;
+#if WIN32
+	endpoint->event = WSACreateEvent();
+#endif
 
 	return NET_ERR_OK;
 
@@ -78,6 +81,10 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 			SSL_ERROR("SSL_accept()", ret = NET_ERR_SSL_ACCEPT; goto cleanup);
 	}
 
+#if WIN32
+	client->event = WSACreateEvent();
+#endif
+
 	return NET_ERR_OK;
 
 cleanup:
@@ -96,6 +103,13 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 		SSL_CTX_free(endpoint->ssl_ctx);
 		endpoint->ssl_ctx = NULL;
 	}
+
+#if WIN32
+	if (endpoint->event != NULL) {
+		WSACloseEvent(endpoint->event);
+		endpoint->event = NULL;
+	}
+#endif
 
 	if (endpoint->fd > 0) {
 		closesocket(endpoint->fd);

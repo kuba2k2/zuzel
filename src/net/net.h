@@ -26,6 +26,7 @@ typedef enum {
 	NET_ERR_PKT_PROTOCOL,  //!< Packet protocol invalid
 	NET_ERR_PKT_TYPE,	   //!< Packet type invalid
 	NET_ERR_PKT_LENGTH,	   //!< Packet length invalid
+	NET_ERR_MALLOC,		   //!< Memory allocation failed
 	NET_ERR_OK		  = 0, //!< No error
 	NET_ERR_OK_PACKET = 1, //!< No error, packet is available
 } net_err_t;
@@ -33,6 +34,7 @@ typedef enum {
 typedef struct net_endpoint_t {
 	struct sockaddr_in addr; //!< Endpoint address
 	int fd;					 //!< Socket descriptor
+	void *event;			 //!< Socket event (Windows only)
 
 	bool use_ssl;	  //!< Whether to use SSL for this connection
 	SSL_CTX *ssl_ctx; //!< OpenSSL context (optional)
