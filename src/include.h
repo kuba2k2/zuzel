@@ -13,6 +13,7 @@
 #include <SDL2/SDL.h>
 #include <cJSON.h>
 #include <utlist.h>
+#include <openssl/ssl.h>
 
 #ifdef __WIN32__
 #include <winsock2.h>

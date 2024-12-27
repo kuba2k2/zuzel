@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
+include(FetchContent)
+
 set(ENABLE_CJSON_UNINSTALL OFF)
 set(ENABLE_CJSON_TEST OFF)
 set(ENABLE_TARGET_EXPORT OFF)
@@ -24,3 +26,14 @@ add_subdirectory(sdl)
 
 add_library(uthash INTERFACE)
 target_include_directories(uthash INTERFACE "uthash/src/")
+
+set(LIBRESSL_SKIP_INSTALL ON)
+set(LIBRESSL_APPS OFF)
+set(LIBRESSL_TESTS OFF)
+FetchContent_Declare(
+        libressl
+        URL https://github.com/libressl/portable/releases/download/v3.9.2/libressl-3.9.2.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP false
+)
+FetchContent_MakeAvailable(libressl)
+

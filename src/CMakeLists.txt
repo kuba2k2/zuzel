@@ -6,4 +6,12 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
 target_include_directories(${PROJECT_NAME} PRIVATE .)
 target_include_directories(${PROJECT_NAME} PRIVATE ../res/)
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2main SDL2::SDL2 uthash cjson-static ws2_32)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2main SDL2::SDL2)
+target_link_libraries(${PROJECT_NAME} PRIVATE uthash)
+target_link_libraries(${PROJECT_NAME} PRIVATE cjson-static)
+target_link_libraries(${PROJECT_NAME} PRIVATE ssl)
+
+IF (WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
+ENDIF ()
