@@ -67,7 +67,7 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 	int recv_len = recv(endpoint->fd, endpoint->recv.buf, (int)remain_len, 0);
 	if (recv_len == 0)
 		// connection closed
-		return NET_ERR_CONN_CLOSED;
+		return NET_ERR_CLIENT_CLOSED;
 	if (recv_len == -1)
 		// recv error
 		SOCK_ERROR("recv()", return NET_ERR_RECV);

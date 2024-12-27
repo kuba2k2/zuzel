@@ -32,93 +32,78 @@ void net_server_stop() {
 }
 
 static int net_server_listen(void *param) {
+	if (server == NULL)
+		return -1;
 	(void)param;
 
-#if WIN32
-	WSADATA wsa_data;
-	WSAStartup(MAKEWORD(2, 0), &wsa_data);
-#endif
+	// create a net_t* structure for the first client
+	net_t *client;
+	MALLOC(client, sizeof(*client), goto cleanup);
 
-	int sfd = (int)socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sfd == INVALID_SOCKET)
-		SOCK_ERROR("socket()", goto cleanup);
-
-	// enable address reuse
-	char on = 1;
-	if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0)
-		SOCK_ERROR("setsockopt()", goto cleanup);
-
-	// bind the server socket to an address
+	// start the TCP server
 	struct sockaddr_in saddr = {
 		.sin_family = AF_INET,
 		.sin_port	= htons(1234),
 		.sin_addr	= {{{0}}},
 	};
-	if (bind(sfd, (struct sockaddr *)&saddr, sizeof(saddr)) != 0)
-		SOCK_ERROR("bind()", goto cleanup);
-
-	// listen for incoming connections
-	if (listen(sfd, 10) != 0)
-		SOCK_ERROR("listen()", goto cleanup);
-
-	// server started successfully, fill net_t*
-	LT_I("Server: listening on %s:%d with fd=%d", inet_ntoa(saddr.sin_addr), ntohs(saddr.sin_port), sfd);
 	server->endpoint.addr = saddr;
-	server->endpoint.fd	  = sfd;
+	if (net_endpoint_listen(&server->endpoint) != NET_ERR_OK)
+		goto cleanup;
+
+	LT_I(
+		"Server: listening on %s:%d with fd=%d",
+		inet_ntoa(saddr.sin_addr),
+		ntohs(saddr.sin_port),
+		server->endpoint.fd
+	);
 
 	while (1) {
-		int cfd;
-		struct sockaddr_in caddr = {0};
-		int addrlen				 = sizeof(caddr);
-
 		// accept an incoming connection
-		if ((cfd = (int)accept(sfd, (struct sockaddr *)&caddr, &addrlen)) < 0) {
-#if WIN32
-			if (WSAGetLastError() == WSAECONNRESET) {
-#else
-			if (errno == ECONNABORTED) {
-#endif
-				LT_W("Server: connection reset during accept()");
+		net_err_t err;
+		if ((err = net_endpoint_accept(&server->endpoint, &client->endpoint)) != NET_ERR_OK) {
+			if (err == NET_ERR_CLIENT_CLOSED) {
+				// non-fatal server error
+				LT_W("Server: connection closed during accept()");
 				continue;
 			}
-			if (server->stop)
+			if (server->stop) {
 				// stop requested, exit without error
+				LT_I("Server: stopping gracefully");
 				break;
-			SOCK_ERROR("accept()", );
+			}
+			// fail on actual errors
 			goto cleanup;
 		}
 
 		// connection was received
-		LT_I("Server: connection from %s:%d with fd=%d", inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port), cfd);
-
-		// create a net_t* structure for the client
-		net_t *net;
-		MALLOC(net, sizeof(*net), goto cleanup_client);
-		net->endpoint.addr = caddr;
-		net->endpoint.fd   = cfd;
+		LT_I(
+			"Server: connection from %s:%d with fd=%d",
+			inet_ntoa(client->endpoint.addr.sin_addr),
+			ntohs(client->endpoint.addr.sin_port),
+			client->endpoint.fd
+		);
 
 		// create a network thread for the client
-		SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)net_server_accept, "server-accept", net);
+		SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)net_server_accept, "server-accept", client);
 		SDL_DetachThread(thread);
-		if (thread == NULL)
-			SDL_ERROR("SDL_CreateThread()", goto cleanup_client);
-
-		// if successful, run the loop again
-		continue;
-	cleanup_client:
-		closesocket(cfd);
-		free(net);
+		if (thread == NULL) {
+			// thread creation failed, close the connection
+			SDL_ERROR("SDL_CreateThread()", );
+			net_endpoint_close(&client->endpoint);
+		} else {
+			// thread successfully created, make a new structure for the next client
+			MALLOC(client, sizeof(*client), goto cleanup);
+		}
 	}
 
-	LT_I("Server: stopping gracefully");
-
 cleanup:
-	closesocket(sfd);
+	// stop the server
+	net_endpoint_close(&server->endpoint);
+	// free the next client's structure
+	free(client);
+	// free the server's structure
 	free(server);
 	server = NULL;
-#if WIN32
-	WSACleanup();
-#endif
 	return 0;
 }
 
@@ -134,7 +119,7 @@ static int net_server_accept(net_t *net) {
 		net_err_t ret = net_pkt_recv(&net->endpoint);
 		if (ret == NET_ERR_RECV)
 			break;
-		if (ret == NET_ERR_CONN_CLOSED) {
+		if (ret == NET_ERR_CLIENT_CLOSED) {
 			LT_I("Server: connection closed from %s:%d", inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
 			break;
 		}

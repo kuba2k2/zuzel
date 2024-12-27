@@ -10,7 +10,13 @@
 
 typedef enum {
 	NET_ERR_MIN = -100,
-	NET_ERR_CONN_CLOSED,   //!< Client connection was closed
+	NET_ERR_SERVER_CLOSED, //!< Server connection was closed
+	NET_ERR_CLIENT_CLOSED, //!< Client connection was closed
+	NET_ERR_SOCKET,		   //!< socket() failed
+	NET_ERR_SETSOCKOPT,	   //!< setsockopt() failed
+	NET_ERR_BIND,		   //!< bind() failed
+	NET_ERR_LISTEN,		   //!< listen() failed
+	NET_ERR_ACCEPT,		   //!< accept() failed
 	NET_ERR_RECV,		   //!< recv() failed
 	NET_ERR_SEND,		   //!< send() failed
 	NET_ERR_PKT_PROTOCOL,  //!< Packet protocol invalid
@@ -42,6 +48,11 @@ typedef struct net_t {
 // net.c
 net_err_t net_pkt_recv(net_endpoint_t *endpoint);
 net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt);
+
+// endpoint.c
+net_err_t net_endpoint_listen(net_endpoint_t *endpoint);
+net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *client);
+void net_endpoint_close(net_endpoint_t *endpoint);
 
 // server.c
 net_t *net_server_start();
