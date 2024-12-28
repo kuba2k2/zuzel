@@ -6,6 +6,9 @@ static int game_thread(game_t *game);
 static net_err_t game_select_cb(net_endpoint_t *endpoint, game_t *game);
 static net_err_t game_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt);
 
+static game_t *game_list		  = NULL;
+static SDL_mutex *game_list_mutex = NULL;
+
 game_t *game_init() {
 	game_t *game;
 	MALLOC(game, sizeof(*game), goto cleanup);
@@ -41,6 +44,12 @@ game_t *game_init() {
 	if (thread == NULL)
 		SDL_ERROR("SDL_CreateThread()", goto cleanup);
 
+	if (game_list_mutex == NULL)
+		game_list_mutex = SDL_CreateMutex();
+	SDL_WITH_MUTEX(game_list_mutex) {
+		DL_APPEND(game_list, game);
+	}
+
 	return game;
 
 cleanup:
@@ -51,6 +60,20 @@ cleanup:
 void game_free(game_t *game) {
 	if (game == NULL)
 		return;
+	// remove the game from the global list
+	SDL_WITH_MUTEX(game_list_mutex) {
+		DL_DELETE(game_list, game);
+	}
+	// close and free all endpoints
+	SDL_WITH_MUTEX(game->mutex) {
+		net_endpoint_t *endpoint, *tmp;
+		DL_FOREACH_SAFE(game->endpoints, endpoint, tmp) {
+			DL_DELETE(game->endpoints, endpoint);
+			net_endpoint_close(endpoint);
+			free(endpoint);
+		}
+	}
+	// free remaining members
 	SDL_DestroyMutex(game->mutex);
 	free(game);
 }
