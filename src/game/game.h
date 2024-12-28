@@ -19,3 +19,4 @@ void game_free(game_t *game);
 
 // utils.c
 bool game_add_endpoint(game_t *game, net_endpoint_t *endpoint);
+void game_del_endpoint(game_t *game, net_endpoint_t *endpoint);

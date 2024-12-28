@@ -46,8 +46,12 @@ typedef struct net_endpoint_t {
 
 	struct sockaddr_in addr; //!< Endpoint address
 	int fd;					 //!< Socket descriptor
-	int pipe[2];			 //!< Pipe descriptor
-	void *event;			 //!< Socket event (Windows only)
+
+	struct {
+		int fd[2];	 //!< Pipe descriptor
+		int len;	 //!< Pipe sent data length
+		void *event; //!< Socket event (Windows only)
+	} pipe;
 
 	SSL_CTX *ssl_ctx; //!< OpenSSL context (optional)
 	SSL *ssl;		  //!< OpenSSL socket (optional)

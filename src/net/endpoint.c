@@ -18,11 +18,11 @@ net_endpoint_t *net_endpoint_dup(net_endpoint_t *endpoint) {
 }
 
 net_err_t net_endpoint_pipe(net_endpoint_t *endpoint) {
-	if (pipe(endpoint->pipe) != 0)
+	if (pipe(endpoint->pipe.fd) != 0)
 		LT_ERR(F, return NET_ERR_PIPE, "Couldn't create a pipe");
 	endpoint->type = NET_ENDPOINT_PIPE;
 #if WIN32
-	endpoint->event = WSACreateEvent();
+	endpoint->pipe.event = WSACreateEvent();
 #endif
 	return NET_ERR_OK;
 }
@@ -63,7 +63,7 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 	// server started successfully, fill net_endpoint_t*
 	endpoint->fd = sfd;
 #if WIN32
-	endpoint->event = WSACreateEvent();
+	endpoint->pipe.event = WSACreateEvent();
 #endif
 
 	return NET_ERR_OK;
@@ -112,7 +112,7 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 	}
 
 #if WIN32
-	client->event = WSACreateEvent();
+	client->pipe.event = WSACreateEvent();
 #endif
 
 	return NET_ERR_OK;
@@ -135,9 +135,9 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 	}
 
 #if WIN32
-	if (endpoint->event != NULL) {
-		WSACloseEvent(endpoint->event);
-		endpoint->event = NULL;
+	if (endpoint->pipe.event != NULL) {
+		WSACloseEvent(endpoint->pipe.event);
+		endpoint->pipe.event = NULL;
 	}
 #endif
 
@@ -146,9 +146,9 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 		endpoint->fd = 0;
 	}
 
-	if (endpoint->pipe[PIPE_READ] != 0) {
-		close(endpoint->pipe[PIPE_READ]);
-		close(endpoint->pipe[PIPE_WRITE]);
+	if (endpoint->pipe.fd[PIPE_READ] != 0) {
+		close(endpoint->pipe.fd[PIPE_READ]);
+		close(endpoint->pipe.fd[PIPE_WRITE]);
 	}
 
 #if WIN32
@@ -159,10 +159,25 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len) {
 	int recv_len;
-	if (endpoint->type == NET_ENDPOINT_TCP) {
-		recv_len = recv(endpoint->fd, buf, (int)*len, 0);
-	} else {
-		recv_len = SSL_read(endpoint->ssl, buf, (int)*len);
+	switch (endpoint->type) {
+		case NET_ENDPOINT_TCP:
+			recv_len = recv(endpoint->fd, buf, (int)*len, 0);
+			break;
+		case NET_ENDPOINT_TLS:
+			recv_len = SSL_read(endpoint->ssl, buf, (int)*len);
+			break;
+		case NET_ENDPOINT_PIPE:
+			recv_len = read(endpoint->pipe.fd[PIPE_READ], buf, (int)*len);
+#if WIN32
+			endpoint->pipe.len -= recv_len;
+			if (endpoint->pipe.len)
+				WSASetEvent(endpoint->pipe.event);
+			else
+				WSAResetEvent(endpoint->pipe.event);
+#endif
+			break;
+		default:
+			return NET_ERR_ENDPOINT_TYPE;
 	}
 
 	if (recv_len == 0)
@@ -178,10 +193,22 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len) {
 	int send_len;
-	if (endpoint->type == NET_ENDPOINT_TCP) {
-		send_len = send(endpoint->fd, buf, (int)len, 0);
-	} else {
-		send_len = SSL_write(endpoint->ssl, buf, (int)len);
+	switch (endpoint->type) {
+		case NET_ENDPOINT_TCP:
+			send_len = send(endpoint->fd, buf, (int)len, 0);
+			break;
+		case NET_ENDPOINT_TLS:
+			send_len = SSL_write(endpoint->ssl, buf, (int)len);
+			break;
+		case NET_ENDPOINT_PIPE:
+			send_len = write(endpoint->pipe.fd[PIPE_WRITE], buf, (int)len);
+#if WIN32
+			endpoint->pipe.len += send_len;
+			WSASetEvent(endpoint->pipe.event);
+#endif
+			break;
+		default:
+			return NET_ERR_ENDPOINT_TYPE;
 	}
 
 	if (send_len == -1)
@@ -207,10 +234,10 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 			if (endpoint->type > NET_ENDPOINT_PIPE)
 				continue;
 			endpoint_list[num_events] = endpoint;
-			event_list[num_events]	  = endpoint->event;
+			event_list[num_events]	  = endpoint->pipe.event;
 			if (endpoint->fd != 0)
 				// call WSAEventSelect() on sockets only (not on pipes)
-				WSAEventSelect(endpoint->fd, endpoint->event, mask);
+				WSAEventSelect(endpoint->fd, endpoint->pipe.event, mask);
 			num_events++;
 		}
 	}

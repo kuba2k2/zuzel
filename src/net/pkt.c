@@ -17,6 +17,7 @@ static const int pkt_len_list[] = {
 	sizeof(pkt_player_keypress_t),
 	0,
 	sizeof(pkt_player_leave_t),
+	sizeof(pkt_send_update_t),
 };
 
 static const char *pkt_name_list[] = {
@@ -34,6 +35,7 @@ static const char *pkt_name_list[] = {
 	"PKT_PLAYER_KEYPRESS",
 	"PKT_PLAYER_UPDATE",
 	"PKT_PLAYER_LEAVE",
+	"PKT_SEND_UPDATE",
 };
 
 /**

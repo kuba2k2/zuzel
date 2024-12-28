@@ -15,7 +15,7 @@ game_t *game_init() {
 
 	// create a pipe for incoming packets
 	{
-		net_endpoint_t pipe;
+		net_endpoint_t pipe = {0};
 		net_endpoint_pipe(&pipe);
 		game_add_endpoint(game, &pipe);
 	}
@@ -87,16 +87,7 @@ static net_err_t game_select_cb(net_endpoint_t *endpoint, game_t *game) {
 	return game_respond(endpoint, &endpoint->recv.pkt);
 
 closed:
-	SDL_WITH_MUTEX(game->mutex) {
-		net_endpoint_t *item, *tmp;
-		DL_FOREACH_SAFE(game->endpoints, item, tmp) {
-			if (item != endpoint)
-				continue;
-			DL_DELETE(game->endpoints, item);
-			net_endpoint_close(endpoint);
-			free(endpoint);
-		}
-	}
+	game_del_endpoint(game, endpoint);
 	return NET_ERR_OK;
 }
 
