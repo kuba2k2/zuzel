@@ -4,7 +4,7 @@
 
 static int game_thread(game_t *game);
 static net_err_t game_select_cb(net_endpoint_t *endpoint, game_t *game);
-static net_err_t game_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt);
+static net_err_t game_respond(net_endpoint_t *endpoint, game_t *game, pkt_t *recv_pkt);
 
 static game_t *game_list		  = NULL;
 static SDL_mutex *game_list_mutex = NULL;
@@ -26,13 +26,15 @@ game_t *game_init() {
 	// generate a game name
 	snprintf(game->name, sizeof(game->name) - 1, "%s's Game", SETTINGS->player_name);
 	// generate a game key
-	char *ch = game->key;
-	for (int i = 0; i < sizeof(game->key) - 1; i++) {
-		int num = '0' + rand() % 36;
-		if (num > '9')
-			num += 'A' - '9' - 1;
-		*ch++ = num;
-	}
+	do {
+		char *ch = game->key;
+		for (int i = 0; i < sizeof(game->key) - 1; i++) {
+			int num = '0' + rand() % 36;
+			if (num > '9')
+				num += 'A' - '9' - 1;
+			*ch++ = num;
+		}
+	} while (game_get_by_key(game->key) != NULL);
 	// set some other default settings
 	game->is_public = false;
 	game->speed		= 3;
@@ -78,6 +80,23 @@ void game_free(game_t *game) {
 	free(game);
 }
 
+game_t *game_get_by_key(const char *key) {
+	game_t *game;
+	SDL_WITH_MUTEX(game_list_mutex) {
+		DL_FOREACH(game_list, game) {
+			if (strnicmp(game->key, key, GAME_KEY_LEN) == 0)
+				break;
+		}
+	}
+	return game;
+}
+
+game_t *game_get_list(SDL_mutex **mutex) {
+	if (mutex != NULL)
+		*mutex = game_list_mutex;
+	return game_list;
+}
+
 static int game_thread(game_t *game) {
 	if (game == NULL)
 		return -1;
@@ -107,14 +126,14 @@ static net_err_t game_select_cb(net_endpoint_t *endpoint, game_t *game) {
 		return NET_ERR_OK;
 
 	// valid packet received, process it and send a response
-	return game_respond(endpoint, &endpoint->recv.pkt);
+	return game_respond(endpoint, game, &endpoint->recv.pkt);
 
 closed:
 	game_del_endpoint(game, endpoint);
 	return NET_ERR_OK;
 }
 
-static net_err_t game_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
+static net_err_t game_respond(net_endpoint_t *endpoint, game_t *game, pkt_t *recv_pkt) {
 	switch (recv_pkt->hdr.type) {
 		case PKT_PING: {
 			pkt_ping_t pkt = {
@@ -124,6 +143,13 @@ static net_err_t game_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 			};
 			return net_pkt_send(endpoint, (pkt_t *)&pkt);
 		}
+
+		case PKT_ERROR:
+			return NET_ERR_OK;
+
+		case PKT_SEND_UPDATE:
+			game_send_update(game, endpoint, NULL);
+			return NET_ERR_OK;
 
 		default: {
 			pkt_error_t pkt = {

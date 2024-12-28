@@ -171,8 +171,42 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 			return net_pkt_send(endpoint, (pkt_t *)&pkt);
 		}
 
-		case PKT_GAME_LIST:
+		case PKT_GAME_LIST: {
+			SDL_mutex *game_list_mutex;
+			game_t *game_list = game_get_list(&game_list_mutex);
+			// count the active games
+			int total_count;
+			SDL_WITH_MUTEX(game_list_mutex) {
+				game_t *game;
+				DL_COUNT(game_list, game, total_count);
+			}
+			// send game list response
+			pkt_game_list_t pkt = {
+				.hdr.type	 = PKT_GAME_LIST,
+				.page		 = recv_pkt->game_list.page,
+				.per_page	 = recv_pkt->game_list.per_page,
+				.total_count = total_count,
+			};
+			net_pkt_send(endpoint, (pkt_t *)&pkt);
+			// send updates for the requested range
+			SDL_WITH_MUTEX(game_list_mutex) {
+				game_t *game;
+				int index = 0;
+				int first = recv_pkt->game_list.page * recv_pkt->game_list.per_page;
+				int last  = first + recv_pkt->game_list.per_page;
+				DL_FOREACH(game_list, game) {
+					if (index < first) {
+						index++;
+						continue;
+					} else {
+						game_send_update(game, NULL, endpoint);
+						if (++index >= last)
+							break;
+					}
+				}
+			}
 			return NET_ERR_OK;
+		}
 
 		case PKT_GAME_NEW: {
 			game_t *game = game_init();
@@ -181,8 +215,19 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 			return NET_ERR_OK_PACKET;
 		}
 
-		case PKT_GAME_JOIN:
-			return NET_ERR_OK;
+		case PKT_GAME_JOIN: {
+			game_t *game = game_get_by_key(recv_pkt->game_join.key);
+			if (game == NULL) {
+				pkt_error_t pkt = {
+					.hdr.type = PKT_ERROR,
+					.error	  = GAME_ERR_NOT_FOUND,
+				};
+				return net_pkt_send(endpoint, (pkt_t *)&pkt);
+			}
+			// game found, pass endpoint to game thread
+			game_add_endpoint(game, endpoint);
+			return NET_ERR_OK_PACKET;
+		}
 
 		default: {
 			pkt_error_t pkt = {

@@ -49,7 +49,7 @@ typedef struct __attribute__((packed)) {
 	pkt_hdr_t hdr;
 	uint32_t page;
 	uint32_t per_page;
-	uint32_t total_pages;
+	uint32_t total_count;
 } pkt_game_list_t;
 
 typedef struct __attribute__((packed)) {
