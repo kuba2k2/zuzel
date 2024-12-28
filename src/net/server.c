@@ -46,8 +46,8 @@ static int net_server_listen(void *param) {
 		.sin_port	= htons(1234),
 		.sin_addr	= {{{0}}},
 	};
-	server->endpoint.addr	 = saddr;
-	server->endpoint.use_ssl = false;
+	server->endpoint.addr = saddr;
+	server->endpoint.type = NET_ENDPOINT_TCP;
 	if (net_endpoint_listen(&server->endpoint) != NET_ERR_OK)
 		goto cleanup;
 
@@ -176,13 +176,8 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 
 		case PKT_GAME_NEW: {
 			game_t *game = game_init();
-			SDL_WITH_MUTEX(game->mutex) {
-				// duplicate the endpoint, as it's owned by net_server_accept()
-				net_endpoint_t *item;
-				MALLOC(item, sizeof(*item), return NET_ERR_MALLOC);
-				memcpy(item, endpoint, sizeof(*item));
-				DL_APPEND(game->endpoints, item);
-			}
+			// pass the endpoint to the game thread, duplicating it
+			game_add_endpoint(game, endpoint);
 			return NET_ERR_OK_PACKET;
 		}
 

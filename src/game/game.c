@@ -15,14 +15,9 @@ game_t *game_init() {
 
 	// create a pipe for incoming packets
 	{
-		net_endpoint_t *pipe;
-		MALLOC(pipe, sizeof(*pipe), goto cleanup);
-		DL_APPEND(game->endpoints, pipe);
-		if (pipe(pipe->pipe) != 0)
-			LT_ERR(F, goto cleanup, "Couldn't create a pipe");
-#if WIN32
-		pipe->event = WSACreateEvent();
-#endif
+		net_endpoint_t pipe;
+		net_endpoint_pipe(&pipe);
+		game_add_endpoint(game, &pipe);
 	}
 
 	// generate a game name

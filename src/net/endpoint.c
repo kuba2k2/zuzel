@@ -2,14 +2,41 @@
 
 #include "include.h"
 
+net_endpoint_t *net_endpoint_dup(net_endpoint_t *endpoint) {
+	// allocate memory
+	net_endpoint_t *item;
+	MALLOC(item, sizeof(*item), return NULL);
+	*item = *endpoint;
+	// adjust the recv buffer pointers
+	if (item->recv.buf != NULL) {
+		int buf_pos		 = endpoint->recv.buf - endpoint->recv.start;
+		item->recv.start = (char *)&item->recv.pkt;
+		item->recv.end	 = item->recv.start + sizeof(item->recv.pkt);
+		item->recv.buf	 = item->recv.start + buf_pos;
+	}
+	return item;
+}
+
+net_err_t net_endpoint_pipe(net_endpoint_t *endpoint) {
+	if (pipe(endpoint->pipe) != 0)
+		LT_ERR(F, return NET_ERR_PIPE, "Couldn't create a pipe");
+	endpoint->type = NET_ENDPOINT_PIPE;
+#if WIN32
+	endpoint->event = WSACreateEvent();
+#endif
+	return NET_ERR_OK;
+}
+
 net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
+	if (endpoint->type > NET_ENDPOINT_TLS)
+		return NET_ERR_ENDPOINT_TYPE;
 	net_err_t ret;
 #if WIN32
 	WSADATA wsa_data;
 	WSAStartup(MAKEWORD(2, 0), &wsa_data);
 #endif
 
-	if (endpoint->use_ssl) {
+	if (endpoint->type == NET_ENDPOINT_TLS) {
 		SSL_load_error_strings();
 		SSL_library_init();
 		if ((endpoint->ssl_ctx = SSL_CTX_new(TLS_server_method())) == NULL)
@@ -47,6 +74,8 @@ cleanup:
 }
 
 net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *client) {
+	if (endpoint->type > NET_ENDPOINT_TLS)
+		return NET_ERR_ENDPOINT_TYPE;
 	net_err_t ret;
 #if WIN32
 	WSADATA wsa_data;
@@ -71,8 +100,9 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 		goto cleanup;
 	}
 
-	if (endpoint->use_ssl) {
-		client->use_ssl = true;
+	client->type = NET_ENDPOINT_TCP;
+	if (endpoint->type == NET_ENDPOINT_TLS) {
+		client->type = NET_ENDPOINT_TLS;
 		if ((client->ssl = SSL_new(endpoint->ssl_ctx)) == NULL)
 			SSL_ERROR("SSL_new()", ret = NET_ERR_SSL; goto cleanup);
 		if (SSL_set_fd(client->ssl, client->fd) != 1)
@@ -116,14 +146,20 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 		endpoint->fd = 0;
 	}
 
+	if (endpoint->pipe[PIPE_READ] != 0) {
+		close(endpoint->pipe[PIPE_READ]);
+		close(endpoint->pipe[PIPE_WRITE]);
+	}
+
 #if WIN32
-	WSACleanup();
+	if (endpoint->type <= NET_ENDPOINT_TLS)
+		WSACleanup();
 #endif
 }
 
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len) {
 	int recv_len;
-	if (!endpoint->use_ssl) {
+	if (endpoint->type == NET_ENDPOINT_TCP) {
 		recv_len = recv(endpoint->fd, buf, (int)*len, 0);
 	} else {
 		recv_len = SSL_read(endpoint->ssl, buf, (int)*len);
@@ -142,7 +178,7 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len) {
 	int send_len;
-	if (!endpoint->use_ssl) {
+	if (endpoint->type == NET_ENDPOINT_TCP) {
 		send_len = send(endpoint->fd, buf, (int)len, 0);
 	} else {
 		send_len = SSL_write(endpoint->ssl, buf, (int)len);
@@ -168,6 +204,8 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 	SDL_WITH_MUTEX(mutex) {
 		net_endpoint_t *endpoint;
 		DL_FOREACH(endpoints, endpoint) {
+			if (endpoint->type > NET_ENDPOINT_PIPE)
+				continue;
 			endpoint_list[num_events] = endpoint;
 			event_list[num_events]	  = endpoint->event;
 			if (endpoint->fd != 0)

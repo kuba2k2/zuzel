@@ -13,5 +13,9 @@ typedef enum {
 
 typedef struct game_t game_t;
 
+// game.c
 game_t *game_init();
 void game_free(game_t *game);
+
+// utils.c
+bool game_add_endpoint(game_t *game, net_endpoint_t *endpoint);

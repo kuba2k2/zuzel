@@ -14,13 +14,13 @@ void hexdump(const void *buf, size_t len) {
 			if (i % 8 == 0) {
 				putchar(' ');
 			}
-			printf("%02x ", ((const char *)buf)[pos + i]);
+			printf("%02x ", ((const uint8_t *)buf)[pos + i]);
 		}
 		// print ascii representation
 		putchar(' ');
 		putchar('|');
 		for (uint8_t i = 0; i < lineWidth; i++) {
-			char c = ((const char *)buf)[pos + i];
+			uint8_t c = ((const uint8_t *)buf)[pos + i];
 			putchar((c >= 0x20 && c <= 0x7f) ? c : '.');
 		}
 		puts("|\r");
