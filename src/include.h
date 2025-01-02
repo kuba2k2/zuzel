@@ -32,5 +32,6 @@
 #include "game/game.h"
 #include "net/net.h"
 
+#include "ui/fragment/fragment.h"
 #include "ui/gfx/gfx.h"
 #include "ui/ui.h"

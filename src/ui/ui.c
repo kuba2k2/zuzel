@@ -5,25 +5,6 @@
 #include "font_res.h"
 #include "ui_res.h"
 
-// menu_main.c
-extern const view_inflate_on_event_t menu_main_on_event[];
-// menu_server_new.c
-extern const view_inflate_on_event_t menu_server_new_on_event[];
-// menu_server_join.c
-extern const view_inflate_on_event_t menu_server_join_on_event[];
-
-// views to inflate
-const unsigned char *ui_states_json[UI_STATE_MAX] = {
-	[UI_STATE_MENU_MAIN]		= UI_MENU_MAIN_JSON,
-	[UI_STATE_MENU_SERVER_NEW]	= UI_MENU_SERVER_NEW_JSON,
-	[UI_STATE_MENU_SERVER_JOIN] = UI_MENU_SERVER_JOIN_JSON,
-};
-const view_inflate_on_event_t *ui_states_on_event[UI_STATE_MAX] = {
-	[UI_STATE_MENU_MAIN]		= menu_main_on_event,
-	[UI_STATE_MENU_SERVER_NEW]	= menu_server_new_on_event,
-	[UI_STATE_MENU_SERVER_JOIN] = menu_server_join_on_event,
-};
-
 ui_t *ui_init(SDL_Renderer *renderer) {
 	ui_t *ui;
 	MALLOC(ui, sizeof(*ui), return NULL);
@@ -47,19 +28,8 @@ ui_t *ui_init(SDL_Renderer *renderer) {
 	gfx_load_font(2, NULL, FONT_TSCR_CHR);
 	gfx_load_font(3, NULL, FONT_SANS_CHR);
 
-	// inflate views for all UI states
-	for (ui_state_t state = UI_STATE_MENU_MAIN; state < UI_STATE_MAX; state++) {
-		if (ui_states_json[state] == NULL)
-			continue;
-		cJSON *json = cJSON_Parse((const char *)ui_states_json[state]);
-		if (json == NULL)
-			LT_E("JSON parse failed: %s", cJSON_GetErrorPtr());
-		ui->views[state] = gfx_view_inflate(json, NULL, ui_states_on_event[state]);
-		cJSON_Delete(json);
-		if (ui->views[state] == NULL)
-			LT_ERR(E, goto free_menu, "View inflate failed for state %d", state);
-		gfx_view_set_event_param(ui->views[state], NULL, ui);
-	}
+	// inflate all UI fragments (menus etc.)
+	fragment_init_all(ui->fragments, ui);
 
 	return ui;
 
@@ -69,21 +39,21 @@ free_menu:
 }
 
 int ui_run(ui_t *ui) {
-	view_t *prev_views = NULL;
+	fragment_t *prev_fragment = NULL;
 	while (1) {
-		view_t *views = ui->views[ui->state];
+		fragment_t *fragment = ui->fragments[ui->state];
 
 		SDL_SetRenderTarget(ui->renderer, NULL);
 		gfx_set_color(ui->renderer, 0x000000);
 		SDL_RenderClear(ui->renderer);
 
-		if (views != NULL) {
-			if (views != prev_views) {
-				gfx_view_measure(views);
-				gfx_view_layout(views);
-				prev_views = views;
+		if (fragment != NULL) {
+			if (fragment != prev_fragment) {
+				gfx_view_measure(fragment->views);
+				gfx_view_layout(fragment->views);
+				prev_fragment = fragment;
 			}
-			gfx_view_draw(ui->renderer, views);
+			gfx_view_draw(ui->renderer, fragment->views);
 		}
 		SDL_RenderPresent(ui->renderer);
 
@@ -102,8 +72,8 @@ int ui_run(ui_t *ui) {
 				break;
 
 			default:
-				if (views != NULL)
-					gfx_view_on_event(views, &e);
+				if (fragment != NULL)
+					gfx_view_on_event(fragment->views, &e);
 				continue;
 		}
 
@@ -118,8 +88,10 @@ int ui_run(ui_t *ui) {
 void ui_free(ui_t *ui) {
 	if (ui == NULL)
 		return;
-	for (ui_state_t state = UI_STATE_MENU_MAIN; state < UI_STATE_MAX; state++) {
-		gfx_view_free(ui->views[state]);
+	for (ui_state_t state = UI_STATE_MAIN; state < UI_STATE_MAX; state++) {
+		fragment_t *fragment = ui->fragments[state];
+		if (fragment != NULL)
+			gfx_view_free(fragment->views);
 	}
 	SDL_DestroyTexture(ui->texture);
 	free(ui);
