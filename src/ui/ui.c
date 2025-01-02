@@ -73,7 +73,7 @@ int ui_run(ui_t *ui) {
 					break;
 				if (fragment->on_event != NULL && fragment->on_event(ui, fragment, &e) == true)
 					break;
-				if (gfx_view_on_event(fragment->views, &e) == true)
+				if (fragment->views != NULL && gfx_view_on_event(fragment->views, &e) == true)
 					break;
 				break;
 		}

@@ -140,6 +140,7 @@ view_t *gfx_view_find_next(view_t *view);
 view_t *gfx_view_find_by_id(view_t *views, const char *id);
 char *gfx_view_make_id(view_t *view);
 void gfx_view_set_event_param(view_t *views, const char *id, void *param);
+void gfx_view_set_text(view_t *view, const char *text);
 
 // view_*.c
 view_t *gfx_view_make_frame(view_t *parent);

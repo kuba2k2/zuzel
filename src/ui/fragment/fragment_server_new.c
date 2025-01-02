@@ -11,6 +11,7 @@ static bool on_btn_back(view_t *view, SDL_Event *e, ui_t *ui) {
 static bool on_btn_local(view_t *view, SDL_Event *e, ui_t *ui) {
 	if (net_server_start() == NULL)
 		LT_ERR(F, , "Couldn't start the server");
+	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;
 }
 

@@ -20,5 +20,6 @@ typedef struct fragment_t {
 extern fragment_t fragment_main;
 extern fragment_t fragment_server_join;
 extern fragment_t fragment_server_new;
+extern fragment_t fragment_connecting;
 
 bool fragment_init_all(fragment_t **fragments, void *param);

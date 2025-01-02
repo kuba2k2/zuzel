@@ -155,3 +155,10 @@ void gfx_view_set_event_param(view_t *views, const char *id, void *param) {
 			view->event.param = param;
 	}
 }
+
+void gfx_view_set_text(view_t *view, const char *text) {
+	if (view == NULL)
+		return;
+	free(view->data.text.text);
+	view->data.text.text = strdup(text);
+}
