@@ -242,7 +242,7 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 		}
 	}
 
-	int ret = WSAWaitForMultipleEvents(num_events, event_list, false, 5000, true);
+	unsigned int ret = WSAWaitForMultipleEvents(num_events, event_list, false, 5000, true);
 	if (ret == WSA_WAIT_FAILED)
 		SOCK_ERROR("WSAWaitForMultipleEvents()", return NET_ERR_SELECT);
 	if (ret == WSA_WAIT_IO_COMPLETION)
@@ -252,7 +252,7 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 	if (cb == NULL)
 		return NET_ERR_OK;
 
-	int index				 = ret - WSA_WAIT_EVENT_0;
+	unsigned int index		 = ret - WSA_WAIT_EVENT_0;
 	net_endpoint_t *endpoint = endpoint_list[index];
 
 	WSANETWORKEVENTS network_events;

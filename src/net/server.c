@@ -192,8 +192,8 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 			SDL_WITH_MUTEX(game_list_mutex) {
 				game_t *game;
 				int index = 0;
-				int first = recv_pkt->game_list.page * recv_pkt->game_list.per_page;
-				int last  = first + recv_pkt->game_list.per_page;
+				unsigned int first = recv_pkt->game_list.page * recv_pkt->game_list.per_page;
+				unsigned int last  = first + recv_pkt->game_list.per_page;
 				DL_FOREACH(game_list, game) {
 					if (index < first) {
 						index++;
