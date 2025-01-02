@@ -66,20 +66,15 @@ int ui_run(ui_t *ui) {
 			case SDL_KEYUP:
 				if (e.key.keysym.sym == SDLK_F1)
 					gfx_view_bounding_box = !gfx_view_bounding_box;
-				continue;
-
-			case SDL_USEREVENT:
 				break;
 
 			default:
-				if (fragment != NULL)
-					gfx_view_on_event(fragment->views, &e);
-				continue;
-		}
-
-		// SDL_USEREVENT
-		switch (e.user.code) {
-			case UI_EVENT_ERROR:
+				if (fragment == NULL)
+					break;
+				if (fragment->on_event != NULL && fragment->on_event(ui, fragment, &e) == true)
+					break;
+				if (gfx_view_on_event(fragment->views, &e) == true)
+					break;
 				break;
 		}
 	}

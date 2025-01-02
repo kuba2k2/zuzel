@@ -25,7 +25,7 @@ static bool on_btn_exit(view_t *view, SDL_Event *e, ui_t *i) {
 	return true;
 }
 
-const view_inflate_on_event_t fragment_main_on_event[] = {
+static const view_inflate_on_event_t inflate_on_event[] = {
 	GFX_VIEW_ON_EVENT(on_btn_quick_play),
 	GFX_VIEW_ON_EVENT(on_btn_new_game),
 	GFX_VIEW_ON_EVENT(on_btn_join_game),
@@ -34,5 +34,5 @@ const view_inflate_on_event_t fragment_main_on_event[] = {
 };
 
 fragment_t fragment_main = {
-	.inflate_on_event = fragment_main_on_event,
+	.inflate_on_event = inflate_on_event,
 };

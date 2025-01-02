@@ -14,12 +14,12 @@ static bool on_btn_local(view_t *view, SDL_Event *e, ui_t *ui) {
 	return true;
 }
 
-const view_inflate_on_event_t fragment_server_new_on_event[] = {
+static const view_inflate_on_event_t inflate_on_event[] = {
 	GFX_VIEW_ON_EVENT(on_btn_back),
 	GFX_VIEW_ON_EVENT(on_btn_local),
 	GFX_VIEW_ON_EVENT_END(),
 };
 
 fragment_t fragment_server_new = {
-	.inflate_on_event = fragment_server_new_on_event,
+	.inflate_on_event = inflate_on_event,
 };
