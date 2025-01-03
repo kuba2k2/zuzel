@@ -191,7 +191,7 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 			// send updates for the requested range
 			SDL_WITH_MUTEX(game_list_mutex) {
 				game_t *game;
-				int index = 0;
+				int index		   = 0;
 				unsigned int first = recv_pkt->game_list.page * recv_pkt->game_list.per_page;
 				unsigned int last  = first + recv_pkt->game_list.per_page;
 				DL_FOREACH(game_list, game) {

@@ -21,6 +21,15 @@ typedef enum {
 	UI_STATE_MAX,
 } ui_state_t;
 
+typedef enum {
+	UI_CONNECT_NEW_PUBLIC,
+	UI_CONNECT_NEW_PRIVATE,
+	UI_CONNECT_NEW_LOCAL,
+	UI_CONNECT_JOIN_BROWSE,
+	UI_CONNECT_JOIN_KEY,
+	UI_CONNECT_JOIN_ADDRESS,
+} ui_connect_type_t;
+
 typedef struct ui_t {
 	SDL_Renderer *renderer; //!< SDL renderer
 	SDL_Texture *texture;	//!< SDL texture
@@ -30,6 +39,12 @@ typedef struct ui_t {
 	ui_state_t next_state; //!< Next state
 
 	fragment_t *fragments[UI_STATE_MAX];
+
+	struct {
+		ui_connect_type_t type;
+		char *server;
+		char *key;
+	} connection;
 
 	net_t *server;
 	net_t *client;
