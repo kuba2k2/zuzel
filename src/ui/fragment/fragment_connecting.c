@@ -2,6 +2,10 @@
 
 #include "fragment.h"
 
+static bool connect_to_server(ui_t *ui) {
+	return true;
+}
+
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	bool result = false;
 	char message[128];
@@ -12,15 +16,14 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		result = net_server_start();
 	} else if (ui->connection.type == UI_CONNECT_JOIN_ADDRESS) {
 		sprintf(message, "Connecting to %s...", ui->connection.server);
-		result = true;
+		result = connect_to_server(ui);
 	} else {
 		strcpy(message, "Connecting to public game server...");
-		result = true;
+		result = connect_to_server(ui);
 	}
 
 	if (!result) {
-		ui_state_prev(ui);
-		ui_state_set(ui, UI_STATE_ERROR);
+		ui_state_error(ui);
 		return false;
 	}
 
@@ -35,6 +38,14 @@ static bool on_btn_cancel(view_t *view, SDL_Event *e, ui_t *ui) {
 }
 
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
+	switch (e->type) {
+		case SDL_USEREVENT_SERVER:
+			if (e->user.code == false)
+				ui_state_error(ui);
+			else
+				connect_to_server(ui);
+			return true;
+	}
 	return false;
 }
 

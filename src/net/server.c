@@ -36,9 +36,13 @@ static int net_server_listen(void *param) {
 		return -1;
 	(void)param;
 
+	SDL_Event event = {
+		.user.type = SDL_USEREVENT_SERVER,
+	};
+
 	// create a net_t* structure for the first client
 	net_t *client;
-	MALLOC(client, sizeof(*client), goto cleanup);
+	MALLOC(client, sizeof(*client), goto error_start);
 
 	// start the TCP server
 	struct sockaddr_in saddr = {
@@ -49,7 +53,7 @@ static int net_server_listen(void *param) {
 	server->endpoint.addr = saddr;
 	server->endpoint.type = NET_ENDPOINT_TCP;
 	if (net_endpoint_listen(&server->endpoint) != NET_ERR_OK)
-		goto cleanup;
+		goto error_start;
 
 	LT_I(
 		"Server: listening on %s:%d with fd=%d",
@@ -57,6 +61,8 @@ static int net_server_listen(void *param) {
 		ntohs(saddr.sin_port),
 		server->endpoint.fd
 	);
+	event.user.code = true;
+	SDL_PushEvent(&event);
 
 	while (1) {
 		// accept an incoming connection
@@ -75,7 +81,7 @@ static int net_server_listen(void *param) {
 			if (server->stop) {
 				// stop requested, exit without error
 				LT_I("Server: stopping gracefully");
-				break;
+				goto cleanup;
 			}
 			// disconnect the client on any other error
 			LT_E("Server: client connection failed");
@@ -102,6 +108,10 @@ static int net_server_listen(void *param) {
 			MALLOC(client, sizeof(*client), goto cleanup);
 		}
 	}
+
+error_start:
+	event.user.code = false;
+	SDL_PushEvent(&event);
 
 cleanup:
 	// stop the server

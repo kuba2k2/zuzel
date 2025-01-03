@@ -87,6 +87,9 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len);
 net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_select_cb_t cb, void *param);
 
+// errors.c
+bool net_error_print();
+
 // server.c
 net_t *net_server_start();
 void net_server_stop();

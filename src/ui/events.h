@@ -2,7 +2,9 @@
 
 #pragma once
 
-typedef enum {
-	UI_EVENT_ERROR			   = 1, //!< An error has occurred
-	UI_EVENT_CLIENT_CONNECTION = 2, //!< Client connection was successful
-} ui_event_type_t;
+enum {
+	SDL_USEREVENT_FIRST = SDL_USEREVENT + 0x100,
+	SDL_USEREVENT_SERVER,	  //!< Server starting result
+	SDL_USEREVENT_CONNECTION, //!< Client connection result
+	SDL_USEREVENT_ERROR,	  //!< An error has occurred
+};

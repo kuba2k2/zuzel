@@ -29,3 +29,8 @@ void ui_state_next(ui_t *ui) {
 	ui->state	   = ui->next_state;
 	ui->next_state = UI_STATE_MAX;
 }
+
+void ui_state_error(ui_t *ui) {
+	ui_state_prev(ui);
+	ui_state_set(ui, UI_STATE_ERROR);
+}

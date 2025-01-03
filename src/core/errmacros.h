@@ -60,13 +60,15 @@
 #if WIN32
 #define SOCK_ERROR(func, err)                                                                                          \
 	do {                                                                                                               \
-		LT_F(func " failed; WSAGetLastError: %d", WSAGetLastError());                                                  \
+		if (!net_error_print())                                                                                        \
+			LT_F(func " failed; WSAGetLastError: %d", WSAGetLastError());                                              \
 		err;                                                                                                           \
 	} while (0)
 #else
 #define SOCK_ERROR(func, err)                                                                                          \
 	do {                                                                                                               \
-		LT_F(func " failed; errno: %s", sys_errlist[errno]);                                                           \
+		if (!net_error_print())                                                                                        \
+			LT_F(func " failed; errno: %s", sys_errlist[errno]);                                                       \
 		err;                                                                                                           \
 	} while (0)
 #endif

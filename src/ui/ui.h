@@ -59,3 +59,4 @@ void ui_state_set(ui_t *ui, ui_state_t state);
 void ui_state_set_via(ui_t *ui, ui_state_t state, ui_state_t via);
 void ui_state_prev(ui_t *ui);
 void ui_state_next(ui_t *ui);
+void ui_state_error(ui_t *ui);
