@@ -49,6 +49,11 @@ int ui_run(ui_t *ui) {
 
 		if (fragment != NULL) {
 			if (fragment != prev_fragment) {
+				// call on_hide/on_show
+				if (prev_fragment != NULL && prev_fragment->on_hide != NULL)
+					prev_fragment->on_hide(ui, prev_fragment, NULL);
+				if (fragment->on_show != NULL)
+					fragment->on_show(ui, fragment, NULL);
 				gfx_view_measure(fragment->views);
 				gfx_view_layout(fragment->views);
 				prev_fragment = fragment;

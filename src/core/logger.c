@@ -33,6 +33,9 @@ static const uint8_t colors[] = {
 };
 #endif
 
+static char message_buf[1024];
+static bool lt_log_append_error(const char *message);
+
 #if LT_LOGGER_CALLER
 void lt_log(const uint8_t level, const char *caller, const unsigned short line, const char *format, ...) {
 #else
@@ -112,9 +115,60 @@ void lt_log(const uint8_t level, const char *format, ...) {
 
 	va_list va_args;
 	va_start(va_args, format);
-	vprintf(format, va_args);
+	vsnprintf(message_buf, sizeof(message_buf) - 1, format, va_args);
 	va_end(va_args);
-	putchar('\r');
-	putchar('\n');
+
+	if (level >= LT_LEVEL_ERROR)
+		lt_log_append_error(message_buf);
+	printf("%s\r\n", message_buf);
 	fflush(stdout);
+}
+
+typedef struct log_error_t {
+	char *message;
+	unsigned int len;
+	struct log_error_t *next;
+	struct log_error_t *prev;
+} log_error_t;
+
+static log_error_t *errors = NULL;
+
+static bool lt_log_append_error(const char *message) {
+	log_error_t *error = malloc(sizeof(*error));
+	if (error == NULL)
+		return false;
+	memset(error, 0, sizeof(*error));
+	DL_APPEND(errors, error);
+	error->message = strdup(message);
+	error->len	   = strlen(message);
+	return true;
+}
+
+char *lt_log_get_errors(const char *prefix) {
+	// count the total length of messages
+	size_t prefix_len = strlen(prefix);
+	size_t errors_len = prefix_len;
+	log_error_t *error, *tmp;
+	DL_FOREACH(errors, error) {
+		errors_len += error->len + sizeof("\n") - 1;
+	}
+	// allocate a string
+	char *errors_str;
+	MALLOC(errors_str, errors_len + 1, return NULL);
+	// copy the prefix message
+	memcpy(errors_str, prefix, prefix_len + 1);
+	// copy each message while deleting them
+	char *write_head = errors_str + prefix_len;
+	DL_FOREACH_SAFE(errors, error, tmp) {
+		strcpy(write_head, error->message);
+		write_head += error->len;
+		strcpy(write_head, "\n");
+		write_head += sizeof("\n") - 1;
+		DL_DELETE(errors, error);
+		free(error->message);
+		free(error);
+	}
+	if (write_head[-1] == '\n')
+		write_head[-1] = '\0';
+	return errors_str;
 }

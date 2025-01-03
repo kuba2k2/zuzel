@@ -13,6 +13,8 @@ typedef bool (*fragment_on_event_t)(ui_t *ui, fragment_t *fragment, SDL_Event *e
 typedef struct fragment_t {
 	const unsigned char *json;
 	view_t *views;
+	const fragment_on_event_t on_show;
+	const fragment_on_event_t on_hide;
 	const fragment_on_event_t on_event;
 	const view_inflate_on_event_t *inflate_on_event;
 } fragment_t;
@@ -21,5 +23,6 @@ extern fragment_t fragment_main;
 extern fragment_t fragment_server_join;
 extern fragment_t fragment_server_new;
 extern fragment_t fragment_connecting;
+extern fragment_t fragment_error;
 
 bool fragment_init_all(fragment_t **fragments, void *param);

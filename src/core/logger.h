@@ -34,6 +34,8 @@ void lt_log(uint8_t level, const char *caller, unsigned short line, const char *
 void lt_log(uint8_t level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 #endif
 
+char *lt_log_get_errors(const char *prefix);
+
 #define LT_T(...)		   LT_LOG(LT_LEVEL_TRACE, __FUNCTION__, __LINE__, __VA_ARGS__)
 #define LT_V(...)		   LT_LOG(LT_LEVEL_TRACE, __FUNCTION__, __LINE__, __VA_ARGS__)
 #define LT_TM(module, ...) LT_LOGM(LT_LEVEL_TRACE, module, __FUNCTION__, __LINE__, __VA_ARGS__)
