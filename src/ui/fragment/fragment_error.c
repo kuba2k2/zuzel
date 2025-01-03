@@ -3,7 +3,7 @@
 #include "fragment.h"
 
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
-	char *message = lt_log_get_errors("");
+	char *message = lt_log_get_errors(50);
 	gfx_view_set_text(gfx_view_find_by_id(fragment->views, "message"), message);
 	free(message);
 	return true;

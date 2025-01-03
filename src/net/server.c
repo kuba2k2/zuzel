@@ -110,6 +110,7 @@ static int net_server_listen(void *param) {
 	}
 
 error_start:
+	LT_E("Couldn't start the game server");
 	event.user.code = false;
 	SDL_PushEvent(&event);
 

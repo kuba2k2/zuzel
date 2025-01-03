@@ -144,31 +144,49 @@ static bool lt_log_append_error(const char *message) {
 	return true;
 }
 
-char *lt_log_get_errors(const char *prefix) {
+char *lt_log_get_errors(int wrap) {
 	// count the total length of messages
-	size_t prefix_len = strlen(prefix);
-	size_t errors_len = prefix_len;
+	size_t errors_len = 0;
 	log_error_t *error, *tmp;
 	DL_FOREACH(errors, error) {
-		errors_len += error->len + sizeof("\n") - 1;
+		errors_len += error->len + sizeof("\n\n") - 1;
+		if (wrap != 0)
+			errors_len += error->len / wrap;
 	}
 	// allocate a string
 	char *errors_str;
 	MALLOC(errors_str, errors_len + 1, return NULL);
-	// copy the prefix message
-	memcpy(errors_str, prefix, prefix_len + 1);
 	// copy each message while deleting them
-	char *write_head = errors_str + prefix_len;
+	char *write_head = errors_str;
 	DL_FOREACH_SAFE(errors, error, tmp) {
-		strcpy(write_head, error->message);
-		write_head += error->len;
-		strcpy(write_head, "\n");
-		write_head += sizeof("\n") - 1;
+		size_t line_len = 0;
+		char *message	= error->message;
+		do {
+			char *space = strchr(message, ' ');
+			int word_len;
+			if (space != NULL)
+				word_len = space - message + 1;
+			else
+				word_len = strlen(message);
+			if (wrap != 0 && line_len + word_len > wrap) {
+				strcpy(write_head, "\n");
+				write_head += sizeof("\n") - 1;
+				line_len = 0;
+			}
+			strncpy(write_head, message, word_len);
+			message += word_len;
+			write_head += word_len;
+			line_len += word_len;
+		} while (*message != '\0');
+
+		strcpy(write_head, "\n\n");
+		write_head += sizeof("\n\n") - 1;
+
 		DL_DELETE(errors, error);
 		free(error->message);
 		free(error);
 	}
-	if (write_head[-1] == '\n')
-		write_head[-1] = '\0';
+	if (write_head > errors_str && *(write_head - 1) == '\n')
+		*(write_head - 1) = '\0';
 	return errors_str;
 }

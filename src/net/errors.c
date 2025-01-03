@@ -13,6 +13,11 @@ bool net_error_print() {
 		0,
 		NULL
 	);
+	size_t len = strlen(message);
+	if (message[len - 1] == '\n')
+		message[--len] = '\0';
+	if (message[len - 1] == '\r')
+		message[--len] = '\0';
 	LT_F("%s", message);
 	LocalFree(message);
 	return true;
