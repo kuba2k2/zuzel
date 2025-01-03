@@ -13,7 +13,8 @@ typedef struct {
 		int scale;
 	} screen;
 
-	char player_name[PLAYER_NAME_LEN + 1];
+	char *player_name;
+	char *public_server_address;
 } settings_t;
 
 void settings_load();

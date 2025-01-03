@@ -4,11 +4,12 @@
 
 void settings_load() {
 	// load defaults first
-	SETTINGS->loglevel		= LT_LEVEL_DEBUG;
-	SETTINGS->screen.width	= 640;
-	SETTINGS->screen.height = 480;
-	SETTINGS->screen.scale	= 1;
-	strcpy(SETTINGS->player_name, "Player");
+	SETTINGS->loglevel				= LT_LEVEL_DEBUG;
+	SETTINGS->screen.width			= 640;
+	SETTINGS->screen.height			= 480;
+	SETTINGS->screen.scale			= 1;
+	SETTINGS->player_name			= strdup("Player");
+	SETTINGS->public_server_address = strdup("127.0.0.1");
 }
 
 bool settings_save() {

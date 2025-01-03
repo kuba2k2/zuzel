@@ -6,6 +6,12 @@
 #define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
 #define SDL_WITH_MUTEX(m)		   for (volatile int i = SDL_LockMutex(m) * 0; i < 1; SDL_UnlockMutex(m), i++)
 
+#define FREE_NULL(var)                                                                                                 \
+	do {                                                                                                               \
+		free(var);                                                                                                     \
+		var = NULL;                                                                                                    \
+	} while (0)
+
 #define PIPE_READ  0
 #define PIPE_WRITE 1
 #if WIN32

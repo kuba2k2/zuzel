@@ -3,33 +3,36 @@
 #include "fragment.h"
 
 static bool on_btn_public(view_t *view, SDL_Event *e, ui_t *ui) {
-	ui->connection.type = UI_CONNECT_NEW_PUBLIC;
-	free(ui->connection.server);
-	ui->connection.server = NULL;
-	free(ui->connection.key);
-	ui->connection.key = NULL;
+	FREE_NULL(ui->connection.address);
+	FREE_NULL(ui->connection.key);
+	ui->connection.type	   = UI_CONNECT_NEW_PUBLIC;
+	ui->connection.address = strdup(SETTINGS->public_server_address);
+	ui->connection.use_tls = true;
+	ui->connection.key	   = NULL;
 
 	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;
 }
 
 static bool on_btn_private(view_t *view, SDL_Event *e, ui_t *ui) {
-	ui->connection.type = UI_CONNECT_NEW_PRIVATE;
-	free(ui->connection.server);
-	ui->connection.server = NULL;
-	free(ui->connection.key);
-	ui->connection.key = NULL;
+	FREE_NULL(ui->connection.address);
+	FREE_NULL(ui->connection.key);
+	ui->connection.type	   = UI_CONNECT_NEW_PRIVATE;
+	ui->connection.address = strdup(SETTINGS->public_server_address);
+	ui->connection.use_tls = true;
+	ui->connection.key	   = NULL;
 
 	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;
 }
 
 static bool on_btn_local(view_t *view, SDL_Event *e, ui_t *ui) {
-	ui->connection.type = UI_CONNECT_NEW_LOCAL;
-	free(ui->connection.server);
-	ui->connection.server = NULL;
-	free(ui->connection.key);
-	ui->connection.key = NULL;
+	FREE_NULL(ui->connection.address);
+	FREE_NULL(ui->connection.key);
+	ui->connection.type	   = UI_CONNECT_NEW_LOCAL;
+	ui->connection.address = strdup("127.0.0.1");
+	ui->connection.use_tls = false;
+	ui->connection.key	   = NULL;
 
 	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;

@@ -2,27 +2,23 @@
 
 #include "fragment.h"
 
-static bool connect_to_server(ui_t *ui) {
-	return true;
-}
-
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
-	bool result = false;
+	net_t *net = NULL;
 	char message[128];
 
 	// start the network stack and update UI message
 	if (ui->connection.type == UI_CONNECT_NEW_LOCAL) {
 		strcpy(message, "Connecting to local game server...");
-		result = net_server_start();
+		net = net_server_start();
 	} else if (ui->connection.type == UI_CONNECT_JOIN_ADDRESS) {
-		sprintf(message, "Connecting to %s...", ui->connection.server);
-		result = connect_to_server(ui);
+		sprintf(message, "Connecting to %s...", ui->connection.address);
+		net = net_client_start(ui->connection.address, ui->connection.use_tls);
 	} else {
 		strcpy(message, "Connecting to public game server...");
-		result = connect_to_server(ui);
+		net = net_client_start(ui->connection.address, ui->connection.use_tls);
 	}
 
-	if (!result) {
+	if (net == NULL) {
 		ui_state_error(ui);
 		return false;
 	}
@@ -32,6 +28,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 }
 
 static bool on_btn_cancel(view_t *view, SDL_Event *e, ui_t *ui) {
+	net_client_stop();
 	net_server_stop();
 	ui_state_prev(ui);
 	return true;
@@ -42,8 +39,8 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		case SDL_USEREVENT_SERVER:
 			if (e->user.code == false)
 				ui_state_error(ui);
-			else
-				connect_to_server(ui);
+			else if (net_client_start(ui->connection.address, ui->connection.use_tls) == NULL)
+				ui_state_error(ui);
 			return true;
 	}
 	return false;

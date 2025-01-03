@@ -41,9 +41,10 @@ typedef struct ui_t {
 	fragment_t *fragments[UI_STATE_MAX];
 
 	struct {
-		ui_connect_type_t type;
-		char *server;
-		char *key;
+		ui_connect_type_t type; //!< Type of connection to make
+		char *address;			//!< Address of server to connect to
+		bool use_tls;			//!< Whether to use TLS for the connection
+		char *key;				//!< Room key (if joining)
 	} connection;
 
 	net_t *server;

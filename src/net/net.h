@@ -93,3 +93,7 @@ bool net_error_print();
 // server.c
 net_t *net_server_start();
 void net_server_stop();
+
+// client.c
+net_t *net_client_start(const char *address, bool use_tls);
+void net_client_stop();
