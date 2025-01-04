@@ -69,7 +69,7 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 	return NET_ERR_OK;
 
 cleanup:
-	net_endpoint_close(endpoint);
+	net_endpoint_free(endpoint);
 	return ret;
 }
 
@@ -118,7 +118,7 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 	return NET_ERR_OK;
 
 cleanup:
-	net_endpoint_close(client);
+	net_endpoint_free(client);
 	return ret;
 }
 
@@ -165,13 +165,30 @@ net_err_t net_endpoint_connect(net_endpoint_t *endpoint) {
 	return NET_ERR_OK;
 
 cleanup:
-	net_endpoint_close(endpoint);
+	net_endpoint_free(endpoint);
 	return ret;
 }
 
 void net_endpoint_close(net_endpoint_t *endpoint) {
-	if (endpoint->ssl != NULL) {
+	if (endpoint->ssl != NULL)
 		SSL_shutdown(endpoint->ssl);
+
+	if (endpoint->fd > 0) {
+		closesocket(endpoint->fd);
+		endpoint->fd = 0;
+	}
+
+	if (endpoint->pipe.fd[PIPE_READ] != 0) {
+		close(endpoint->pipe.fd[PIPE_READ]);
+		close(endpoint->pipe.fd[PIPE_WRITE]);
+		endpoint->pipe.fd[PIPE_READ] = 0;
+	}
+}
+
+void net_endpoint_free(net_endpoint_t *endpoint) {
+	net_endpoint_close(endpoint);
+
+	if (endpoint->ssl != NULL) {
 		SSL_free(endpoint->ssl);
 		endpoint->ssl = NULL;
 	}
@@ -187,16 +204,6 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 		endpoint->pipe.event = NULL;
 	}
 #endif
-
-	if (endpoint->fd > 0) {
-		closesocket(endpoint->fd);
-		endpoint->fd = 0;
-	}
-
-	if (endpoint->pipe.fd[PIPE_READ] != 0) {
-		close(endpoint->pipe.fd[PIPE_READ]);
-		close(endpoint->pipe.fd[PIPE_WRITE]);
-	}
 
 #if WIN32
 	if (endpoint->type <= NET_ENDPOINT_TLS)

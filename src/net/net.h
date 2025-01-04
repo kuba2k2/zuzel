@@ -87,6 +87,7 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint);
 net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *client);
 net_err_t net_endpoint_connect(net_endpoint_t *endpoint);
 void net_endpoint_close(net_endpoint_t *endpoint);
+void net_endpoint_free(net_endpoint_t *endpoint);
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len);
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len);
 net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_select_cb_t cb, void *param);

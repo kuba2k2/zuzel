@@ -102,7 +102,7 @@ static int net_server_listen(void *param) {
 		if (thread == NULL) {
 			// thread creation failed, close the connection
 			SDL_ERROR("SDL_CreateThread()", );
-			net_endpoint_close(&client->endpoint);
+			net_endpoint_free(&client->endpoint);
 		} else {
 			// thread successfully created, make a new structure for the next client
 			MALLOC(client, sizeof(*client), goto cleanup);
@@ -116,7 +116,7 @@ error_start:
 
 cleanup:
 	// stop the server
-	net_endpoint_close(&server->endpoint);
+	net_endpoint_free(&server->endpoint);
 	// free the next client's structure
 	free(client);
 	// free the server's structure

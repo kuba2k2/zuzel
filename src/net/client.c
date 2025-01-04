@@ -107,7 +107,7 @@ error_start:
 
 cleanup:
 	// stop the client
-	net_endpoint_close(&client->endpoint);
+	net_endpoint_free(&client->endpoint);
 	// free the server's structure
 	free(client);
 	client = NULL;

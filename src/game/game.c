@@ -71,7 +71,7 @@ void game_free(game_t *game) {
 		net_endpoint_t *endpoint, *tmp;
 		DL_FOREACH_SAFE(game->endpoints, endpoint, tmp) {
 			DL_DELETE(game->endpoints, endpoint);
-			net_endpoint_close(endpoint);
+			net_endpoint_free(endpoint);
 			free(endpoint);
 		}
 	}
