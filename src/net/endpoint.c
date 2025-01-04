@@ -357,6 +357,9 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 			if (endpoint->fd != 0)
 				// call WSAEventSelect() on sockets only (not on pipes)
 				WSAEventSelect(endpoint->fd, endpoint->pipe.event, mask);
+			if (endpoint->type == NET_ENDPOINT_TLS && SSL_pending(endpoint->ssl))
+				// immediately allow reading any previously-buffered TLS data
+				return cb(endpoint, param);
 			num_events++;
 		}
 	}
