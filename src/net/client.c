@@ -28,6 +28,7 @@ net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 	SDL_DetachThread(thread);
 	if (thread == NULL) {
 		SDL_ERROR("SDL_CreateThread()", );
+		net_endpoint_free(pipe);
 		free(pipe);
 		free(client);
 		client = NULL;
@@ -40,8 +41,9 @@ net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 void net_client_stop() {
 	if (client == NULL)
 		return;
+	if (client->stop == true)
+		return;
 	client->stop = true;
-	net_endpoint_close(client->endpoint.next);
 	net_endpoint_close(&client->endpoint);
 }
 
@@ -117,16 +119,21 @@ cleanup:
 	// send a 'closed' event
 	event.user.code = false;
 	SDL_PushEvent(&event);
+	// mark this client as 'stopping'
+	client->stop = true;
+	net_t *net	 = client;
+	client		 = NULL;
 	// close and free the pipe
-	net_endpoint_free(client->endpoint.next);
-	SDL_DestroyMutex(client->endpoint.next->mutex);
-	free(client->endpoint.next);
+	SDL_WITH_MUTEX(net->endpoint.mutex) {
+		net_endpoint_free(net->endpoint.next);
+		SDL_DestroyMutex(net->endpoint.next->mutex);
+		free(net->endpoint.next);
+	}
 	// stop the client
-	net_endpoint_free(&client->endpoint);
-	SDL_DestroyMutex(client->endpoint.mutex);
+	net_endpoint_free(&net->endpoint);
+	SDL_DestroyMutex(net->endpoint.mutex);
 	// free the server's structure
-	free(client);
-	client = NULL;
+	free(net);
 #if WIN32
 	WSACleanup();
 #endif

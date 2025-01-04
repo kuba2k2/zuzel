@@ -33,6 +33,8 @@ net_t *net_server_start(bool headless) {
 void net_server_stop() {
 	if (server == NULL)
 		return;
+	if (server->stop == true)
+		return;
 	server->stop = true;
 	net_endpoint_close(&server->endpoint);
 }
@@ -122,16 +124,19 @@ error_start:
 	SDL_PushEvent(&event);
 
 cleanup:
+	// mark this server as 'stopping'
+	server->stop = true;
+	net_t *net	 = server;
+	server		 = NULL;
 	// stop the server
-	net_endpoint_free(&server->endpoint);
+	net_endpoint_free(&net->endpoint);
 	// free the next client's structure
 	if (client != NULL)
 		SDL_DestroyMutex(client->endpoint.mutex);
 	free(client);
 	// free the server's structure
-	SDL_DestroyMutex(server->endpoint.mutex);
-	free(server);
-	server = NULL;
+	SDL_DestroyMutex(net->endpoint.mutex);
+	free(net);
 	return 0;
 }
 
