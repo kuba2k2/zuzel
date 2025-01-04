@@ -15,6 +15,7 @@ typedef struct {
 
 	char *player_name;
 	char *public_server_address;
+	int server_port;
 } settings_t;
 
 void settings_load();

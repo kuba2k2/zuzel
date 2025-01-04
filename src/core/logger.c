@@ -190,3 +190,12 @@ char *lt_log_get_errors(int wrap) {
 		*(write_head - 1) = '\0';
 	return errors_str;
 }
+
+void lt_log_clear_errors() {
+	log_error_t *error, *tmp;
+	DL_FOREACH_SAFE(errors, error, tmp) {
+		DL_DELETE(errors, error);
+		free(error->message);
+		free(error);
+	}
+}

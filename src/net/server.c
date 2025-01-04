@@ -47,7 +47,7 @@ static int net_server_listen(void *param) {
 	// start the TCP server
 	struct sockaddr_in saddr = {
 		.sin_family = AF_INET,
-		.sin_port	= htons(1234),
+		.sin_port	= htons(SETTINGS->server_port),
 		.sin_addr	= {{{0}}},
 	};
 	server->endpoint.addr = saddr;

@@ -142,15 +142,15 @@ net_err_t net_endpoint_connect(net_endpoint_t *endpoint) {
 	if (cfd == INVALID_SOCKET)
 		SOCK_ERROR("socket()", ret = NET_ERR_SOCKET; goto cleanup);
 
-	// connect to the server
-	if (connect(cfd, (struct sockaddr *)&endpoint->addr, sizeof(endpoint->addr)) != 0)
-		SOCK_ERROR("connect()", ret = NET_ERR_CONNECT; goto cleanup);
-
-	// client started successfully, fill net_endpoint_t*
+	// fill net_endpoint_t* first, so that disconnection is possible
 	endpoint->fd = cfd;
 #if WIN32
 	endpoint->pipe.event = WSACreateEvent();
 #endif
+
+	// connect to the server
+	if (connect(cfd, (struct sockaddr *)&endpoint->addr, sizeof(endpoint->addr)) != 0)
+		SOCK_ERROR("connect()", ret = NET_ERR_CONNECT; goto cleanup);
 
 	// perform a TLS handshake if requested
 	if (endpoint->type == NET_ENDPOINT_TLS) {

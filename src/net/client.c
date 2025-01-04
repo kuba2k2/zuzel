@@ -44,6 +44,14 @@ static int net_client_connect(char *address) {
 		.user.type = SDL_USEREVENT_CLIENT,
 	};
 
+	// check port number if specified
+	int port	   = SETTINGS->server_port;
+	char *port_str = strchr(address, ':');
+	if (port_str != NULL) {
+		*port_str = '\0';
+		port	  = atoi(port_str + 1);
+	}
+
 	// resolve the host name
 	struct addrinfo hints = {
 		.ai_family	 = AF_INET,
@@ -62,7 +70,7 @@ static int net_client_connect(char *address) {
 	// build the destination server address
 	struct sockaddr_in saddr = {
 		.sin_family = AF_INET,
-		.sin_port	= htons(1234),
+		.sin_port	= htons(port),
 		.sin_addr	= ((struct sockaddr_in *)info->ai_addr)->sin_addr,
 	};
 	freeaddrinfo(info);

@@ -6,6 +6,8 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	net_t *net = NULL;
 	char message[128];
 
+	lt_log_clear_errors();
+
 	// start the network stack and update UI message
 	if (ui->connection.type == UI_CONNECT_NEW_LOCAL) {
 		strcpy(message, "Connecting to local game server...");

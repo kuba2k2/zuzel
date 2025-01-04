@@ -10,6 +10,7 @@ void settings_load() {
 	SETTINGS->screen.scale			= 1;
 	SETTINGS->player_name			= strdup("Player");
 	SETTINGS->public_server_address = strdup("127.0.0.1");
+	SETTINGS->server_port			= 1234;
 }
 
 bool settings_save() {
