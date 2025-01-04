@@ -92,6 +92,12 @@ int ui_run(ui_t *ui) {
 void ui_free(ui_t *ui) {
 	if (ui == NULL)
 		return;
+	free(ui->connection.address);
+	free(ui->connection.key);
+	free(ui->connection.game_data);
+	free(ui->client);
+	net_client_stop();
+	net_server_stop();
 	for (ui_state_t state = UI_STATE_MAIN; state < UI_STATE_MAX; state++) {
 		fragment_t *fragment = ui->fragments[state];
 		if (fragment != NULL)

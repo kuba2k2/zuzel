@@ -76,6 +76,7 @@ typedef struct net_t {
 typedef net_err_t (*net_select_cb_t)(net_endpoint_t *endpoint, void *param);
 
 // pkt.c
+pkt_t *net_pkt_dup(pkt_t *pkt);
 net_err_t net_pkt_recv(net_endpoint_t *endpoint);
 net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt);
 net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_t *source);

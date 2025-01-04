@@ -83,7 +83,9 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 	// - PKT_ERROR
 	switch (pkt->hdr.type) {
 		case PKT_GAME_DATA:
-			LT_I("Game received");
+			FREE_NULL(ui->connection.game_data);
+			ui->connection.game_data = net_pkt_dup(pkt);
+			ui_state_next(ui);
 			return;
 
 		case PKT_ERROR:

@@ -39,6 +39,19 @@ static const char *pkt_name_list[] = {
 };
 
 /**
+ * Allocate and copy a packet.
+ *
+ * @param pkt packet to duplicate
+ * @return duplicated packet data of the correct length
+ */
+pkt_t *net_pkt_dup(pkt_t *pkt) {
+	pkt_t *new_pkt;
+	MALLOC(new_pkt, pkt->hdr.len, return NULL);
+	memcpy(new_pkt, pkt, pkt->hdr.len);
+	return new_pkt;
+}
+
+/**
  * Receive a single pkt_t from the socket.
  *
  * @param endpoint where to receive the packet from
@@ -152,12 +165,9 @@ net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_
 		if (endpoint == source)
 			continue;
 		if (endpoint->type == NET_ENDPOINT_PIPE) {
-			pkt_t *new_pkt;
-			MALLOC(new_pkt, pkt->hdr.len, return NET_ERR_MALLOC);
-			memcpy(new_pkt, pkt, pkt->hdr.len);
 			SDL_Event user = {
 				.user.type	= SDL_USEREVENT_PACKET,
-				.user.data1 = new_pkt,
+				.user.data1 = net_pkt_dup(pkt),
 			};
 			SDL_PushEvent(&user);
 		} else {
