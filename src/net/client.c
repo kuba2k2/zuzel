@@ -41,6 +41,7 @@ void net_client_stop() {
 	if (client == NULL)
 		return;
 	client->stop = true;
+	net_endpoint_close(client->endpoint.next);
 	net_endpoint_close(&client->endpoint);
 }
 
@@ -104,7 +105,7 @@ static int net_client_connect(char *address) {
 	event.user.code = true;
 	SDL_PushEvent(&event);
 
-	while (1) {
+	while (!client->stop) {
 		// wait for incoming data
 		if (net_endpoint_select(&client->endpoint, NULL, (net_select_cb_t)net_client_select_cb, client) != NET_ERR_OK)
 			goto cleanup;
@@ -128,6 +129,7 @@ cleanup:
 #if WIN32
 	WSACleanup();
 #endif
+	LT_I("Client: thread stopped");
 	return 0;
 }
 

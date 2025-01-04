@@ -2,6 +2,8 @@
 
 #include "fragment.h"
 
+static void on_error(ui_t *ui);
+
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	void *result = NULL;
 	char message[128];
@@ -21,7 +23,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	}
 
 	if (result == NULL) {
-		ui_state_error(ui);
+		on_error(ui);
 		return false;
 	}
 
@@ -69,7 +71,7 @@ static void on_connected(ui_t *ui) {
 	}
 
 	if (send_err != NET_ERR_OK)
-		ui_state_error(ui);
+		on_error(ui);
 }
 
 static void on_packet(ui_t *ui, pkt_t *pkt) {
@@ -104,6 +106,13 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 	}
 
 error:
+	on_error(ui);
+}
+
+static void on_error(ui_t *ui) {
+	ui->client = NULL;
+	net_client_stop();
+	net_server_stop();
 	ui_state_error(ui);
 }
 
@@ -119,17 +128,17 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	switch (e->type) {
 		case SDL_USEREVENT_SERVER:
 			if (e->user.code == false) {
-				ui_state_error(ui);
+				on_error(ui);
 				return true;
 			}
 			ui->client = net_client_start(ui->connection.address, ui->connection.use_tls);
 			if (ui->client == NULL)
-				ui_state_error(ui);
+				on_error(ui);
 			return true;
 
 		case SDL_USEREVENT_CLIENT:
 			if (e->user.code == false)
-				ui_state_error(ui);
+				on_error(ui);
 			else
 				on_connected(ui);
 			return true;

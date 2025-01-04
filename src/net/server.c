@@ -65,7 +65,7 @@ static int net_server_listen(void *param) {
 	event.user.code = true;
 	SDL_PushEvent(&event);
 
-	while (1) {
+	while (!server->stop) {
 		// accept an incoming connection
 		net_err_t err;
 		if ((err = net_endpoint_accept(&server->endpoint, &client->endpoint)) != NET_ERR_OK) {

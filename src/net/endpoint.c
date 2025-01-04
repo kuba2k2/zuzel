@@ -217,6 +217,12 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 		close(endpoint->pipe.fd[PIPE_WRITE]);
 		endpoint->pipe.fd[PIPE_READ] = 0;
 	}
+
+#if WIN32
+	// signal the pipe's event so that WSAWaitForMultipleEvents() returns
+	if (endpoint->pipe.event != NULL)
+		WSASetEvent(endpoint->pipe.event);
+#endif
 }
 
 void net_endpoint_free(net_endpoint_t *endpoint) {
@@ -255,6 +261,9 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 			recv_len = SSL_read(endpoint->ssl, buf, (int)*len);
 			break;
 		case NET_ENDPOINT_PIPE:
+			if (endpoint->pipe.len == 0)
+				// nothing to receive - e.g. signaled by net_endpoint_close()
+				goto empty;
 			recv_len = read(endpoint->pipe.fd[PIPE_READ], buf, (int)*len);
 #if WIN32
 			endpoint->pipe.len -= recv_len;
@@ -275,18 +284,20 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 	if (recv_len == -1) {
 #if WIN32
 		if (WSAGetLastError() == WSAEWOULDBLOCK)
+			goto empty;
 #else
 		if (errno == EWOULDBLOCK)
+			goto empty;
 #endif
-		{
-			*len = 0;
-			return NET_ERR_OK;
-		}
 		// recv error
 		SOCK_ERROR("recv()", return NET_ERR_RECV);
 	}
 
 	*len = recv_len;
+	return NET_ERR_OK;
+
+empty:
+	*len = 0;
 	return NET_ERR_OK;
 }
 
