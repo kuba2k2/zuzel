@@ -102,7 +102,7 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 	if (total_len < pkt->hdr.len)
 		return NET_ERR_OK;
 
-	LT_D("Packet %s received (%d bytes)", pkt_name_list[pkt->hdr.type], pkt->hdr.len);
+	LT_D("Packet %s received (%d bytes) <- %s", pkt_name_list[pkt->hdr.type], pkt->hdr.len, net_endpoint_str(endpoint));
 	hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
 
 	// indicate that a complete packet is available; also reset the write buffer
@@ -125,8 +125,29 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
 	if ((err = net_endpoint_send(endpoint, (const char *)pkt, pkt->hdr.len)) != NET_ERR_OK)
 		return err;
 
-	LT_D("Packet %s sent (%d bytes)", pkt_name_list[pkt->hdr.type], pkt->hdr.len);
+	LT_D("Packet %s sent (%d bytes) -> %s", pkt_name_list[pkt->hdr.type], pkt->hdr.len, net_endpoint_str(endpoint));
 	hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
 
 	return NET_ERR_OK;
+}
+
+/**
+ * Send a single pkt_t to all endpoints.
+ *
+ * @param endpoints where to send the packet to (DL list)
+ * @param pkt packet to send
+ * @param source endpoint to skip during sending
+ * @return net_err_t
+ */
+net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_t *source) {
+	net_err_t ret = NET_ERR_OK;
+	net_endpoint_t *endpoint;
+	DL_FOREACH(endpoints, endpoint) {
+		if (endpoint == source)
+			continue;
+		ret = net_pkt_send(endpoint, pkt);
+		if (ret != NET_ERR_OK)
+			return ret;
+	}
+	return ret;
 }

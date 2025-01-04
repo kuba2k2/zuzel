@@ -2,6 +2,40 @@
 
 #include "include.h"
 
+static char str_buf[128] = {0};
+
+const char *net_endpoint_str(net_endpoint_t *endpoint) {
+	if (endpoint == NULL)
+		return "(null)";
+	const char *type = "TLS";
+	switch (endpoint->type) {
+		case NET_ENDPOINT_TCP:
+			type = "TCP";
+		case NET_ENDPOINT_TLS:
+			snprintf(
+				str_buf,
+				sizeof(str_buf) - 1,
+				"%s(addr=%s, port=%d)",
+				type,
+				inet_ntoa(endpoint->addr.sin_addr),
+				ntohs(endpoint->addr.sin_port)
+			);
+			break;
+		case NET_ENDPOINT_PIPE:
+			snprintf(
+				str_buf,
+				sizeof(str_buf) - 1,
+				"PIPE(read_fd=%d, write_fd=%d)",
+				endpoint->pipe.fd[0],
+				endpoint->pipe.fd[1]
+			);
+			break;
+		case NET_ENDPOINT_SDL:
+			break;
+	}
+	return str_buf;
+}
+
 net_endpoint_t *net_endpoint_dup(net_endpoint_t *endpoint) {
 	// allocate memory
 	net_endpoint_t *item;
