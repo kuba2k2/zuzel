@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_inflate_on_event_t *on_event);
+static void gfx_view_clone_button(view_t *src, view_t *dst);
 static void gfx_view_free_button(view_t *button);
 static void gfx_view_measure_button(view_t *button);
 static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button);
@@ -14,6 +15,7 @@ view_t *gfx_view_make_button(view_t *parent) {
 
 	view->type					  = VIEW_TYPE_BUTTON;
 	view->inflate				  = gfx_view_inflate_button;
+	view->clone					  = gfx_view_clone_button;
 	view->free					  = gfx_view_free_button;
 	view->measure				  = gfx_view_measure_button;
 	view->draw					  = gfx_view_draw_button;
@@ -33,13 +35,6 @@ view_t *gfx_view_make_button(view_t *parent) {
 	return view;
 }
 
-static void gfx_view_free_button(view_t *button) {
-	if (button == NULL)
-		return;
-	free(button->data.button.text.text);
-	free(button);
-}
-
 static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_inflate_on_event_t *on_event) {
 	json_read_gfx_view_text(json, "text", &button->data.button.text);
 	json_read_gfx_color(json, "bg_color", &button->data.button.bg_color);
@@ -48,6 +43,17 @@ static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_infl
 	json_read_gfx_color(json, "fg_shadow", &button->data.button.fg_shadow);
 	json_read_gfx_color(json, "fg_focus", &button->data.button.fg_focused);
 	json_read_gfx_color(json, "fg_disabled", &button->data.button.fg_disabled);
+}
+
+static void gfx_view_clone_button(view_t *src, view_t *dst) {
+	dst->data.button.text.text = strdup(dst->data.button.text.text);
+}
+
+static void gfx_view_free_button(view_t *button) {
+	if (button == NULL)
+		return;
+	free(button->data.button.text.text);
+	free(button);
 }
 
 static void gfx_view_measure_button(view_t *button) {

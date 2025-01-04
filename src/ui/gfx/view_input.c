@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflate_on_event_t *on_event);
+static void gfx_view_clone_input(view_t *src, view_t *dst);
 static void gfx_view_free_input(view_t *input);
 static void gfx_view_measure_input(view_t *input);
 static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input);
@@ -14,6 +15,7 @@ view_t *gfx_view_make_input(view_t *parent) {
 
 	view->type						   = VIEW_TYPE_INPUT;
 	view->inflate					   = gfx_view_inflate_input;
+	view->clone						   = gfx_view_clone_input;
 	view->free						   = gfx_view_free_input;
 	view->measure					   = gfx_view_measure_input;
 	view->draw						   = gfx_view_draw_input;
@@ -40,6 +42,13 @@ static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflat
 		strncpy(input->data.input.value, input->data.input.text.text, input->data.input.max_length);
 		input->data.input.pos = strlen(input->data.input.value);
 	}
+}
+
+static void gfx_view_clone_input(view_t *src, view_t *dst) {
+	dst->data.input.text.text		 = strdup(dst->data.input.text.text);
+	dst->data.input.placeholder.text = strdup(dst->data.input.placeholder.text);
+	MALLOC(dst->data.input.value, dst->data.input.max_length + 2, return);
+	strncpy(dst->data.input.value, src->data.input.value, dst->data.input.max_length);
 }
 
 static void gfx_view_free_input(view_t *input) {

@@ -79,14 +79,51 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent, const view_inflate_on_even
 	return view;
 }
 
+view_t *gfx_view_clone(view_t *view, view_t *parent) {
+	view_t *clone;
+	MALLOC(clone, sizeof(*clone), return NULL);
+	memcpy(clone, view, sizeof(*clone));
+
+	// duplicate the ID
+	clone->id = strdup(view->id);
+	// update view-owned memory
+	clone->children = NULL;
+	clone->parent	= parent;
+	clone->prev		= NULL;
+	clone->next		= NULL;
+
+	// clone all children
+	view_t *child;
+	DL_FOREACH(view->children, child) {
+		view_t *child_clone = gfx_view_clone(child, clone);
+		if (child_clone == NULL)
+			goto fail;
+		DL_APPEND(clone->children, child_clone);
+	}
+
+	// clone view-specific data
+	if (clone->clone != NULL)
+		clone->clone(view, clone);
+
+	return clone;
+
+fail:
+	gfx_view_free(clone);
+	return NULL;
+}
+
 void gfx_view_free(view_t *views) {
 	view_t *view, *tmp;
 	DL_FOREACH_SAFE(views, view, tmp) {
 		DL_DELETE(views, view);
-		if (view->free != NULL)
+		if (view->free != NULL) {
+			free(view->id);
 			view->free(view);
-		else
+		} else {
 			LT_W("View '%s' does not provide 'free' function", view->id);
+			free(view->id);
+			free(view);
+		}
 	}
 }
 

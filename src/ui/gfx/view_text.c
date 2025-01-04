@@ -3,6 +3,7 @@
 #include "view.h"
 
 static void gfx_view_inflate_text(view_t *text, cJSON *json, const view_inflate_on_event_t *on_event);
+static void gfx_view_clone_text(view_t *src, view_t *dst);
 static void gfx_view_free_text(view_t *text);
 static void gfx_view_measure_text(view_t *text);
 static void gfx_view_draw_text(SDL_Renderer *renderer, view_t *text);
@@ -13,6 +14,7 @@ view_t *gfx_view_make_text(view_t *parent) {
 
 	view->type			  = VIEW_TYPE_TEXT;
 	view->inflate		  = gfx_view_inflate_text;
+	view->clone			  = gfx_view_clone_text;
 	view->free			  = gfx_view_free_text;
 	view->measure		  = gfx_view_measure_text;
 	view->draw			  = gfx_view_draw_text;
@@ -27,6 +29,10 @@ view_t *gfx_view_make_text(view_t *parent) {
 
 static void gfx_view_inflate_text(view_t *text, cJSON *json, const view_inflate_on_event_t *on_event) {
 	json_read_gfx_view_text(json, "text", &text->data.text);
+}
+
+static void gfx_view_clone_text(view_t *src, view_t *dst) {
+	dst->data.text.text = strdup(dst->data.text.text);
 }
 
 static void gfx_view_free_text(view_t *text) {

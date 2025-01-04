@@ -11,6 +11,7 @@ typedef struct view_t view_t;
 typedef struct view_inflate_on_event_t view_inflate_on_event_t;
 
 typedef void (*view_inflate_t)(view_t *view, cJSON *json, const view_inflate_on_event_t *on_event);
+typedef void (*view_clone_t)(view_t *src, view_t *dst);
 typedef void (*view_free_t)(view_t *views);
 typedef void (*view_measure_t)(view_t *view);
 typedef void (*view_layout_t)(view_t *view);
@@ -45,6 +46,7 @@ typedef struct view_t {
 	char *id;				  //!< Freeform view ID/name (view-owned)
 	view_type_t type;		  //!< Type of the view
 	view_inflate_t inflate;	  //!< View inflater (parameter deserialization)
+	view_clone_t clone;		  //!< Function to duplicate view-specific properties (optional)
 	view_free_t free;		  //!< Function to free/release the views (recursively)
 	view_measure_t measure;	  //!< View bounding box measurement function
 	view_layout_t layout;	  //!< Layout positioning function (optional)
@@ -131,6 +133,7 @@ typedef struct view_t {
 // view.c
 extern bool gfx_view_bounding_box;
 view_t *gfx_view_inflate(cJSON *json, view_t *parent, const view_inflate_on_event_t *on_event);
+view_t *gfx_view_clone(view_t *view, view_t *parent);
 void gfx_view_free(view_t *views);
 void gfx_view_measure(view_t *views);
 void gfx_view_layout(view_t *views);
