@@ -30,8 +30,8 @@ const char *net_endpoint_str(net_endpoint_t *endpoint) {
 				endpoint->pipe.fd[1]
 			);
 			break;
-		case NET_ENDPOINT_SDL:
-			break;
+		default:
+			return "(invalid)";
 	}
 	return str_buf;
 }

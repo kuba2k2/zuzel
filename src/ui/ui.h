@@ -47,8 +47,7 @@ typedef struct ui_t {
 		char *key;				//!< Room key (if joining)
 	} connection;
 
-	net_t *server;
-	net_t *client;
+	net_endpoint_t *client;
 } ui_t;
 
 ui_t *ui_init(SDL_Renderer *renderer);

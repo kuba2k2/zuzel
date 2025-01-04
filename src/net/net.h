@@ -41,7 +41,6 @@ typedef enum {
 	NET_ENDPOINT_TCP,
 	NET_ENDPOINT_TLS,
 	NET_ENDPOINT_PIPE,
-	NET_ENDPOINT_SDL,
 } net_endpoint_type_t;
 
 typedef struct net_endpoint_t {
@@ -102,5 +101,5 @@ net_t *net_server_start();
 void net_server_stop();
 
 // client.c
-net_t *net_client_start(const char *address, bool use_tls);
+net_endpoint_t *net_client_start(const char *address, bool use_tls);
 void net_client_stop();

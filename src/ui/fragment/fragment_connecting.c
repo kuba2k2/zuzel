@@ -3,7 +3,7 @@
 #include "fragment.h"
 
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
-	net_t *net = NULL;
+	void *result = NULL;
 	char message[128];
 
 	lt_log_clear_errors();
@@ -11,16 +11,16 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	// start the network stack and update UI message
 	if (ui->connection.type == UI_CONNECT_NEW_LOCAL) {
 		strcpy(message, "Connecting to local game server...");
-		net = net_server_start();
+		result = net_server_start();
 	} else if (ui->connection.type == UI_CONNECT_JOIN_ADDRESS) {
 		sprintf(message, "Connecting to %s...", ui->connection.address);
-		net = net_client_start(ui->connection.address, ui->connection.use_tls);
+		result = ui->client = net_client_start(ui->connection.address, ui->connection.use_tls);
 	} else {
 		strcpy(message, "Connecting to public game server...");
-		net = net_client_start(ui->connection.address, ui->connection.use_tls);
+		result = ui->client = net_client_start(ui->connection.address, ui->connection.use_tls);
 	}
 
-	if (net == NULL) {
+	if (result == NULL) {
 		ui_state_error(ui);
 		return false;
 	}
@@ -29,7 +29,20 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	return true;
 }
 
+static void on_connected(ui_t *ui) {
+	if (ui->client == NULL)
+		return;
+	LT_I("Got connected event");
+}
+
+static void on_packet(ui_t *ui, pkt_t *pkt) {
+	if (ui->client == NULL)
+		return;
+	LT_I("Got packet on SDL");
+}
+
 static bool on_btn_cancel(view_t *view, SDL_Event *e, ui_t *ui) {
+	ui->client = NULL;
 	net_client_stop();
 	net_server_stop();
 	ui_state_prev(ui);
@@ -39,10 +52,24 @@ static bool on_btn_cancel(view_t *view, SDL_Event *e, ui_t *ui) {
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	switch (e->type) {
 		case SDL_USEREVENT_SERVER:
+			if (e->user.code == false) {
+				ui_state_error(ui);
+				return true;
+			}
+			ui->client = net_client_start(ui->connection.address, ui->connection.use_tls);
+			if (ui->client == NULL)
+				ui_state_error(ui);
+			return true;
+
+		case SDL_USEREVENT_CLIENT:
 			if (e->user.code == false)
 				ui_state_error(ui);
-			else if (net_client_start(ui->connection.address, ui->connection.use_tls) == NULL)
-				ui_state_error(ui);
+			else
+				on_connected(ui);
+			return true;
+
+		case SDL_USEREVENT_PACKET:
+			on_packet(ui, e->user.data1);
 			return true;
 	}
 	return false;

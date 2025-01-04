@@ -3,25 +3,38 @@
 #include "net.h"
 
 static int net_client_connect(char *address);
+static net_err_t net_client_select_cb(net_endpoint_t *endpoint, net_t *net);
 
 static net_t *client = NULL;
 
-net_t *net_client_start(const char *address, bool use_tls) {
+net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 	if (client != NULL)
 		return client;
 	MALLOC(client, sizeof(*client), return NULL);
 
+	// set the connection protocol
 	client->endpoint.type = use_tls ? NET_ENDPOINT_TLS : NET_ENDPOINT_TCP;
+
+	// create a pipe for UI communication
+	net_endpoint_t *pipe;
+	MALLOC(pipe, sizeof(*pipe), return NULL);
+	net_endpoint_pipe(pipe);
+	// append to doubly-linked list for net_endpoint_select()
+	pipe->prev			  = &client->endpoint;
+	client->endpoint.next = pipe;
+	client->endpoint.prev = pipe;
 
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)net_client_connect, "client", strdup(address));
 	SDL_DetachThread(thread);
 	if (thread == NULL) {
 		SDL_ERROR("SDL_CreateThread()", );
+		free(pipe);
 		free(client);
 		client = NULL;
+		return NULL;
 	}
 
-	return client;
+	return &client->endpoint;
 }
 
 void net_client_stop() {
@@ -90,22 +103,10 @@ static int net_client_connect(char *address) {
 	event.user.code = true;
 	SDL_PushEvent(&event);
 
-	net_t *net = client;
 	while (1) {
-		net_err_t ret = net_pkt_recv(&net->endpoint);
-		if (ret == NET_ERR_RECV)
+		// wait for incoming data
+		if (net_endpoint_select(&client->endpoint, NULL, (net_select_cb_t)net_client_select_cb, client) != NET_ERR_OK)
 			goto cleanup;
-		if (ret == NET_ERR_CLIENT_CLOSED) {
-			LT_I(
-				"Client: connection closed with %s:%d",
-				inet_ntoa(net->endpoint.addr.sin_addr),
-				ntohs(net->endpoint.addr.sin_port)
-			);
-			goto cleanup;
-		}
-		if (ret != NET_ERR_OK_PACKET)
-			// continue if packet is not fully received yet
-			continue;
 	}
 
 error_start:
@@ -114,6 +115,9 @@ error_start:
 	SDL_PushEvent(&event);
 
 cleanup:
+	// close and free the pipe
+	net_endpoint_free(client->endpoint.next);
+	free(client->endpoint.next);
 	// stop the client
 	net_endpoint_free(&client->endpoint);
 	// free the server's structure
@@ -123,4 +127,23 @@ cleanup:
 	WSACleanup();
 #endif
 	return 0;
+}
+
+static net_err_t net_client_select_cb(net_endpoint_t *endpoint, net_t *net) {
+	net_err_t ret = net_pkt_recv(endpoint);
+	if (ret == NET_ERR_RECV)
+		return ret;
+	if (ret == NET_ERR_CLIENT_CLOSED) {
+		LT_I(
+			"Client: connection closed with %s:%d",
+			inet_ntoa(endpoint->addr.sin_addr),
+			ntohs(endpoint->addr.sin_port)
+		);
+		return ret;
+	}
+	if (ret != NET_ERR_OK_PACKET)
+		// continue if packet is not fully received yet
+		return NET_ERR_OK;
+
+	return net_pkt_broadcast(&net->endpoint, &net->endpoint.recv.pkt, endpoint);
 }

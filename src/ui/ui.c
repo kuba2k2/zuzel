@@ -82,6 +82,10 @@ int ui_run(ui_t *ui) {
 					break;
 				break;
 		}
+
+		// free custom packets that need it
+		if (e.type == SDL_USEREVENT_PACKET)
+			free(e.user.data1);
 	}
 }
 

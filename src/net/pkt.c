@@ -135,7 +135,7 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
 }
 
 /**
- * Send a single pkt_t to all endpoints.
+ * Send a single pkt_t to all endpoints. For NET_ENDPOINT_PIPE endpoints, send an SDL event instead.
  *
  * @param endpoints where to send the packet to (DL list)
  * @param pkt packet to send
@@ -143,14 +143,28 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
  * @return net_err_t
  */
 net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_t *source) {
+	pkt->hdr.protocol = NET_PROTOCOL;
+	pkt->hdr.len	  = pkt_len_list[pkt->hdr.type];
+
 	net_err_t ret = NET_ERR_OK;
 	net_endpoint_t *endpoint;
 	DL_FOREACH(endpoints, endpoint) {
 		if (endpoint == source)
 			continue;
-		ret = net_pkt_send(endpoint, pkt);
-		if (ret != NET_ERR_OK)
-			return ret;
+		if (endpoint->type == NET_ENDPOINT_PIPE) {
+			pkt_t *new_pkt;
+			MALLOC(new_pkt, pkt->hdr.len, return NET_ERR_MALLOC);
+			memcpy(new_pkt, pkt, pkt->hdr.len);
+			SDL_Event user = {
+				.user.type	= SDL_USEREVENT_PACKET,
+				.user.data1 = new_pkt,
+			};
+			SDL_PushEvent(&user);
+		} else {
+			ret = net_pkt_send(endpoint, pkt);
+			if (ret != NET_ERR_OK)
+				return ret;
+		}
 	}
 	return ret;
 }
