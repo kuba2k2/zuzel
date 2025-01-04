@@ -138,6 +138,9 @@ char *gfx_view_make_id(view_t *view) {
 		case VIEW_TYPE_INPUT:
 			type_str = "input";
 			break;
+		case VIEW_TYPE_RECT:
+			type_str = "rect";
+			break;
 	}
 
 	static int counter = 0;
