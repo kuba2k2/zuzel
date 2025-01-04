@@ -69,6 +69,9 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 	net_err_t err;
 	if ((err = net_endpoint_recv(endpoint, endpoint->recv.buf, &recv_len)) != NET_ERR_OK)
 		return err;
+	// return if no data received (if recv() returns EWOULDBLOCK when used with select() on Windows)
+	if (recv_len == 0)
+		return NET_ERR_OK;
 
 	// recv successful
 	endpoint->recv.buf += recv_len;

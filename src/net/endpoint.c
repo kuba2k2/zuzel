@@ -271,9 +271,20 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 	if (recv_len == 0)
 		// connection closed
 		return NET_ERR_CLIENT_CLOSED;
-	if (recv_len == -1)
+
+	if (recv_len == -1) {
+#if WIN32
+		if (WSAGetLastError() == WSAEWOULDBLOCK)
+#else
+		if (errno == EWOULDBLOCK)
+#endif
+		{
+			*len = 0;
+			return NET_ERR_OK;
+		}
 		// recv error
 		SOCK_ERROR("recv()", return NET_ERR_RECV);
+	}
 
 	*len = recv_len;
 	return NET_ERR_OK;
