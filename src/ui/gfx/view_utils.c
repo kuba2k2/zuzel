@@ -85,26 +85,29 @@ void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, in
 }
 
 view_t *gfx_view_find_prev(view_t *view) {
-	if (view->prev != NULL && view->prev->next == view)
+	if (view->prev != NULL && view->prev->next == view) {
 		view = view->prev;
-	else if (view->parent != NULL && view->parent->prev != NULL && view->parent->prev->next == view->parent)
-		view = view->parent->prev;
-	else
-		view = NULL;
-	if (view != NULL && view->children != NULL)
-		view = view->children->prev;
-	return view;
+		while (view->children != NULL) {
+			view = view->children->prev;
+		}
+		return view;
+	}
+	if (view->parent != NULL)
+		return view->parent;
+	return NULL;
 }
 
 view_t *gfx_view_find_next(view_t *view) {
 	if (view->children != NULL)
 		return view->children;
-	else if (view->next != NULL)
+	if (view->next != NULL)
 		return view->next;
-	else if (view->parent != NULL)
-		return view->parent->next;
-	else
-		return NULL;
+	while (view->parent != NULL) {
+		if (view->parent->next != NULL)
+			return view->parent->next;
+		view = view->parent;
+	}
+	return NULL;
 }
 
 view_t *gfx_view_find_by_id(view_t *views, const char *id) {
