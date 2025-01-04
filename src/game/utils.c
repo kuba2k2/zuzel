@@ -46,7 +46,7 @@ void game_send_packet_broadcast(game_t *game, pkt_t *pkt, net_endpoint_t *source
 		DL_FOREACH(game->endpoints, endpoint) {
 			if (endpoint == source)
 				continue;
-			LT_D("Game: broadcasting to %p", endpoint);
+			LT_D("Game: broadcasting to %s", net_endpoint_str(endpoint));
 			net_pkt_send(endpoint, pkt);
 		}
 	}

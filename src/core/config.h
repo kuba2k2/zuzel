@@ -12,7 +12,7 @@
 #endif
 
 #ifndef LT_LOGGER_TASK
-#define LT_LOGGER_TASK 0
+#define LT_LOGGER_TASK 1
 #endif
 
 #ifndef LT_LOGGER_COLOR

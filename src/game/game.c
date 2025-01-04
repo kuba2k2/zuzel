@@ -100,6 +100,7 @@ game_t *game_get_list(SDL_mutex **mutex) {
 static int game_thread(game_t *game) {
 	if (game == NULL)
 		return -1;
+	lt_log_set_thread_name("game");
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);
 

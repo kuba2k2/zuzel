@@ -33,9 +33,24 @@ static const uint8_t colors[] = {
 };
 #endif
 
+typedef struct log_thread_t {
+	SDL_threadID id;
+	char *name;
+	struct log_thread_t *next;
+} log_thread_t;
+
+typedef struct log_error_t {
+	char *message;
+	unsigned int len;
+	struct log_error_t *next;
+	struct log_error_t *prev;
+} log_error_t;
+
 static char message_buf[1024];
 static bool lt_log_append_error(const char *message);
-SDL_mutex *log_mutex = NULL;
+static log_thread_t *log_threads = NULL;
+static log_error_t *log_errors	 = NULL;
+SDL_mutex *log_mutex			 = NULL;
 
 #if LT_LOGGER_CALLER
 void lt_log(const uint8_t level, const char *caller, const unsigned short line, const char *format, ...) {
@@ -57,12 +72,10 @@ void lt_log(const uint8_t level, const char *format, ...) {
 #endif
 
 #if LT_LOGGER_TASK
-#error "Not implemented"
-	char task_colon = ':';
-	char *task_name;
-	if (!task) {
-		task_name  = "";
-		task_colon = '-';
+	log_thread_t *thread;
+	LL_FOREACH(log_threads, thread) {
+		if (thread->id == SDL_ThreadID())
+			break;
 	}
 #endif
 
@@ -85,11 +98,11 @@ void lt_log(const uint8_t level, const char *format, ...) {
 #if LT_LOGGER_COLOR
 		"\e[0m"
 #endif
+#if LT_LOGGER_TASK
+		"[%s] "
+#endif
 #if LT_LOGGER_CALLER
 		"%s():%hu: "
-#endif
-#if LT_LOGGER_TASK
-		"%s%c "
 #endif
 		,
 	// arguments:
@@ -108,15 +121,14 @@ void lt_log(const uint8_t level, const char *format, ...) {
 		tm.tm_sec,
 		tv.tv_usec / 1000
 #endif
+#if LT_LOGGER_TASK
+		,
+		thread == NULL ? "main" : thread->name
+#endif
 #if LT_LOGGER_CALLER
 		,
 		caller,
 		line
-#endif
-#if LT_LOGGER_TASK
-		,
-		task_name,
-		task_colon // printing outside of tasks
 #endif
 	);
 
@@ -133,21 +145,20 @@ void lt_log(const uint8_t level, const char *format, ...) {
 	SDL_UnlockMutex(log_mutex);
 }
 
-typedef struct log_error_t {
-	char *message;
-	unsigned int len;
-	struct log_error_t *next;
-	struct log_error_t *prev;
-} log_error_t;
-
-static log_error_t *errors = NULL;
+void lt_log_set_thread_name(const char *name) {
+	log_thread_t *log_thread;
+	MALLOC(log_thread, sizeof(*log_thread), return);
+	log_thread->id	 = SDL_ThreadID();
+	log_thread->name = strdup(name);
+	LL_APPEND(log_threads, log_thread);
+}
 
 static bool lt_log_append_error(const char *message) {
 	log_error_t *error = malloc(sizeof(*error));
 	if (error == NULL)
 		return false;
 	memset(error, 0, sizeof(*error));
-	DL_APPEND(errors, error);
+	DL_APPEND(log_errors, error);
 	error->message = strdup(message);
 	error->len	   = strlen(message);
 	return true;
@@ -157,7 +168,7 @@ char *lt_log_get_errors(int wrap) {
 	// count the total length of messages
 	size_t errors_len = 0;
 	log_error_t *error, *tmp;
-	DL_FOREACH(errors, error) {
+	DL_FOREACH(log_errors, error) {
 		errors_len += error->len + sizeof("\n\n") - 1;
 		if (wrap != 0)
 			errors_len += error->len / wrap;
@@ -167,7 +178,7 @@ char *lt_log_get_errors(int wrap) {
 	MALLOC(errors_str, errors_len + 1, return NULL);
 	// copy each message while deleting them
 	char *write_head = errors_str;
-	DL_FOREACH_SAFE(errors, error, tmp) {
+	DL_FOREACH_SAFE(log_errors, error, tmp) {
 		size_t line_len = 0;
 		char *message	= error->message;
 		do {
@@ -191,19 +202,20 @@ char *lt_log_get_errors(int wrap) {
 		strcpy(write_head, "\n\n");
 		write_head += sizeof("\n\n") - 1;
 
-		DL_DELETE(errors, error);
+		DL_DELETE(log_errors, error);
 		free(error->message);
 		free(error);
 	}
-	if (write_head > errors_str && *(write_head - 1) == '\n')
-		*(write_head - 1) = '\0';
+	// trim trailing newline
+	while (write_head > errors_str && *(write_head - 1) == '\n')
+		*(--write_head) = '\0';
 	return errors_str;
 }
 
 void lt_log_clear_errors() {
 	log_error_t *error, *tmp;
-	DL_FOREACH_SAFE(errors, error, tmp) {
-		DL_DELETE(errors, error);
+	DL_FOREACH_SAFE(log_errors, error, tmp) {
+		DL_DELETE(log_errors, error);
 		free(error->message);
 		free(error);
 	}
