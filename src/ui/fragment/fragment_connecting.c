@@ -13,7 +13,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	// start the network stack and update UI message
 	if (ui->connection.type == UI_CONNECT_NEW_LOCAL) {
 		strcpy(message, "Connecting to local game server...");
-		result = net_server_start();
+		result = net_server_start(false);
 	} else if (ui->connection.type == UI_CONNECT_JOIN_ADDRESS) {
 		sprintf(message, "Connecting to %s...", ui->connection.address);
 		result = ui->client = net_client_start(ui->connection.address, ui->connection.use_tls);

@@ -92,7 +92,6 @@ static int net_client_connect(char *address) {
 
 	// start the TCP client
 	client->endpoint.addr = saddr;
-	client->endpoint.type = NET_ENDPOINT_TCP;
 	if (net_endpoint_connect(&client->endpoint) != NET_ERR_OK)
 		goto error_start;
 

@@ -98,7 +98,7 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 bool net_error_print();
 
 // server.c
-net_t *net_server_start();
+net_t *net_server_start(bool headless);
 void net_server_stop();
 
 // client.c

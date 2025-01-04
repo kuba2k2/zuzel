@@ -8,13 +8,19 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt);
 
 static net_t *server = NULL;
 
-net_t *net_server_start() {
+net_t *net_server_start(bool headless) {
 	if (server != NULL)
 		return server;
 	MALLOC(server, sizeof(*server), return NULL);
 
+	// set the connection protocol
+	server->endpoint.type = headless ? NET_ENDPOINT_TLS : NET_ENDPOINT_TCP;
+
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)net_server_listen, "server", NULL);
-	SDL_DetachThread(thread);
+	if (headless)
+		SDL_WaitThread(thread, NULL);
+	else
+		SDL_DetachThread(thread);
 	if (thread == NULL) {
 		SDL_ERROR("SDL_CreateThread()", );
 		free(server);
@@ -52,7 +58,6 @@ static int net_server_listen(void *param) {
 		.sin_addr	= {{{0}}},
 	};
 	server->endpoint.addr = saddr;
-	server->endpoint.type = NET_ENDPOINT_TCP;
 	if (net_endpoint_listen(&server->endpoint) != NET_ERR_OK)
 		goto error_start;
 

@@ -1,17 +1,29 @@
 cmake_minimum_required(VERSION 3.20)
 
-file(GLOB SOURCES "*.c" "*/*.c" "*/*/*.c")
-add_executable(${PROJECT_NAME} ${SOURCES})
+# Common library
+file(GLOB SOURCES "core/*.c" "game/*.c" "net/*.c")
+add_library(${PROJECT_NAME}-common STATIC ${SOURCES})
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
-target_include_directories(${PROJECT_NAME} PRIVATE .)
-target_include_directories(${PROJECT_NAME} PRIVATE ../res/)
+target_compile_options(${PROJECT_NAME}-common PUBLIC -Wall)
+target_include_directories(${PROJECT_NAME}-common PUBLIC .)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2main SDL2::SDL2)
-target_link_libraries(${PROJECT_NAME} PRIVATE uthash)
-target_link_libraries(${PROJECT_NAME} PRIVATE cjson-static)
-target_link_libraries(${PROJECT_NAME} PRIVATE ssl)
+target_link_libraries(${PROJECT_NAME}-common PUBLIC SDL2::SDL2main SDL2::SDL2)
+target_link_libraries(${PROJECT_NAME}-common PUBLIC uthash)
+target_link_libraries(${PROJECT_NAME}-common PUBLIC cjson-static)
+target_link_libraries(${PROJECT_NAME}-common PUBLIC ssl)
 
 IF (WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
+    target_link_libraries(${PROJECT_NAME}-common PUBLIC ws2_32)
 ENDIF ()
+
+# UI executable
+file(GLOB SOURCES "main_ui.c" "ui/*.c" "ui/*/*.c")
+add_executable(${PROJECT_NAME} ${SOURCES})
+target_include_directories(${PROJECT_NAME} PRIVATE ../res/)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}-common)
+
+# Server executable
+file(GLOB SOURCES "main_server.c")
+add_executable(${PROJECT_NAME}-server ${SOURCES})
+target_compile_definitions(${PROJECT_NAME}-server PRIVATE HEADLESS=1)
+target_link_libraries(${PROJECT_NAME}-server PRIVATE ${PROJECT_NAME}-common)
