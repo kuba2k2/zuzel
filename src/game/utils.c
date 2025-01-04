@@ -67,3 +67,17 @@ void game_send_update(game_t *game, net_endpoint_t *source, net_endpoint_t *targ
 		game_send_packet_broadcast(game, (pkt_t *)&pkt, source);
 	}
 }
+
+void game_print_error(game_err_t error) {
+	switch (error) {
+		case GAME_ERR_OK:
+			LT_E("Received error packet with unspecified reason");
+			break;
+		case GAME_ERR_INVALID_STATE:
+			LT_E("Operation invalid in the current game state");
+			break;
+		case GAME_ERR_NOT_FOUND:
+			LT_E("Game not found by the specified key");
+			break;
+	}
+}

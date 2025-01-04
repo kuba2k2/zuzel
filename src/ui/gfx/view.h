@@ -171,7 +171,7 @@ view_t *gfx_view_make_rect(view_t *parent);
 		}                                                                                                              \
 	} while (0)
 
-#define GFX_VIEW_IS_ACTIVE(view) (!view->is_gone && !view->is_invisible && !view->is_disabled && view->is_focusable)
+#define GFX_VIEW_IS_ACTIVE(view) (!view->is_gone && !view->is_disabled && view->is_focusable)
 #define GFX_VIEW_IN_BOX(view, _x, _y)                                                                                  \
 	(_x >= view->rect.x && _x <= view->rect.x + view->rect.w && _y >= view->rect.y && _y <= view->rect.y + view->rect.h)
 

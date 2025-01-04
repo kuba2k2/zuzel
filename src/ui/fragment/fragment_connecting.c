@@ -89,17 +89,7 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			return;
 
 		case PKT_ERROR:
-			switch (pkt->error.error) {
-				case GAME_ERR_OK:
-					LT_E("Received error packet with unspecified reason");
-					goto error;
-				case GAME_ERR_INVALID_STATE:
-					LT_E("Operation invalid in the current game state");
-					goto error;
-				case GAME_ERR_NOT_FOUND:
-					LT_E("Game not found by the specified key");
-					goto error;
-			}
+			game_print_error(pkt->error.error);
 			goto error;
 
 		default:
