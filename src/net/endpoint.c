@@ -122,6 +122,53 @@ cleanup:
 	return ret;
 }
 
+net_err_t net_endpoint_connect(net_endpoint_t *endpoint) {
+	if (endpoint->type > NET_ENDPOINT_TLS)
+		return NET_ERR_ENDPOINT_TYPE;
+	net_err_t ret;
+#if WIN32
+	WSADATA wsa_data;
+	WSAStartup(MAKEWORD(2, 0), &wsa_data);
+#endif
+
+	if (endpoint->type == NET_ENDPOINT_TLS) {
+		SSL_load_error_strings();
+		SSL_library_init();
+		if ((endpoint->ssl_ctx = SSL_CTX_new(TLS_server_method())) == NULL)
+			SSL_ERROR("SSL_CTX_new()", ret = NET_ERR_SSL_CTX; goto cleanup);
+	}
+
+	int cfd = (int)socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (cfd == INVALID_SOCKET)
+		SOCK_ERROR("socket()", ret = NET_ERR_SOCKET; goto cleanup);
+
+	// connect to the server
+	if (connect(cfd, (struct sockaddr *)&endpoint->addr, sizeof(endpoint->addr)) != 0)
+		SOCK_ERROR("connect()", ret = NET_ERR_CONNECT; goto cleanup);
+
+	// client started successfully, fill net_endpoint_t*
+	endpoint->fd = cfd;
+#if WIN32
+	endpoint->pipe.event = WSACreateEvent();
+#endif
+
+	// perform a TLS handshake if requested
+	if (endpoint->type == NET_ENDPOINT_TLS) {
+		if ((endpoint->ssl = SSL_new(endpoint->ssl_ctx)) == NULL)
+			SSL_ERROR("SSL_new()", ret = NET_ERR_SSL; goto cleanup);
+		if (SSL_set_fd(endpoint->ssl, endpoint->fd) != 1)
+			SSL_ERROR("SSL_set_fd()", ret = NET_ERR_SSL; goto cleanup);
+		if (SSL_connect(endpoint->ssl) != 1)
+			SSL_ERROR("SSL_accept()", ret = NET_ERR_SSL_CONNECT; goto cleanup);
+	}
+
+	return NET_ERR_OK;
+
+cleanup:
+	net_endpoint_close(endpoint);
+	return ret;
+}
+
 void net_endpoint_close(net_endpoint_t *endpoint) {
 	if (endpoint->ssl != NULL) {
 		SSL_shutdown(endpoint->ssl);

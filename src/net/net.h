@@ -10,28 +10,31 @@
 
 typedef enum {
 	NET_ERR_MIN = -100,
-	NET_ERR_SERVER_CLOSED, //!< Server connection was closed
-	NET_ERR_CLIENT_CLOSED, //!< Client connection was closed
-	NET_ERR_SOCKET,		   //!< socket() failed
-	NET_ERR_SETSOCKOPT,	   //!< setsockopt() failed
-	NET_ERR_BIND,		   //!< bind() failed
-	NET_ERR_LISTEN,		   //!< listen() failed
-	NET_ERR_ACCEPT,		   //!< accept() failed
-	NET_ERR_RECV,		   //!< recv() failed
-	NET_ERR_SEND,		   //!< send() failed
-	NET_ERR_SELECT,		   //!< select() failed
-	NET_ERR_SSL_CTX,	   //!< SSL_CTX_new() failed
-	NET_ERR_SSL_CERT,	   //!< SSL_CTX_use_*_file() failed
-	NET_ERR_SSL,		   //!< SSL_new() failed
-	NET_ERR_SSL_ACCEPT,	   //!< SSL_accept() failed
-	NET_ERR_PKT_PROTOCOL,  //!< Packet protocol invalid
-	NET_ERR_PKT_TYPE,	   //!< Packet type invalid
-	NET_ERR_PKT_LENGTH,	   //!< Packet length invalid
-	NET_ERR_MALLOC,		   //!< Memory allocation failed
-	NET_ERR_PIPE,		   //!< Pipe creation failed
-	NET_ERR_ENDPOINT_TYPE, //!< Endpoint type invalid
-	NET_ERR_OK		  = 0, //!< No error
-	NET_ERR_OK_PACKET = 1, //!< No error, packet is available
+	NET_ERR_SERVER_CLOSED,	 //!< Server connection was closed
+	NET_ERR_CLIENT_CLOSED,	 //!< Client connection was closed
+	NET_ERR_SOCKET,			 //!< socket() failed
+	NET_ERR_SETSOCKOPT,		 //!< setsockopt() failed
+	NET_ERR_BIND,			 //!< bind() failed
+	NET_ERR_CONNECT,		 //!< connect() failed
+	NET_ERR_LISTEN,			 //!< listen() failed
+	NET_ERR_ACCEPT,			 //!< accept() failed
+	NET_ERR_RECV,			 //!< recv() failed
+	NET_ERR_SEND,			 //!< send() failed
+	NET_ERR_SELECT,			 //!< select() failed
+	NET_ERR_SSL_CTX,		 //!< SSL_CTX_new() failed
+	NET_ERR_SSL_CERT,		 //!< SSL_CTX_use_*_file() failed
+	NET_ERR_SSL,			 //!< SSL_new() failed
+	NET_ERR_SSL_ACCEPT,		 //!< SSL_accept() failed
+	NET_ERR_SSL_CONNECT,	 //!< SSL_connect() failed
+	NET_ERR_PKT_PROTOCOL,	 //!< Packet protocol invalid
+	NET_ERR_PKT_TYPE,		 //!< Packet type invalid
+	NET_ERR_PKT_LENGTH,		 //!< Packet length invalid
+	NET_ERR_MALLOC,			 //!< Memory allocation failed
+	NET_ERR_PIPE,			 //!< Pipe creation failed
+	NET_ERR_ENDPOINT_TYPE,	 //!< Endpoint type invalid
+	NET_ERR_ENDPOINT_CLOSED, //!< Endpoint already closed
+	NET_ERR_OK		  = 0,	 //!< No error
+	NET_ERR_OK_PACKET = 1,	 //!< No error, packet is available
 } net_err_t;
 
 typedef enum {
@@ -82,6 +85,7 @@ net_endpoint_t *net_endpoint_dup(net_endpoint_t *endpoint);
 net_err_t net_endpoint_pipe(net_endpoint_t *endpoint);
 net_err_t net_endpoint_listen(net_endpoint_t *endpoint);
 net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *client);
+net_err_t net_endpoint_connect(net_endpoint_t *endpoint);
 void net_endpoint_close(net_endpoint_t *endpoint);
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len);
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len);
