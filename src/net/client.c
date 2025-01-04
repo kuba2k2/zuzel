@@ -9,7 +9,7 @@ static net_t *client = NULL;
 
 net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 	if (client != NULL)
-		return client;
+		return &client->endpoint;
 	MALLOC(client, sizeof(*client), return NULL);
 
 	// set the connection protocol
@@ -112,10 +112,11 @@ static int net_client_connect(char *address) {
 
 error_start:
 	LT_E("Couldn't start the game client");
-	event.user.code = false;
-	SDL_PushEvent(&event);
 
 cleanup:
+	// send a 'closed' event
+	event.user.code = false;
+	SDL_PushEvent(&event);
 	// close and free the pipe
 	net_endpoint_free(client->endpoint.next);
 	free(client->endpoint.next);
@@ -135,7 +136,7 @@ static net_err_t net_client_select_cb(net_endpoint_t *endpoint, net_t *net) {
 	if (ret == NET_ERR_RECV)
 		return ret;
 	if (ret == NET_ERR_CLIENT_CLOSED) {
-		LT_I(
+		LT_E(
 			"Client: connection closed with %s:%d",
 			inet_ntoa(endpoint->addr.sin_addr),
 			ntohs(endpoint->addr.sin_port)
