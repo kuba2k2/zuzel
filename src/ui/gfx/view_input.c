@@ -20,9 +20,9 @@ view_t *gfx_view_make_input(view_t *parent) {
 	view->on_event					   = gfx_view_on_event_input;
 	view->is_focusable				   = true;
 	view->data.input.text.color		   = 0xE0E0E0;
-	view->data.input.text.size		   = FONT_SIZE_DEFAULT;
+	view->data.input.text.size		   = 7;
 	view->data.input.placeholder.color = 0x505050;
-	view->data.input.placeholder.size  = FONT_SIZE_DEFAULT;
+	view->data.input.placeholder.size  = 7;
 	view->data.input.max_length		   = 32;
 	view->parent					   = parent;
 

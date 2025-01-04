@@ -20,7 +20,7 @@ view_t *gfx_view_make_button(view_t *parent) {
 	view->on_event				  = gfx_view_on_event_button;
 	view->is_focusable			  = true;
 	view->data.button.text.color  = 0xE0E0E0;
-	view->data.button.text.size	  = FONT_SIZE_DEFAULT;
+	view->data.button.text.size	  = 7;
 	view->data.button.bg_color	  = 0x707070;
 	view->data.button.bg_focused  = 0x7E88BF;
 	view->data.button.bg_disabled = 0x2A2A2A;
