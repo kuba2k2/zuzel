@@ -11,7 +11,8 @@ typedef struct fragment_t fragment_t;
 typedef bool (*fragment_on_event_t)(ui_t *ui, fragment_t *fragment, SDL_Event *e);
 
 typedef struct fragment_t {
-	const unsigned char *json;
+	const char *file;
+	const char *json;
 	view_t *views;
 	const fragment_on_event_t on_show;
 	const fragment_on_event_t on_hide;
@@ -26,3 +27,4 @@ extern fragment_t fragment_connecting;
 extern fragment_t fragment_error;
 
 bool fragment_init_all(fragment_t **fragments, void *param);
+void fragment_reload(fragment_t *fragment, void *param);

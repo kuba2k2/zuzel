@@ -71,6 +71,8 @@ int ui_run(ui_t *ui) {
 			case SDL_KEYUP:
 				if (e.key.keysym.sym == SDLK_F1)
 					gfx_view_bounding_box = !gfx_view_bounding_box;
+				else if (e.key.keysym.sym == SDLK_F5)
+					prev_fragment = NULL, fragment_reload(fragment, ui);
 				break;
 
 			default:

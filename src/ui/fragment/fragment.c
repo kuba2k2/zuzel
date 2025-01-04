@@ -4,31 +4,44 @@
 
 #include "fragment_res.h"
 
+#define DEFINE_FRAGMENT(lower, upper)                                                                                  \
+	do {                                                                                                               \
+		fragments[UI_STATE_##upper] = &fragment_##lower;                                                               \
+		fragment_##lower.file		= "../../res/ui_" #lower ".json";                                                  \
+		fragment_##lower.json		= (const char *)FRAGMENT_##upper##_JSON;                                           \
+		fragment_inflate(&fragment_##lower, param);                                                                    \
+	} while (0)
+
+static void fragment_inflate(fragment_t *fragment, void *param) {
+	cJSON *json = cJSON_Parse((const char *)fragment->json);
+	if (json == NULL)
+		LT_E("JSON parse failed: %s", cJSON_GetErrorPtr());
+	fragment->views = gfx_view_inflate(json, NULL, fragment->inflate_on_event);
+	cJSON_Delete(json);
+	if (fragment->views == NULL)
+		LT_ERR(E, , "View inflate failed for file '%s'", fragment->file);
+	gfx_view_set_event_param(fragment->views, NULL, param);
+}
+
 bool fragment_init_all(fragment_t **fragments, void *param) {
-	fragment_main.json		  = FRAGMENT_MAIN_JSON;
-	fragment_server_new.json  = FRAGMENT_SERVER_NEW_JSON;
-	fragment_server_join.json = FRAGMENT_SERVER_JOIN_JSON;
-	fragment_connecting.json  = FRAGMENT_CONNECTING_JSON;
-	fragment_error.json		  = FRAGMENT_ERROR_JSON;
-
-	fragments[UI_STATE_MAIN]		= &fragment_main;
-	fragments[UI_STATE_SERVER_JOIN] = &fragment_server_join;
-	fragments[UI_STATE_SERVER_NEW]	= &fragment_server_new;
-	fragments[UI_STATE_CONNECTING]	= &fragment_connecting;
-	fragments[UI_STATE_ERROR]		= &fragment_error;
-
-	for (ui_state_t state = UI_STATE_MAIN; state < UI_STATE_MAX; state++) {
-		if (fragments[state] == NULL)
-			continue;
-		cJSON *json = cJSON_Parse((const char *)fragments[state]->json);
-		if (json == NULL)
-			LT_E("JSON parse failed: %s", cJSON_GetErrorPtr());
-		fragments[state]->views = gfx_view_inflate(json, NULL, fragments[state]->inflate_on_event);
-		cJSON_Delete(json);
-		if (fragments[state]->views == NULL)
-			LT_ERR(E, , "View inflate failed for state %d", state);
-		gfx_view_set_event_param(fragments[state]->views, NULL, param);
-	}
+	DEFINE_FRAGMENT(main, MAIN);
+	DEFINE_FRAGMENT(server_new, SERVER_NEW);
+	DEFINE_FRAGMENT(server_join, SERVER_JOIN);
+	DEFINE_FRAGMENT(connecting, CONNECTING);
+	DEFINE_FRAGMENT(error, ERROR);
 
 	return true;
+}
+
+void fragment_reload(fragment_t *fragment, void *param) {
+	gfx_view_free(fragment->views);
+
+	char *file_data;
+	fragment->json = file_data = file_read_data(fragment->file);
+	if (fragment->json == NULL)
+		LT_ERR(E, return, "File read failed '%s'", fragment->file);
+
+	fragment_inflate(fragment, param);
+	// free the read data to prevent memory leaks
+	free(file_data);
 }
