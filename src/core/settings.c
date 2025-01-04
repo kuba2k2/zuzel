@@ -11,6 +11,8 @@ void settings_load() {
 	SETTINGS->player_name			= strdup("Player");
 	SETTINGS->public_server_address = strdup("127.0.0.1");
 	SETTINGS->server_port			= 1234;
+	SETTINGS->tls_cert_file			= strdup("server.crt");
+	SETTINGS->tls_key_file			= strdup("server.key");
 }
 
 bool settings_save() {

@@ -75,6 +75,10 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 		SSL_library_init();
 		if ((endpoint->ssl_ctx = SSL_CTX_new(TLS_server_method())) == NULL)
 			SSL_ERROR("SSL_CTX_new()", ret = NET_ERR_SSL_CTX; goto cleanup);
+		if (SSL_CTX_use_certificate(endpoint->ssl_ctx, SETTINGS->tls_cert) != 1)
+			SSL_ERROR("SSL_CTX_use_certificate()", ret = NET_ERR_SSL_CERT; goto cleanup);
+		if (SSL_CTX_use_RSAPrivateKey(endpoint->ssl_ctx, SETTINGS->tls_key) != 1)
+			SSL_ERROR("SSL_CTX_use_RSAPrivateKey()", ret = NET_ERR_SSL_CERT; goto cleanup);
 	}
 
 	int sfd = (int)socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
