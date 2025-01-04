@@ -155,7 +155,7 @@ static bool gfx_view_on_event_button(view_t *button, SDL_Event *e, void *param) 
 	switch (e->type) {
 		case SDL_KEYDOWN:
 			// send a 'press' event on Enter keypress
-			if (e->key.keysym.sym == SDLK_RETURN && button->event.press)
+			if (e->key.keysym.sym == SDLK_RETURN && button->event.press && !button->is_disabled)
 				return button->event.press(button, e, param);
 			break;
 
@@ -166,7 +166,7 @@ static bool gfx_view_on_event_button(view_t *button, SDL_Event *e, void *param) 
 
 		case SDL_MOUSEBUTTONUP:
 			// only send a 'press' event if the button is still focused
-			if (button->in_event && button->is_focused && button->event.press) {
+			if (button->in_event && button->is_focused && button->event.press && !button->is_disabled) {
 				button->in_event = false;
 				return button->event.press(button, e, param);
 			}

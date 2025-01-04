@@ -54,10 +54,13 @@ int ui_run(ui_t *ui) {
 					prev_fragment->on_hide(ui, prev_fragment, NULL);
 				if (fragment->on_show != NULL)
 					fragment->on_show(ui, fragment, NULL);
+			}
+			if (fragment != prev_fragment || ui->force_layout) {
 				gfx_view_measure(fragment->views);
 				gfx_view_layout(fragment->views);
-				prev_fragment = fragment;
 			}
+			prev_fragment	 = fragment;
+			ui->force_layout = false;
 			gfx_view_draw(ui->renderer, fragment->views);
 		}
 		SDL_RenderPresent(ui->renderer);
