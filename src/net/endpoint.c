@@ -40,7 +40,8 @@ net_endpoint_t *net_endpoint_dup(net_endpoint_t *endpoint) {
 	// allocate memory
 	net_endpoint_t *item;
 	MALLOC(item, sizeof(*item), return NULL);
-	*item = *endpoint;
+	*item		= *endpoint;
+	item->mutex = NULL;
 	// adjust the recv buffer pointers
 	if (item->recv.buf != NULL) {
 		int buf_pos		 = endpoint->recv.buf - endpoint->recv.start;
@@ -107,7 +108,7 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 	return NET_ERR_OK;
 
 cleanup:
-	net_endpoint_free(endpoint);
+	net_endpoint_close(endpoint);
 	return ret;
 }
 
@@ -156,7 +157,7 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 	return NET_ERR_OK;
 
 cleanup:
-	net_endpoint_free(client);
+	net_endpoint_close(client);
 	return ret;
 }
 
@@ -203,56 +204,60 @@ net_err_t net_endpoint_connect(net_endpoint_t *endpoint) {
 	return NET_ERR_OK;
 
 cleanup:
-	net_endpoint_free(endpoint);
+	net_endpoint_close(endpoint);
 	return ret;
 }
 
 void net_endpoint_close(net_endpoint_t *endpoint) {
-	if (endpoint->ssl != NULL)
-		SSL_shutdown(endpoint->ssl);
+	SDL_WITH_MUTEX(endpoint->mutex) {
+		if (endpoint->ssl != NULL)
+			SSL_shutdown(endpoint->ssl);
 
-	if (endpoint->fd > 0) {
-		closesocket(endpoint->fd);
-		endpoint->fd = 0;
-	}
+		if (endpoint->fd > 0) {
+			closesocket(endpoint->fd);
+			endpoint->fd = 0;
+		}
 
-	if (endpoint->pipe.fd[PIPE_READ] != 0) {
-		close(endpoint->pipe.fd[PIPE_READ]);
-		close(endpoint->pipe.fd[PIPE_WRITE]);
-		endpoint->pipe.fd[PIPE_READ] = 0;
-	}
+		if (endpoint->pipe.fd[PIPE_READ] != 0) {
+			close(endpoint->pipe.fd[PIPE_READ]);
+			close(endpoint->pipe.fd[PIPE_WRITE]);
+			endpoint->pipe.fd[PIPE_READ] = 0;
+		}
 
 #if WIN32
-	// signal the pipe's event so that WSAWaitForMultipleEvents() returns
-	if (endpoint->pipe.event != NULL)
-		WSASetEvent(endpoint->pipe.event);
+		// signal the pipe's event so that WSAWaitForMultipleEvents() returns
+		if (endpoint->pipe.event != NULL)
+			WSASetEvent(endpoint->pipe.event);
 #endif
+	}
 }
 
 void net_endpoint_free(net_endpoint_t *endpoint) {
 	net_endpoint_close(endpoint);
 
-	if (endpoint->ssl != NULL) {
-		SSL_free(endpoint->ssl);
-		endpoint->ssl = NULL;
-	}
+	SDL_WITH_MUTEX(endpoint->mutex) {
+		if (endpoint->ssl != NULL) {
+			SSL_free(endpoint->ssl);
+			endpoint->ssl = NULL;
+		}
 
-	if (endpoint->ssl_ctx != NULL) {
-		SSL_CTX_free(endpoint->ssl_ctx);
-		endpoint->ssl_ctx = NULL;
-	}
+		if (endpoint->ssl_ctx != NULL) {
+			SSL_CTX_free(endpoint->ssl_ctx);
+			endpoint->ssl_ctx = NULL;
+		}
 
 #if WIN32
-	if (endpoint->pipe.event != NULL) {
-		WSACloseEvent(endpoint->pipe.event);
-		endpoint->pipe.event = NULL;
-	}
+		if (endpoint->pipe.event != NULL) {
+			WSACloseEvent(endpoint->pipe.event);
+			endpoint->pipe.event = NULL;
+		}
 #endif
 
 #if WIN32
-	if (endpoint->type <= NET_ENDPOINT_TLS)
-		WSACleanup();
+		if (endpoint->type <= NET_ENDPOINT_TLS)
+			WSACleanup();
 #endif
+	}
 }
 
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len) {
@@ -342,7 +347,7 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 	int num_events = 0;
 	int mask	   = FD_READ | FD_CLOSE;
 
-	SDL_WITH_MUTEX(mutex) {
+	SDL_WITH_MUTEX_OPTIONAL(mutex) {
 		net_endpoint_t *endpoint;
 		DL_FOREACH(endpoints, endpoint) {
 			if (endpoint->type > NET_ENDPOINT_PIPE)

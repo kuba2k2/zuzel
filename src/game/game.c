@@ -13,9 +13,6 @@ game_t *game_init() {
 	game_t *game;
 	MALLOC(game, sizeof(*game), goto cleanup);
 
-	if ((game->mutex = SDL_CreateMutex()) == NULL)
-		SDL_ERROR("SDL_CreateMutex()", goto cleanup);
-
 	// create a pipe for incoming packets
 	{
 		net_endpoint_t pipe = {0};
@@ -46,8 +43,6 @@ game_t *game_init() {
 	if (thread == NULL)
 		SDL_ERROR("SDL_CreateThread()", goto cleanup);
 
-	if (game_list_mutex == NULL)
-		game_list_mutex = SDL_CreateMutex();
 	SDL_WITH_MUTEX(game_list_mutex) {
 		DL_APPEND(game_list, game);
 	}
@@ -72,6 +67,7 @@ void game_free(game_t *game) {
 		DL_FOREACH_SAFE(game->endpoints, endpoint, tmp) {
 			DL_DELETE(game->endpoints, endpoint);
 			net_endpoint_free(endpoint);
+			SDL_DestroyMutex(endpoint->mutex);
 			free(endpoint);
 		}
 	}

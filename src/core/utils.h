@@ -4,7 +4,10 @@
 
 #define STRUCT_PADDING(field, len) char _padding_##field[4 - (len) % 4]
 #define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
-#define SDL_WITH_MUTEX(m)		   for (volatile int i = SDL_LockMutex(m) * 0; i < 1; SDL_UnlockMutex(m), i++)
+
+#define SDL_WITH_MUTEX(m)                                                                                              \
+	for (volatile int i = SDL_LockMutex((m) = (m) ? (m) : SDL_CreateMutex()) * 0; i < 1; SDL_UnlockMutex(m), i++)
+#define SDL_WITH_MUTEX_OPTIONAL(m) for (volatile int i = SDL_LockMutex(m) * 0; i < 1; SDL_UnlockMutex(m), i++)
 
 #define FREE_NULL(var)                                                                                                 \
 	do {                                                                                                               \

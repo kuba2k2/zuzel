@@ -119,9 +119,11 @@ cleanup:
 	SDL_PushEvent(&event);
 	// close and free the pipe
 	net_endpoint_free(client->endpoint.next);
+	SDL_DestroyMutex(client->endpoint.next->mutex);
 	free(client->endpoint.next);
 	// stop the client
 	net_endpoint_free(&client->endpoint);
+	SDL_DestroyMutex(client->endpoint.mutex);
 	// free the server's structure
 	free(client);
 	client = NULL;

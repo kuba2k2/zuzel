@@ -44,6 +44,7 @@ typedef enum {
 } net_endpoint_type_t;
 
 typedef struct net_endpoint_t {
+	SDL_mutex *mutex;		  //!< Mutex locking this endpoint
 	net_endpoint_type_t type; //!< Endpoint type
 
 	struct sockaddr_in addr; //!< Endpoint address
