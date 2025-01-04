@@ -32,13 +32,79 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 static void on_connected(ui_t *ui) {
 	if (ui->client == NULL)
 		return;
-	LT_I("Got connected event");
+
+	net_err_t send_err;
+	switch (ui->connection.type) {
+		case UI_CONNECT_NEW_PUBLIC:
+		case UI_CONNECT_NEW_PRIVATE:
+		case UI_CONNECT_NEW_LOCAL: {
+			pkt_game_new_t pkt = {
+				.hdr.type = PKT_GAME_NEW,
+			};
+			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
+			break;
+		}
+
+		case UI_CONNECT_JOIN_BROWSE:
+			ui_state_next(ui);
+			return;
+
+		case UI_CONNECT_JOIN_KEY: {
+			pkt_game_join_t pkt = {
+				.hdr.type = PKT_GAME_JOIN,
+			};
+			strncpy(pkt.key, ui->connection.key, GAME_KEY_LEN);
+			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
+			break;
+		}
+
+		case UI_CONNECT_JOIN_ADDRESS: {
+			pkt_game_join_t pkt = {
+				.hdr.type = PKT_GAME_JOIN,
+				.key	  = {0},
+			};
+			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
+			break;
+		}
+	}
+
+	if (send_err != NET_ERR_OK)
+		ui_state_error(ui);
 }
 
 static void on_packet(ui_t *ui, pkt_t *pkt) {
 	if (ui->client == NULL)
 		return;
-	LT_I("Got packet on SDL");
+
+	// only allow one of two possible responses:
+	// - PKT_GAME_DATA
+	// - PKT_ERROR
+	switch (pkt->hdr.type) {
+		case PKT_GAME_DATA:
+			LT_I("Game received");
+			return;
+
+		case PKT_ERROR:
+			switch (pkt->error.error) {
+				case GAME_ERR_OK:
+					LT_E("Received error packet with unspecified reason");
+					goto error;
+				case GAME_ERR_INVALID_STATE:
+					LT_E("Operation invalid in the current game state");
+					goto error;
+				case GAME_ERR_NOT_FOUND:
+					LT_E("Game not found by the specified key");
+					goto error;
+			}
+			goto error;
+
+		default:
+			LT_E("Unsupported packet received from the server");
+			goto error;
+	}
+
+error:
+	ui_state_error(ui);
 }
 
 static bool on_btn_cancel(view_t *view, SDL_Event *e, ui_t *ui) {

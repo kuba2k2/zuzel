@@ -25,7 +25,6 @@ void ui_state_prev(ui_t *ui) {
 void ui_state_next(ui_t *ui) {
 	if (ui->next_state == UI_STATE_MAX)
 		return;
-	ui->prev_state = ui->state;
 	ui->state	   = ui->next_state;
 	ui->next_state = UI_STATE_MAX;
 }

@@ -35,7 +35,7 @@ static bool on_btn_key_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 	ui->connection.use_tls = true;
 	ui->connection.key	   = strdup(input->data.input.value);
 
-	ui_state_set_via(ui, UI_STATE_BROWSE, UI_STATE_CONNECTING);
+	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;
 }
 
@@ -67,7 +67,7 @@ static bool on_btn_address_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 	ui->connection.use_tls = false;
 	ui->connection.key	   = NULL;
 
-	ui_state_set_via(ui, UI_STATE_BROWSE, UI_STATE_CONNECTING);
+	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;
 }
 
