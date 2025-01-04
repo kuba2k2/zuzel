@@ -24,6 +24,7 @@ extern fragment_t fragment_main;
 extern fragment_t fragment_server_join;
 extern fragment_t fragment_server_new;
 extern fragment_t fragment_connecting;
+extern fragment_t fragment_browse;
 extern fragment_t fragment_error;
 
 bool fragment_init_all(fragment_t **fragments, void *param);

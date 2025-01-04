@@ -28,6 +28,7 @@ bool fragment_init_all(fragment_t **fragments, void *param) {
 	DEFINE_FRAGMENT(server_new, SERVER_NEW);
 	DEFINE_FRAGMENT(server_join, SERVER_JOIN);
 	DEFINE_FRAGMENT(connecting, CONNECTING);
+	DEFINE_FRAGMENT(browse, BROWSE);
 	DEFINE_FRAGMENT(error, ERROR);
 
 	return true;
