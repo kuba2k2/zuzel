@@ -3,6 +3,7 @@
 #include "utils.h"
 
 void hexdump(const void *buf, size_t len) {
+	SDL_LockMutex(log_mutex);
 	uint16_t pos = 0;
 	while (pos < len) {
 		// print hex offset
@@ -27,6 +28,7 @@ void hexdump(const void *buf, size_t len) {
 		pos += lineWidth;
 	}
 	fflush(stdout);
+	SDL_UnlockMutex(log_mutex);
 }
 
 char *file_read_data(const char *filename) {

@@ -35,12 +35,17 @@ static const uint8_t colors[] = {
 
 static char message_buf[1024];
 static bool lt_log_append_error(const char *message);
+SDL_mutex *log_mutex = NULL;
 
 #if LT_LOGGER_CALLER
 void lt_log(const uint8_t level, const char *caller, const unsigned short line, const char *format, ...) {
 #else
 void lt_log(const uint8_t level, const char *format, ...) {
 #endif
+
+	if (log_mutex == NULL)
+		log_mutex = SDL_CreateMutex();
+
 	if (level < SETTINGS->loglevel)
 		return;
 
@@ -65,6 +70,8 @@ void lt_log(const uint8_t level, const char *format, ...) {
 	char c_bright = '0' + (colors[level] >> 4);
 	char c_value  = '0' + (colors[level] & 0x7);
 #endif
+
+	SDL_LockMutex(log_mutex);
 
 	printf(
 	// format:
@@ -122,6 +129,8 @@ void lt_log(const uint8_t level, const char *format, ...) {
 		lt_log_append_error(message_buf);
 	printf("%s\r\n", message_buf);
 	fflush(stdout);
+
+	SDL_UnlockMutex(log_mutex);
 }
 
 typedef struct log_error_t {

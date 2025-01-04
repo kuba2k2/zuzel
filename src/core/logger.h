@@ -36,6 +36,7 @@ void lt_log(uint8_t level, const char *format, ...) __attribute__((format(printf
 
 char *lt_log_get_errors(int wrap);
 void lt_log_clear_errors();
+extern SDL_mutex *log_mutex;
 
 #define LT_T(...)		   LT_LOG(LT_LEVEL_TRACE, __FUNCTION__, __LINE__, __VA_ARGS__)
 #define LT_V(...)		   LT_LOG(LT_LEVEL_TRACE, __FUNCTION__, __LINE__, __VA_ARGS__)
