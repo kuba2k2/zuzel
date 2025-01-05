@@ -13,21 +13,22 @@ view_t *gfx_view_make_slider(view_t *parent) {
 	view_t *view;
 	MALLOC(view, sizeof(*view), return NULL);
 
-	view->type					 = VIEW_TYPE_SLIDER;
-	view->inflate				 = gfx_view_inflate_slider;
-	view->clone					 = gfx_view_clone_slider;
-	view->free					 = gfx_view_free_slider;
-	view->measure				 = gfx_view_measure_slider;
-	view->draw					 = gfx_view_draw_slider;
-	view->on_event				 = gfx_view_on_event_slider;
-	view->is_focusable			 = true;
-	view->data.slider.text.color = 0xE0E0E0;
-	view->data.slider.text.size	 = FONT_SIZE_DEFAULT;
-	view->data.slider.value		 = 1;
-	view->data.slider.min		 = 1;
-	view->data.slider.max		 = 100;
-	view->data.slider.button	 = gfx_view_make_button(parent);
-	view->parent				 = parent;
+	view->type					   = VIEW_TYPE_SLIDER;
+	view->inflate				   = gfx_view_inflate_slider;
+	view->clone					   = gfx_view_clone_slider;
+	view->free					   = gfx_view_free_slider;
+	view->measure				   = gfx_view_measure_slider;
+	view->draw					   = gfx_view_draw_slider;
+	view->on_event				   = gfx_view_on_event_slider;
+	view->is_focusable			   = true;
+	view->data.slider.text.color   = 0xE0E0E0;
+	view->data.slider.text.size	   = 7;
+	view->data.slider.value		   = 1;
+	view->data.slider.min		   = 1;
+	view->data.slider.max		   = 100;
+	view->data.slider.button	   = gfx_view_make_button(parent);
+	view->data.slider.button->prev = view->data.slider.button;
+	view->parent				   = parent;
 
 	view->id = gfx_view_make_id(view);
 	return view;
