@@ -141,7 +141,8 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			ui->force_layout	  = true;
 			current_page		  = pkt->game_list.page;
 			btn_prev->is_disabled = current_page == 0;
-			int total_pages		  = (pkt->game_list.total_count - 1) / pkt->game_list.per_page + 1;
+			int total_pages =
+				pkt->game_list.total_count ? ((pkt->game_list.total_count - 1) / pkt->game_list.per_page + 1) : 1;
 			btn_next->is_disabled = current_page >= total_pages - 1;
 			btn_join->is_disabled = true;
 			snprintf(
@@ -176,7 +177,13 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 				// update texts
 				gfx_view_set_text(row_name, pkt->game_data.name);
 				gfx_view_set_text(row_key, pkt->game_data.key);
-				snprintf(buf, sizeof(buf) - 1, "In Lobby \x07 Players: %d", 0);
+				snprintf(
+					buf,
+					sizeof(buf) - 1,
+					"%s \x07 Players: %d",
+					pkt->game_data.state == GAME_IDLE ? "In Lobby" : "In Game",
+					pkt->game_data.players
+				);
 				gfx_view_set_text(row_line1, buf);
 				snprintf(buf, sizeof(buf) - 1, "Game Speed: %d", pkt->game_data.speed);
 				gfx_view_set_text(row_line2, buf);
@@ -192,7 +199,9 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 
 		case PKT_ERROR:
 			game_print_error(pkt->error.error);
-			goto error;
+			// on game error, go back to the browse screen
+			ui_state_set(ui, UI_STATE_ERROR);
+			return;
 
 		default:
 			LT_E("Unsupported packet received from the server");
@@ -214,7 +223,7 @@ static bool on_btn_back(view_t *view, SDL_Event *e, ui_t *ui) {
 	ui->client = NULL;
 	net_client_stop();
 	net_server_stop();
-	ui_state_prev(ui);
+	ui_state_set(ui, UI_STATE_SERVER_JOIN);
 	return true;
 }
 

@@ -23,9 +23,10 @@ game_t *game_get_by_key(const char *key);
 game_t *game_get_list(SDL_mutex **mutex);
 
 // utils.c
-bool game_add_endpoint(game_t *game, net_endpoint_t *endpoint);
+void game_add_endpoint(game_t *game, net_endpoint_t *endpoint);
 void game_del_endpoint(game_t *game, net_endpoint_t *endpoint);
 void game_send_packet_pipe(game_t *game, pkt_t *pkt);
 void game_send_packet_broadcast(game_t *game, pkt_t *pkt, net_endpoint_t *source);
+void game_request_update(game_t *game);
 void game_send_update(game_t *game, net_endpoint_t *source, net_endpoint_t *target);
 void game_print_error(game_err_t error);

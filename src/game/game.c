@@ -105,7 +105,7 @@ static int game_thread(game_t *game) {
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);
 
-	while (1) {
+	while (!game->stop) {
 		// wait for incoming data
 		net_err_t err = net_endpoint_select(
 			game->endpoints,
@@ -121,6 +121,7 @@ static int game_thread(game_t *game) {
 
 cleanup:
 	LT_I("Game: stopping '%s' (key: %s)", game->name, game->key);
+	game_free(game);
 	return 0;
 }
 

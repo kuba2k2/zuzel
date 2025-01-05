@@ -2,29 +2,33 @@
 
 #include "include.h"
 
-bool game_add_endpoint(game_t *game, net_endpoint_t *endpoint) {
+void game_add_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	net_endpoint_t *item = net_endpoint_dup(endpoint);
 	if (item == NULL)
-		return false;
+		return;
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_APPEND(game->endpoints, item);
 	}
-	if (endpoint->type <= NET_ENDPOINT_TLS) {
-		// request a global state update
-		pkt_send_update_t pkt = {
-			.hdr.type = PKT_SEND_UPDATE,
-		};
-		game_send_packet_pipe(game, (pkt_t *)&pkt);
-	}
-	return true;
+	if (endpoint->type <= NET_ENDPOINT_TLS)
+		game_request_update(game);
 }
 
 void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_DELETE(game->endpoints, endpoint);
 	}
+	if (endpoint->type <= NET_ENDPOINT_TLS)
+		game_request_update(game);
 	net_endpoint_free(endpoint);
 	free(endpoint);
+	// stop the game if there are no more endpoints
+	int endpoints;
+	SDL_WITH_MUTEX(game->mutex) {
+		net_endpoint_t *item;
+		DL_COUNT(game->endpoints, item, endpoints);
+	}
+	if (endpoints == 1)
+		game->stop = true;
 }
 
 void game_send_packet_pipe(game_t *game, pkt_t *pkt) {
@@ -52,11 +56,27 @@ void game_send_packet_broadcast(game_t *game, pkt_t *pkt, net_endpoint_t *source
 	}
 }
 
+void game_request_update(game_t *game) {
+	// request a global state update
+	pkt_send_update_t pkt = {
+		.hdr.type = PKT_SEND_UPDATE,
+	};
+	game_send_packet_pipe(game, (pkt_t *)&pkt);
+}
+
 void game_send_update(game_t *game, net_endpoint_t *source, net_endpoint_t *target) {
+	int players;
+	SDL_WITH_MUTEX(game->mutex) {
+		net_endpoint_t *item;
+		DL_COUNT(game->endpoints, item, players);
+	}
+
 	pkt_game_data_t pkt = {
 		.hdr.type  = PKT_GAME_DATA,
 		.is_public = game->is_public,
 		.speed	   = game->speed,
+		.state	   = game->state,
+		.players   = players - 1, // all except the pipe
 	};
 	strncpy(pkt.key, game->key, GAME_KEY_LEN);
 	strncpy(pkt.name, game->name, GAME_NAME_LEN);

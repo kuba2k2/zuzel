@@ -69,6 +69,8 @@ typedef struct __attribute__((packed)) {
 	STRUCT_PADDING(name, GAME_NAME_LEN + 1);
 	uint32_t is_public;
 	uint32_t speed;
+	game_state_t state : 32;
+	uint32_t players;
 } pkt_game_data_t;
 
 typedef struct __attribute__((packed)) {
