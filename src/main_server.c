@@ -40,8 +40,11 @@ int SDL_main(int argc, char *argv[]) {
 	if (port != NULL)
 		SETTINGS->server_port = strtol(port + 1, NULL, 0);
 
-	for (int i = 0; i < 8; i++)
-		game_init();
+	for (int i = 0; i < 8; i++) {
+		game_t *game	= game_init();
+		game->is_public = i % 2 == 0;
+	}
+
 	net_server_start(true);
 	return 0;
 }

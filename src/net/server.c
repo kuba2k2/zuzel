@@ -202,10 +202,14 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 			SDL_mutex *game_list_mutex;
 			game_t *game_list = game_get_list(&game_list_mutex);
 			// count the active games
-			int total_count;
+			int total_count = 0;
 			SDL_WITH_MUTEX(game_list_mutex) {
 				game_t *game;
-				DL_COUNT(game_list, game, total_count);
+				DL_FOREACH(game_list, game) {
+					if (!game->is_public)
+						continue;
+					total_count++;
+				}
 			}
 			// send game list response
 			pkt_game_list_t pkt = {
@@ -222,6 +226,8 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 				unsigned int first = recv_pkt->game_list.page * recv_pkt->game_list.per_page;
 				unsigned int last  = first + recv_pkt->game_list.per_page;
 				DL_FOREACH(game_list, game) {
+					if (!game->is_public)
+						continue;
 					if (index < first) {
 						index++;
 						continue;
