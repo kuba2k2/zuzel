@@ -44,11 +44,11 @@ static void get_game_list(ui_t *ui, int page) {
 
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	// find necessary views
-	list		 = gfx_view_find_by_id(fragment->views, "list");
-	btn_prev	 = gfx_view_find_by_id(fragment->views, "btn_prev");
-	btn_next	 = gfx_view_find_by_id(fragment->views, "btn_next");
-	btn_join	 = gfx_view_find_by_id(fragment->views, "btn_join");
-	text_summary = gfx_view_find_by_id(fragment->views, "text_summary");
+	GFX_VIEW_BIND(fragment->views, list, goto error);
+	GFX_VIEW_BIND(fragment->views, btn_prev, goto error);
+	GFX_VIEW_BIND(fragment->views, btn_next, goto error);
+	GFX_VIEW_BIND(fragment->views, btn_join, goto error);
+	GFX_VIEW_BIND(fragment->views, text_summary, goto error);
 
 	// clone the list row and keep statically
 	cloned_row = gfx_view_clone(list->children, list);
@@ -56,6 +56,10 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	// request a game list from the server (also clear the list box rows)
 	get_game_list(ui, 0);
 	return true;
+
+error:
+	on_error(ui);
+	return false;
 }
 
 static bool on_hide(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
@@ -98,9 +102,8 @@ static bool on_btn_join(view_t *view, SDL_Event *e, ui_t *ui) {
 	if (row == NULL)
 		return false;
 	// get the game key view
-	view_t *row_key = gfx_view_find_by_id(row, "row_key");
-	if (row_key == NULL)
-		return false;
+	view_t *row_key;
+	GFX_VIEW_BIND(row, row_key, return false);
 
 	btn_prev->is_disabled = true;
 	btn_next->is_disabled = true;
@@ -156,19 +159,21 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			ui->force_layout = true;
 			// add a divider to the last item
 			if (list->children != NULL) {
-				view_t *row_divider	 = gfx_view_find_by_id(list->children->prev, "row_divider");
+				view_t *row_divider;
+				GFX_VIEW_BIND(list->children->prev, row_divider, return);
 				row_divider->is_gone = false;
 			}
 			// create a new row
 			view_t *clone = gfx_view_clone(cloned_row, list);
 			DL_APPEND(list->children, clone);
 			// find all views
-			view_t *row_bg		= gfx_view_find_by_id(clone, "row_bg");
-			view_t *row_name	= gfx_view_find_by_id(clone, "row_name");
-			view_t *row_key		= gfx_view_find_by_id(clone, "row_key");
-			view_t *row_line1	= gfx_view_find_by_id(clone, "row_line1");
-			view_t *row_line2	= gfx_view_find_by_id(clone, "row_line2");
-			view_t *row_divider = gfx_view_find_by_id(clone, "row_divider");
+			view_t *row_bg, *row_name, *row_key, *row_line1, *row_line2, *row_divider;
+			GFX_VIEW_BIND(clone, row_bg, return);
+			GFX_VIEW_BIND(clone, row_name, return);
+			GFX_VIEW_BIND(clone, row_key, return);
+			GFX_VIEW_BIND(clone, row_line1, return);
+			GFX_VIEW_BIND(clone, row_line2, return);
+			GFX_VIEW_BIND(clone, row_divider, return);
 			// update texts
 			gfx_view_set_text(row_name, pkt->game_data.name);
 			gfx_view_set_text(row_key, pkt->game_data.key);

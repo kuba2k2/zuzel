@@ -177,3 +177,12 @@ view_t *gfx_view_make_rect(view_t *parent);
 
 #define GFX_VIEW_ON_EVENT(_func) {.name = #_func, .func = (view_on_event_t)_func}
 #define GFX_VIEW_ON_EVENT_END()	 {.name = NULL, .func = NULL}
+
+#define GFX_VIEW_BIND(views, view, err)                                                                                \
+	do {                                                                                                               \
+		view = gfx_view_find_by_id(views, #view);                                                                      \
+		if (view == NULL) {                                                                                            \
+			LT_E("View by ID " #view " not found");                                                                    \
+			err;                                                                                                       \
+		}                                                                                                              \
+	} while (0)
