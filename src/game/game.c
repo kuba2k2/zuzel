@@ -1,6 +1,6 @@
 // Copyright (c) Kuba Szczodrzyński 2024-12-27.
 
-#include "include.h"
+#include "game.h"
 
 static int game_thread(game_t *game);
 static net_err_t game_select_read_cb(net_endpoint_t *endpoint, game_t *game);
@@ -81,13 +81,17 @@ void game_free(game_t *game) {
 
 game_t *game_get_by_key(const char *key) {
 	game_t *game;
+	int count = 0;
 	SDL_WITH_MUTEX(game_list_mutex) {
 		DL_FOREACH(game_list, game) {
+			count++;
 			if (strnicmp(game->key, key, GAME_KEY_LEN) == 0)
-				break;
+				return game;
 		}
 	}
-	return game;
+	if (count == 1 && key[0] == '\0' && game_list->is_public)
+		return game_list;
+	return NULL;
 }
 
 game_t *game_get_list(SDL_mutex **mutex) {
