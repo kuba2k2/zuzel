@@ -134,7 +134,7 @@ void lt_log(const uint8_t level, const char *format, ...) {
 
 	va_list va_args;
 	va_start(va_args, format);
-	vsnprintf(message_buf, sizeof(message_buf) - 1, format, va_args);
+	vsnprintf(message_buf, sizeof(message_buf), format, va_args);
 	va_end(va_args);
 
 	if (level >= LT_LEVEL_ERROR)

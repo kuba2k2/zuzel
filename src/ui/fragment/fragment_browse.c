@@ -143,7 +143,7 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			btn_join->is_disabled = true;
 			snprintf(
 				buf,
-				sizeof(buf) - 1,
+				sizeof(buf),
 				"Page %d of %d\n%d Games Found",
 				current_page + 1,
 				total_pages,
@@ -174,13 +174,13 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			gfx_view_set_text(row_key, pkt->game_data.key);
 			snprintf(
 				buf,
-				sizeof(buf) - 1,
+				sizeof(buf),
 				"%s \x07 Players: %d",
 				pkt->game_data.state == GAME_IDLE ? "In Lobby" : "In Game",
 				pkt->game_data.players
 			);
 			gfx_view_set_text(row_line1, buf);
-			snprintf(buf, sizeof(buf) - 1, "Game Speed: %d", pkt->game_data.speed);
+			snprintf(buf, sizeof(buf), "Game Speed: %d", pkt->game_data.speed);
 			gfx_view_set_text(row_line2, buf);
 			row_bg->is_gone		 = true;
 			row_divider->is_gone = true;

@@ -104,7 +104,7 @@ static int game_thread(game_t *game) {
 	if (game == NULL)
 		return -1;
 	char thread_name[12];
-	snprintf(thread_name, sizeof(thread_name) - 1, "game-%s", game->key);
+	snprintf(thread_name, sizeof(thread_name), "game-%s", game->key);
 	lt_log_set_thread_name(thread_name);
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);

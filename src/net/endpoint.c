@@ -14,7 +14,7 @@ const char *net_endpoint_str(net_endpoint_t *endpoint) {
 		case NET_ENDPOINT_TLS:
 			snprintf(
 				str_buf,
-				sizeof(str_buf) - 1,
+				sizeof(str_buf),
 				"%s(%s:%d)",
 				type,
 				inet_ntoa(endpoint->addr.sin_addr),
@@ -22,7 +22,7 @@ const char *net_endpoint_str(net_endpoint_t *endpoint) {
 			);
 			break;
 		case NET_ENDPOINT_PIPE:
-			snprintf(str_buf, sizeof(str_buf) - 1, "PIPE(fds=[%d, %d])", endpoint->pipe.fd[0], endpoint->pipe.fd[1]);
+			snprintf(str_buf, sizeof(str_buf), "PIPE(fds=[%d, %d])", endpoint->pipe.fd[0], endpoint->pipe.fd[1]);
 			break;
 		default:
 			return "(invalid)";
