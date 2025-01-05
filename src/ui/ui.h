@@ -46,7 +46,6 @@ typedef struct ui_t {
 		char *address;			//!< Address of server to connect to
 		bool use_tls;			//!< Whether to use TLS for the connection
 		char *key;				//!< Room key (if joining)
-		pkt_t *game_data;		//!< Game data packet (if not browsing)
 	} connection;
 
 	net_endpoint_t *client;

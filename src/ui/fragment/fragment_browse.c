@@ -120,15 +120,11 @@ static bool on_btn_join(view_t *view, SDL_Event *e, ui_t *ui) {
 }
 
 static bool on_btn_prev(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (is_joining)
-		return false;
 	get_game_list(ui, current_page - 1);
 	return true;
 }
 
 static bool on_btn_next(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (is_joining)
-		return false;
 	get_game_list(ui, current_page + 1);
 	return true;
 }
@@ -157,44 +153,37 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			return;
 
 		case PKT_GAME_DATA:
-			if (!is_joining) {
-				ui->force_layout = true;
-				// add a divider to the last item
-				if (list->children != NULL) {
-					view_t *row_divider	 = gfx_view_find_by_id(list->children->prev, "row_divider");
-					row_divider->is_gone = false;
-				}
-				// create a new row
-				view_t *clone = gfx_view_clone(cloned_row, list);
-				DL_APPEND(list->children, clone);
-				// find all views
-				view_t *row_bg		= gfx_view_find_by_id(clone, "row_bg");
-				view_t *row_name	= gfx_view_find_by_id(clone, "row_name");
-				view_t *row_key		= gfx_view_find_by_id(clone, "row_key");
-				view_t *row_line1	= gfx_view_find_by_id(clone, "row_line1");
-				view_t *row_line2	= gfx_view_find_by_id(clone, "row_line2");
-				view_t *row_divider = gfx_view_find_by_id(clone, "row_divider");
-				// update texts
-				gfx_view_set_text(row_name, pkt->game_data.name);
-				gfx_view_set_text(row_key, pkt->game_data.key);
-				snprintf(
-					buf,
-					sizeof(buf) - 1,
-					"%s \x07 Players: %d",
-					pkt->game_data.state == GAME_IDLE ? "In Lobby" : "In Game",
-					pkt->game_data.players
-				);
-				gfx_view_set_text(row_line1, buf);
-				snprintf(buf, sizeof(buf) - 1, "Game Speed: %d", pkt->game_data.speed);
-				gfx_view_set_text(row_line2, buf);
-				row_bg->is_gone		 = true;
-				row_divider->is_gone = true;
-			} else {
-				FREE_NULL(ui->connection.game_data);
-				ui->connection.game_data = net_pkt_dup(pkt);
-				ui_state_prev(ui);
-				ui_state_set(ui, UI_STATE_LOBBY);
+			ui->force_layout = true;
+			// add a divider to the last item
+			if (list->children != NULL) {
+				view_t *row_divider	 = gfx_view_find_by_id(list->children->prev, "row_divider");
+				row_divider->is_gone = false;
 			}
+			// create a new row
+			view_t *clone = gfx_view_clone(cloned_row, list);
+			DL_APPEND(list->children, clone);
+			// find all views
+			view_t *row_bg		= gfx_view_find_by_id(clone, "row_bg");
+			view_t *row_name	= gfx_view_find_by_id(clone, "row_name");
+			view_t *row_key		= gfx_view_find_by_id(clone, "row_key");
+			view_t *row_line1	= gfx_view_find_by_id(clone, "row_line1");
+			view_t *row_line2	= gfx_view_find_by_id(clone, "row_line2");
+			view_t *row_divider = gfx_view_find_by_id(clone, "row_divider");
+			// update texts
+			gfx_view_set_text(row_name, pkt->game_data.name);
+			gfx_view_set_text(row_key, pkt->game_data.key);
+			snprintf(
+				buf,
+				sizeof(buf) - 1,
+				"%s \x07 Players: %d",
+				pkt->game_data.state == GAME_IDLE ? "In Lobby" : "In Game",
+				pkt->game_data.players
+			);
+			gfx_view_set_text(row_line1, buf);
+			snprintf(buf, sizeof(buf) - 1, "Game Speed: %d", pkt->game_data.speed);
+			gfx_view_set_text(row_line2, buf);
+			row_bg->is_gone		 = true;
+			row_divider->is_gone = true;
 			return;
 
 		case PKT_ERROR:
@@ -236,6 +225,11 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 
 		case SDL_USEREVENT_PACKET:
 			on_packet(ui, e->user.data1);
+			return true;
+
+		case SDL_USEREVENT_GAME:
+			ui->client = NULL;
+			ui_state_set(ui, UI_STATE_LOBBY);
 			return true;
 	}
 	return false;

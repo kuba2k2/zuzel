@@ -73,6 +73,7 @@ void game_send_update(game_t *game, net_endpoint_t *source, net_endpoint_t *targ
 
 	pkt_game_data_t pkt = {
 		.hdr.type  = PKT_GAME_DATA,
+		.is_list   = target != NULL,
 		.is_public = game->is_public,
 		.speed	   = game->speed,
 		.state	   = game->state,

@@ -63,6 +63,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
 	pkt_hdr_t hdr;
+	uint32_t is_list;
 	char key[GAME_KEY_LEN + 1];
 	STRUCT_PADDING(key, GAME_KEY_LEN + 1);
 	char name[GAME_NAME_LEN + 1];

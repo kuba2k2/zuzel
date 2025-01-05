@@ -101,7 +101,6 @@ void ui_free(ui_t *ui) {
 		return;
 	free(ui->connection.address);
 	free(ui->connection.key);
-	free(ui->connection.game_data);
 	net_client_stop();
 	net_server_stop();
 	for (ui_state_t state = UI_STATE_MAIN; state < UI_STATE_MAX; state++) {

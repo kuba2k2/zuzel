@@ -78,16 +78,8 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 	if (ui->client == NULL)
 		return;
 
-	// only allow one of two possible responses:
-	// - PKT_GAME_DATA
-	// - PKT_ERROR
+	// only allow PKT_ERROR, because PKT_GAME_DATA is handled by the client
 	switch (pkt->hdr.type) {
-		case PKT_GAME_DATA:
-			FREE_NULL(ui->connection.game_data);
-			ui->connection.game_data = net_pkt_dup(pkt);
-			ui_state_next(ui);
-			return;
-
 		case PKT_ERROR:
 			game_print_error(pkt->error.error);
 			goto error;
@@ -137,6 +129,11 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 
 		case SDL_USEREVENT_PACKET:
 			on_packet(ui, e->user.data1);
+			return true;
+
+		case SDL_USEREVENT_GAME:
+			ui->client = NULL;
+			ui_state_set(ui, UI_STATE_LOBBY);
 			return true;
 	}
 	return false;

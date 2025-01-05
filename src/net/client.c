@@ -157,8 +157,23 @@ static net_err_t net_client_select_read_cb(net_endpoint_t *endpoint, net_t *net)
 	if (ret != NET_ERR_OK_PACKET)
 		// continue if packet is not fully received yet
 		return NET_ERR_OK;
+	pkt_t *pkt = &net->endpoint.recv.pkt;
 
-	return net_pkt_broadcast(&net->endpoint, &net->endpoint.recv.pkt, endpoint);
+	if (pkt->hdr.type == PKT_GAME_DATA && !pkt->game_data.is_list) {
+		// game joined - hand over to game thread
+		LT_I("Client: joined game %s", pkt->game_data.key);
+		// send game event to UI
+		SDL_Event event = {
+			.user.type	= SDL_USEREVENT_GAME,
+			.user.data1 = NULL,
+		};
+		SDL_PushEvent(&event);
+		// request the client to stop
+		net->stop = true;
+		return NET_ERR_OK;
+	}
+
+	return net_pkt_broadcast(&net->endpoint, pkt, endpoint);
 }
 
 static void net_client_select_err_cb(net_endpoint_t *endpoint, net_t *net, net_err_t err) {
