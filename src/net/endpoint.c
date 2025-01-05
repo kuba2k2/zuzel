@@ -15,20 +15,14 @@ const char *net_endpoint_str(net_endpoint_t *endpoint) {
 			snprintf(
 				str_buf,
 				sizeof(str_buf) - 1,
-				"%s(addr=%s, port=%d)",
+				"%s(%s:%d)",
 				type,
 				inet_ntoa(endpoint->addr.sin_addr),
 				ntohs(endpoint->addr.sin_port)
 			);
 			break;
 		case NET_ENDPOINT_PIPE:
-			snprintf(
-				str_buf,
-				sizeof(str_buf) - 1,
-				"PIPE(read_fd=%d, write_fd=%d)",
-				endpoint->pipe.fd[0],
-				endpoint->pipe.fd[1]
-			);
+			snprintf(str_buf, sizeof(str_buf) - 1, "PIPE(fds=[%d, %d])", endpoint->pipe.fd[0], endpoint->pipe.fd[1]);
 			break;
 		default:
 			return "(invalid)";
@@ -42,12 +36,15 @@ net_endpoint_t *net_endpoint_dup(net_endpoint_t *endpoint) {
 	MALLOC(item, sizeof(*item), return NULL);
 	*item		= *endpoint;
 	item->mutex = NULL;
+#if WIN32
+	item->pipe.event = WSACreateEvent();
+#endif
 	// adjust the recv buffer pointers
 	if (item->recv.buf != NULL) {
-		int buf_pos		 = endpoint->recv.buf - endpoint->recv.start;
-		item->recv.start = (char *)&item->recv.pkt;
-		item->recv.end	 = item->recv.start + sizeof(item->recv.pkt);
-		item->recv.buf	 = item->recv.start + buf_pos;
+		uintptr_t buf_pos = endpoint->recv.buf - endpoint->recv.start;
+		item->recv.start  = (char *)&item->recv.pkt;
+		item->recv.end	  = item->recv.start + sizeof(item->recv.pkt);
+		item->recv.buf	  = item->recv.start + buf_pos;
 	}
 	return item;
 }
@@ -292,11 +289,21 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 
 	if (recv_len == -1) {
 #if WIN32
-		if (WSAGetLastError() == WSAEWOULDBLOCK)
-			goto empty;
+		switch (WSAGetLastError()) {
+			case WSAEWOULDBLOCK:
+				goto empty;
+			case WSAECONNABORTED:
+			case WSAECONNRESET:
+				return NET_ERR_CLIENT_CLOSED;
+		}
 #else
-		if (errno == EWOULDBLOCK)
-			goto empty;
+		switch (errno) {
+			case EWOULDBLOCK:
+				goto empty;
+			case ECONNABORTED:
+			case ECONNRESET:
+				return NET_ERR_CLIENT_CLOSED;
+		}
 #endif
 		// recv error
 		SOCK_ERROR("recv()", return NET_ERR_RECV);
@@ -341,7 +348,13 @@ net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned 
 }
 
 #if WIN32
-net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_select_cb_t cb, void *param) {
+net_err_t net_endpoint_select(
+	net_endpoint_t *endpoints,
+	SDL_mutex *mutex,
+	net_select_read_cb_t read_cb,
+	net_select_err_cb_t error_cb,
+	void *param
+) {
 	net_endpoint_t *endpoint_list[WSA_MAXIMUM_WAIT_EVENTS];
 	void *event_list[WSA_MAXIMUM_WAIT_EVENTS];
 	int num_events = 0;
@@ -354,12 +367,15 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 				continue;
 			endpoint_list[num_events] = endpoint;
 			event_list[num_events]	  = endpoint->pipe.event;
-			if (endpoint->fd != 0)
+			if (endpoint->type != NET_ENDPOINT_PIPE)
 				// call WSAEventSelect() on sockets only (not on pipes)
 				WSAEventSelect(endpoint->fd, endpoint->pipe.event, mask);
-			if (endpoint->type == NET_ENDPOINT_TLS && SSL_pending(endpoint->ssl))
+			if (endpoint->type == NET_ENDPOINT_TLS && SSL_pending(endpoint->ssl)) {
 				// immediately allow reading any previously-buffered TLS data
-				return cb(endpoint, param);
+				net_err_t err;
+				if (read_cb != NULL && (err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
+					error_cb(endpoint, param, err);
+			}
 			num_events++;
 		}
 	}
@@ -371,17 +387,43 @@ net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_s
 		return NET_ERR_OK;
 	if (ret == WSA_WAIT_TIMEOUT)
 		return NET_ERR_OK;
-	if (cb == NULL)
+	if (read_cb == NULL)
 		return NET_ERR_OK;
 
 	unsigned int index		 = ret - WSA_WAIT_EVENT_0;
 	net_endpoint_t *endpoint = endpoint_list[index];
 
-	WSANETWORKEVENTS network_events;
-	WSAEnumNetworkEvents(endpoint->fd, event_list[index], &network_events);
+	if (endpoint->type == NET_ENDPOINT_PIPE) {
+		// pipe event signaled
+		net_err_t err;
+		if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
+			error_cb(endpoint, param, err);
+		return NET_ERR_OK;
+	}
 
-	if (network_events.lNetworkEvents & mask)
-		return cb(endpoint, param);
+	WSANETWORKEVENTS network_events;
+	if (WSAEnumNetworkEvents(endpoint->fd, event_list[index], &network_events) != 0) {
+		net_err_t err;
+		if (WSAGetLastError() == WSAENOTSOCK)
+			err = NET_ERR_CLIENT_CLOSED;
+		else
+			SOCK_ERROR("WSAEnumNetworkEvents()", err = NET_ERR_SELECT);
+		if (error_cb != NULL)
+			error_cb(endpoint, param, err);
+		return NET_ERR_OK;
+	}
+
+	if (network_events.lNetworkEvents & FD_READ) {
+		LT_V("select()=FD_READ, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
+		net_err_t err;
+		if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
+			error_cb(endpoint, param, err);
+	}
+	if (network_events.lNetworkEvents & FD_CLOSE) {
+		LT_V("select()=FD_CLOSE, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
+		if (error_cb != NULL)
+			error_cb(endpoint, param, NET_ERR_CLIENT_CLOSED);
+	}
 
 	return NET_ERR_OK;
 }

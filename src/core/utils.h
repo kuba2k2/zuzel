@@ -6,7 +6,8 @@
 #define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
 
 #define SDL_WITH_MUTEX(m)                                                                                              \
-	for (volatile int i = SDL_LockMutex((m) = (m) ? (m) : SDL_CreateMutex()) * 0; i < 1; SDL_UnlockMutex(m), i++)
+	for (volatile int loop = SDL_LockMutex((m) = (m) ? (m) : SDL_CreateMutex()) * 0; loop < 1;                         \
+		 SDL_UnlockMutex(m), loop++)
 #define SDL_WITH_MUTEX_OPTIONAL(m) for (volatile int i = SDL_LockMutex(m) * 0; i < 1; SDL_UnlockMutex(m), i++)
 
 #define FREE_NULL(var)                                                                                                 \

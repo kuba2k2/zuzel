@@ -119,7 +119,8 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 		return NET_ERR_OK;
 
 	LT_D("Packet %s received (%d bytes) <- %s", pkt_name_list[pkt->hdr.type], pkt->hdr.len, net_endpoint_str(endpoint));
-	hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
+	if (SETTINGS->loglevel <= LT_LEVEL_VERBOSE)
+		hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
 
 	// indicate that a complete packet is available; also reset the write buffer
 	endpoint->recv.buf = endpoint->recv.start;
@@ -142,7 +143,8 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
 		return err;
 
 	LT_D("Packet %s sent (%d bytes) -> %s", pkt_name_list[pkt->hdr.type], pkt->hdr.len, net_endpoint_str(endpoint));
-	hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
+	if (SETTINGS->loglevel <= LT_LEVEL_VERBOSE)
+		hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
 
 	return NET_ERR_OK;
 }

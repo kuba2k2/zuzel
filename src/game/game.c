@@ -3,7 +3,8 @@
 #include "include.h"
 
 static int game_thread(game_t *game);
-static net_err_t game_select_cb(net_endpoint_t *endpoint, game_t *game);
+static net_err_t game_select_read_cb(net_endpoint_t *endpoint, game_t *game);
+static void game_select_err_cb(net_endpoint_t *endpoint, game_t *game, net_err_t err);
 static net_err_t game_respond(net_endpoint_t *endpoint, game_t *game, pkt_t *recv_pkt);
 
 static game_t *game_list		  = NULL;
@@ -20,22 +21,24 @@ game_t *game_init() {
 		game_add_endpoint(game, &pipe);
 	}
 
-	// generate a game name
-	snprintf(game->name, sizeof(game->name) - 1, "%s's Game", SETTINGS->player_name);
-	// generate a game key
-	do {
-		char *ch = game->key;
-		for (int i = 0; i < sizeof(game->key) - 1; i++) {
-			int num = '0' + rand() % 36;
-			if (num > '9')
-				num += 'A' - '9' - 1;
-			*ch++ = num;
-		}
-	} while (game_get_by_key(game->key) != NULL);
-	// set some other default settings
-	game->is_public = false;
-	game->speed		= 3;
-	game->state		= GAME_IDLE;
+	SDL_WITH_MUTEX(game->mutex) {
+		// generate a game name
+		snprintf(game->name, sizeof(game->name) - 1, "%s's Game", SETTINGS->player_name);
+		// generate a game key
+		do {
+			char *ch = game->key;
+			for (int i = 0; i < sizeof(game->key) - 1; i++) {
+				int num = '0' + rand() % 36;
+				if (num > '9')
+					num += 'A' - '9' - 1;
+				*ch++ = num;
+			}
+		} while (game_get_by_key(game->key) != NULL);
+		// set some other default settings
+		game->is_public = false;
+		game->speed		= 3;
+		game->state		= GAME_IDLE;
+	}
 
 	// finally, start the game thread
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)game_thread, "game", game);
@@ -96,38 +99,49 @@ game_t *game_get_list(SDL_mutex **mutex) {
 static int game_thread(game_t *game) {
 	if (game == NULL)
 		return -1;
-	lt_log_set_thread_name("game");
+	char thread_name[12];
+	snprintf(thread_name, sizeof(thread_name) - 1, "game-%s", game->key);
+	lt_log_set_thread_name(thread_name);
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);
 
 	while (1) {
 		// wait for incoming data
-		if (net_endpoint_select(game->endpoints, game->mutex, (net_select_cb_t)game_select_cb, game) != NET_ERR_OK)
+		net_err_t err = net_endpoint_select(
+			game->endpoints,
+			game->mutex,
+			(net_select_read_cb_t)game_select_read_cb,
+			(net_select_err_cb_t)game_select_err_cb,
+			game
+		);
+		if (err != NET_ERR_OK)
 			goto cleanup;
+		SDL_Delay(100);
 	}
 
 cleanup:
+	LT_I("Game: stopping '%s' (key: %s)", game->name, game->key);
 	return 0;
 }
 
-static net_err_t game_select_cb(net_endpoint_t *endpoint, game_t *game) {
+static net_err_t game_select_read_cb(net_endpoint_t *endpoint, game_t *game) {
 	net_err_t ret = net_pkt_recv(endpoint);
-	if (ret == NET_ERR_RECV)
+	if (ret < NET_ERR_OK)
 		return ret;
-	if (ret == NET_ERR_CLIENT_CLOSED) {
-		LT_I("Game: connection closed from %s:%d", inet_ntoa(endpoint->addr.sin_addr), ntohs(endpoint->addr.sin_port));
-		goto closed;
-	}
 	if (ret != NET_ERR_OK_PACKET)
 		// continue if packet is not fully received yet
 		return NET_ERR_OK;
 
 	// valid packet received, process it and send a response
 	return game_respond(endpoint, game, &endpoint->recv.pkt);
+}
 
-closed:
+static void game_select_err_cb(net_endpoint_t *endpoint, game_t *game, net_err_t err) {
+	if (err == NET_ERR_CLIENT_CLOSED)
+		LT_I("Game: connection closed from %s", net_endpoint_str(endpoint));
+	else
+		LT_E("Game: connection error from %s", net_endpoint_str(endpoint));
 	game_del_endpoint(game, endpoint);
-	return NET_ERR_OK;
 }
 
 static net_err_t game_respond(net_endpoint_t *endpoint, game_t *game, pkt_t *recv_pkt) {

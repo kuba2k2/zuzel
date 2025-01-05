@@ -3,7 +3,8 @@
 #include "net.h"
 
 static int net_client_connect(char *address);
-static net_err_t net_client_select_cb(net_endpoint_t *endpoint, net_t *net);
+static net_err_t net_client_select_read_cb(net_endpoint_t *endpoint, net_t *net);
+static void net_client_select_err_cb(net_endpoint_t *endpoint, net_t *net, net_err_t err);
 
 static net_t *client = NULL;
 
@@ -108,12 +109,16 @@ static int net_client_connect(char *address) {
 
 	while (!client->stop) {
 		// wait for incoming data
-		if (net_endpoint_select(&client->endpoint, NULL, (net_select_cb_t)net_client_select_cb, client) != NET_ERR_OK)
+		net_err_t err = net_endpoint_select(
+			&client->endpoint,
+			NULL,
+			(net_select_read_cb_t)net_client_select_read_cb,
+			(net_select_err_cb_t)net_client_select_err_cb,
+			client
+		);
+		if (err != NET_ERR_OK)
 			goto cleanup;
 	}
-
-error_start:
-	LT_E("Couldn't start the game client");
 
 cleanup:
 	// send a 'closed' event
@@ -139,23 +144,29 @@ cleanup:
 #endif
 	LT_I("Client: thread stopped");
 	return 0;
+
+error_start:
+	LT_E("Couldn't start the game client");
+	goto cleanup;
 }
 
-static net_err_t net_client_select_cb(net_endpoint_t *endpoint, net_t *net) {
+static net_err_t net_client_select_read_cb(net_endpoint_t *endpoint, net_t *net) {
 	net_err_t ret = net_pkt_recv(endpoint);
-	if (ret == NET_ERR_RECV)
+	if (ret < NET_ERR_OK)
 		return ret;
-	if (ret == NET_ERR_CLIENT_CLOSED) {
-		LT_E(
-			"Client: connection closed with %s:%d",
-			inet_ntoa(endpoint->addr.sin_addr),
-			ntohs(endpoint->addr.sin_port)
-		);
-		return ret;
-	}
 	if (ret != NET_ERR_OK_PACKET)
 		// continue if packet is not fully received yet
 		return NET_ERR_OK;
 
 	return net_pkt_broadcast(&net->endpoint, &net->endpoint.recv.pkt, endpoint);
+}
+
+static void net_client_select_err_cb(net_endpoint_t *endpoint, net_t *net, net_err_t err) {
+	if (err == NET_ERR_CLIENT_CLOSED && net->stop)
+		LT_I("Client: connection closed from %s", net_endpoint_str(endpoint));
+	else if (err == NET_ERR_CLIENT_CLOSED)
+		LT_E("Client: disconnected from %s", net_endpoint_str(endpoint));
+	else
+		LT_E("Client: connection error from %s", net_endpoint_str(endpoint));
+	net->stop = true;
 }

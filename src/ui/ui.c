@@ -76,6 +76,8 @@ int ui_run(ui_t *ui) {
 					gfx_view_bounding_box = !gfx_view_bounding_box;
 				else if (e.key.keysym.sym == SDLK_F5)
 					prev_fragment = NULL, fragment_reload(fragment, ui);
+				else if (e.key.keysym.sym == SDLK_F10)
+					net_client_stop(), net_server_stop(), ui_state_prev(ui);
 				break;
 
 			default:

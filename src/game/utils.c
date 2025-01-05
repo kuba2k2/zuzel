@@ -23,7 +23,7 @@ void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_DELETE(game->endpoints, endpoint);
 	}
-	net_endpoint_close(endpoint);
+	net_endpoint_free(endpoint);
 	free(endpoint);
 }
 

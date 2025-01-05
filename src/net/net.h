@@ -74,7 +74,8 @@ typedef struct net_t {
 	bool stop;				 //!< Whether the thread should stop gracefully
 } net_t;
 
-typedef net_err_t (*net_select_cb_t)(net_endpoint_t *endpoint, void *param);
+typedef net_err_t (*net_select_read_cb_t)(net_endpoint_t *endpoint, void *param);
+typedef void (*net_select_err_cb_t)(net_endpoint_t *endpoint, void *param, net_err_t err);
 
 // pkt.c
 pkt_t *net_pkt_dup(pkt_t *pkt);
@@ -93,7 +94,13 @@ void net_endpoint_close(net_endpoint_t *endpoint);
 void net_endpoint_free(net_endpoint_t *endpoint);
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len);
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len);
-net_err_t net_endpoint_select(net_endpoint_t *endpoints, SDL_mutex *mutex, net_select_cb_t cb, void *param);
+net_err_t net_endpoint_select(
+	net_endpoint_t *endpoints,
+	SDL_mutex *mutex,
+	net_select_read_cb_t read_cb,
+	net_select_err_cb_t err_cb,
+	void *param
+);
 
 // errors.c
 bool net_error_print();
