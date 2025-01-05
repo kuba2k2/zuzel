@@ -49,6 +49,7 @@ typedef struct ui_t {
 	} connection;
 
 	net_endpoint_t *client;
+	game_t *game;
 } ui_t;
 
 ui_t *ui_init(SDL_Renderer *renderer);

@@ -166,7 +166,7 @@ net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_
 	DL_FOREACH(endpoints, endpoint) {
 		if (endpoint == source)
 			continue;
-		if (endpoint->type == NET_ENDPOINT_PIPE) {
+		if (endpoint->type == NET_ENDPOINT_PIPE && endpoint->pipe.broadcast_sdl) {
 			SDL_Event user = {
 				.user.type	= SDL_USEREVENT_PACKET,
 				.user.data1 = net_pkt_dup(pkt),

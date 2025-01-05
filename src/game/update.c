@@ -34,6 +34,8 @@ void game_send_update(game_t *game, net_endpoint_t *source, net_endpoint_t *targ
 	if (target != NULL) {
 		net_pkt_send(target, (pkt_t *)&pkt);
 	} else {
-		game_send_packet_broadcast(game, (pkt_t *)&pkt, source);
+		SDL_WITH_MUTEX(game->mutex) {
+			net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);
+		}
 	}
 }

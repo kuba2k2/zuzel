@@ -20,6 +20,7 @@ net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 	net_endpoint_t *pipe;
 	MALLOC(pipe, sizeof(*pipe), return NULL);
 	net_endpoint_pipe(pipe);
+	pipe->pipe.broadcast_sdl = true;
 	// append to doubly-linked list for net_endpoint_select()
 	pipe->prev			  = &client->endpoint;
 	client->endpoint.next = pipe;

@@ -46,7 +46,8 @@ static bool process_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t 
 		.hdr.type = PKT_ERROR,
 		.error	  = GAME_ERR_INVALID_STATE,
 	};
-	return net_pkt_send(source, (pkt_t *)&pkt);
+	net_pkt_send(source, (pkt_t *)&pkt);
+	return false;
 }
 
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source) {
@@ -74,8 +75,7 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 	game->is_public = recv_pkt->is_public;
 	game->speed		= recv_pkt->speed;
 
-	// only broadcast game data updates as the server
-	return !game->is_client;
+	return true;
 }
 
 static bool process_pkt_send_update(game_t *game, pkt_send_update_t *recv_pkt, net_endpoint_t *source) {

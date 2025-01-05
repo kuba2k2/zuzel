@@ -51,9 +51,10 @@ typedef struct net_endpoint_t {
 	int fd;					 //!< Socket descriptor
 
 	struct {
-		int fd[2];	 //!< Pipe descriptor
-		int len;	 //!< Pipe sent data length
-		void *event; //!< Socket event (Windows only)
+		int fd[2];			//!< Pipe descriptor
+		int len;			//!< Pipe sent data length
+		void *event;		//!< Socket event (Windows only)
+		bool broadcast_sdl; //!< Whether net_pkt_broadcast() should send to SDL
 	} pipe;
 
 	SSL_CTX *ssl_ctx; //!< OpenSSL context (optional)

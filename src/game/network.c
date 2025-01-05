@@ -43,15 +43,3 @@ void game_send_packet_pipe(game_t *game, pkt_t *pkt) {
 		net_pkt_send(pipe, pkt);
 	}
 }
-
-void game_send_packet_broadcast(game_t *game, pkt_t *pkt, net_endpoint_t *source) {
-	net_endpoint_t *endpoint;
-	SDL_WITH_MUTEX(game->mutex) {
-		DL_FOREACH(game->endpoints, endpoint) {
-			if (endpoint == source)
-				continue;
-			LT_D("Game: broadcasting to %s", net_endpoint_str(endpoint));
-			net_pkt_send(endpoint, pkt);
-		}
-	}
-}

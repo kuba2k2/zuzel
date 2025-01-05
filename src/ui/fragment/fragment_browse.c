@@ -234,6 +234,7 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 
 		case SDL_USEREVENT_GAME:
 			ui->client = NULL;
+			ui->game   = e->user.data1;
 			ui_state_set(ui, UI_STATE_LOBBY);
 			return true;
 	}

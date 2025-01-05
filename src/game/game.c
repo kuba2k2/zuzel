@@ -17,6 +17,7 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	{
 		net_endpoint_t pipe = {0};
 		net_endpoint_pipe(&pipe);
+		pipe.pipe.broadcast_sdl = true;
 		game_add_endpoint(game, &pipe);
 	}
 
@@ -134,7 +135,9 @@ static net_err_t game_select_read_cb(net_endpoint_t *endpoint, game_t *game) {
 		return NET_ERR_OK;
 
 	// otherwise, broadcast the packet to other endpoints
-	game_send_packet_broadcast(game, &endpoint->recv.pkt, endpoint);
+	SDL_WITH_MUTEX(game->mutex) {
+		net_pkt_broadcast(game->endpoints, &endpoint->recv.pkt, endpoint);
+	}
 	return NET_ERR_OK;
 }
 
