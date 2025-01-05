@@ -41,7 +41,8 @@ static void on_connected(ui_t *ui) {
 		case UI_CONNECT_NEW_PRIVATE:
 		case UI_CONNECT_NEW_LOCAL: {
 			pkt_game_new_t pkt = {
-				.hdr.type = PKT_GAME_NEW,
+				.hdr.type  = PKT_GAME_NEW,
+				.is_public = ui->connection.type != UI_CONNECT_NEW_PRIVATE,
 			};
 			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
 			break;

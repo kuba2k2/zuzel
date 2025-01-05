@@ -56,6 +56,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
 	pkt_hdr_t hdr;
+	uint32_t is_public;
 } pkt_game_new_t;
 
 typedef struct __attribute__((packed)) {

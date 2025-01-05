@@ -34,8 +34,11 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	if (thread == NULL)
 		SDL_ERROR("SDL_CreateThread()", goto cleanup);
 
-	SDL_WITH_MUTEX(game_list_mutex) {
-		DL_APPEND(game_list, game);
+	if (!game->is_client) {
+		// only use game_list server-side
+		SDL_WITH_MUTEX(game_list_mutex) {
+			DL_APPEND(game_list, game);
+		}
 	}
 
 	return game;
@@ -91,8 +94,8 @@ game_t *game_get_list(SDL_mutex **mutex) {
 static int game_thread(game_t *game) {
 	if (game == NULL)
 		return -1;
-	char thread_name[12];
-	snprintf(thread_name, sizeof(thread_name), "game-%s", game->key);
+	char thread_name[19];
+	snprintf(thread_name, sizeof(thread_name), "game-%s-%s", game->is_client ? "client" : "server", game->key);
 	lt_log_set_thread_name(thread_name);
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);
