@@ -9,7 +9,7 @@ void settings_load() {
 	SETTINGS->screen.height			= 480;
 	SETTINGS->screen.scale			= 1;
 	SETTINGS->player_name			= strdup("Player");
-	SETTINGS->public_server_address = strdup("127.0.0.1");
+	SETTINGS->public_server_address = strdup("127.0.0.1:5678");
 	SETTINGS->server_port			= 1234;
 	SETTINGS->tls_cert_file			= strdup("server.crt");
 	SETTINGS->tls_key_file			= strdup("server.key");

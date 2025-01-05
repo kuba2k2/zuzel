@@ -17,6 +17,7 @@ int SDL_main(int argc, char *argv[]) {
 	MALLOC(SETTINGS, sizeof(*SETTINGS), return 1);
 	settings_load();
 
+	// load certificate
 	char *cert = file_read_data(SETTINGS->tls_cert_file);
 	if (cert == NULL)
 		LT_ERR(F, return 1, "TLS certificate file '%s' cannot be read", SETTINGS->tls_cert_file);
@@ -25,6 +26,7 @@ int SDL_main(int argc, char *argv[]) {
 	if (SETTINGS->tls_cert == NULL)
 		SSL_ERROR("TLS certificate parse", return 1);
 
+	// load private key
 	char *key = file_read_data(SETTINGS->tls_key_file);
 	if (key == NULL)
 		LT_ERR(F, return 1, "TLS private key file '%s' cannot be read", SETTINGS->tls_key_file);
@@ -33,6 +35,13 @@ int SDL_main(int argc, char *argv[]) {
 	if (SETTINGS->tls_key == NULL)
 		SSL_ERROR("TLS private key parse", return 1);
 
+	// extract port number from public server address
+	char *port = strchr(SETTINGS->public_server_address, ':');
+	if (port != NULL)
+		SETTINGS->server_port = strtol(port + 1, NULL, 0);
+
+	for (int i = 0; i < 8; i++)
+		game_init();
 	net_server_start(true);
 	return 0;
 }
