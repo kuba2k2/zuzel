@@ -14,6 +14,7 @@ typedef struct {
 	} screen;
 
 	char *player_name;
+	char *game_name;
 	char *public_server_address;
 	int server_port;
 

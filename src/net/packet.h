@@ -4,6 +4,8 @@
 
 #include "include.h"
 
+#include "game/structs.h"
+
 typedef enum {
 	PKT_PING = 1,		 //!< Ping/time sync
 	PKT_SUCCESS,		 //!< Success response
@@ -61,7 +63,7 @@ typedef struct __attribute__((packed)) {
 	char key[GAME_KEY_LEN + 1];
 } pkt_game_join_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_game_data_t {
 	pkt_hdr_t hdr;
 	uint32_t is_list;
 	char key[GAME_KEY_LEN + 1];

@@ -242,7 +242,7 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 		}
 
 		case PKT_GAME_NEW: {
-			game_t *game = game_init();
+			game_t *game = game_init(NULL);
 			// pass the endpoint to the game thread, duplicating it
 			game_add_endpoint(game, endpoint);
 			return NET_ERR_OK_PACKET;

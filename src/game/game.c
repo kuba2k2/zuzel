@@ -5,12 +5,11 @@
 static int game_thread(game_t *game);
 static net_err_t game_select_read_cb(net_endpoint_t *endpoint, game_t *game);
 static void game_select_err_cb(net_endpoint_t *endpoint, game_t *game, net_err_t err);
-static net_err_t game_respond(net_endpoint_t *endpoint, game_t *game, pkt_t *recv_pkt);
 
 static game_t *game_list		  = NULL;
 static SDL_mutex *game_list_mutex = NULL;
 
-game_t *game_init() {
+game_t *game_init(pkt_game_data_t *pkt_data) {
 	game_t *game;
 	MALLOC(game, sizeof(*game), goto cleanup);
 
@@ -22,22 +21,11 @@ game_t *game_init() {
 	}
 
 	SDL_WITH_MUTEX(game->mutex) {
-		// generate a game name
-		snprintf(game->name, sizeof(game->name) - 1, "%s's Game", SETTINGS->player_name);
-		// generate a game key
-		do {
-			char *ch = game->key;
-			for (int i = 0; i < sizeof(game->key) - 1; i++) {
-				int num = '0' + rand() % 36;
-				if (num > '9')
-					num += 'A' - '9' - 1;
-				*ch++ = num;
-			}
-		} while (game_get_by_key(game->key) != NULL);
-		// set some other default settings
-		game->is_public = false;
-		game->speed		= 3;
-		game->state		= GAME_IDLE;
+		if (pkt_data == NULL)
+			game_set_data_default(game);
+		else
+			game_process_packet(game, (pkt_t *)pkt_data, NULL);
+		game->is_client = pkt_data != NULL;
 	}
 
 	// finally, start the game thread
@@ -86,12 +74,12 @@ game_t *game_get_by_key(const char *key) {
 		DL_FOREACH(game_list, game) {
 			count++;
 			if (strnicmp(game->key, key, GAME_KEY_LEN) == 0)
-				return game;
+				break;
 		}
 	}
-	if (count == 1 && key[0] == '\0' && game_list->is_public)
+	if (game == NULL && count == 1 && key[0] == '\0' && game_list->is_public)
 		return game_list;
-	return NULL;
+	return game;
 }
 
 game_t *game_get_list(SDL_mutex **mutex) {
@@ -138,7 +126,13 @@ static net_err_t game_select_read_cb(net_endpoint_t *endpoint, game_t *game) {
 		return NET_ERR_OK;
 
 	// valid packet received, process it and send a response
-	return game_respond(endpoint, game, &endpoint->recv.pkt);
+	if (game_process_packet(game, &endpoint->recv.pkt, endpoint) == false)
+		// if 'false', packet was consumed by processing
+		return NET_ERR_OK;
+
+	// otherwise, broadcast the packet to other endpoints
+	game_send_packet_broadcast(game, &endpoint->recv.pkt, endpoint);
+	return NET_ERR_OK;
 }
 
 static void game_select_err_cb(net_endpoint_t *endpoint, game_t *game, net_err_t err) {
@@ -147,32 +141,4 @@ static void game_select_err_cb(net_endpoint_t *endpoint, game_t *game, net_err_t
 	else
 		LT_E("Game: connection error from %s", net_endpoint_str(endpoint));
 	game_del_endpoint(game, endpoint);
-}
-
-static net_err_t game_respond(net_endpoint_t *endpoint, game_t *game, pkt_t *recv_pkt) {
-	switch (recv_pkt->hdr.type) {
-		case PKT_PING: {
-			pkt_ping_t pkt = {
-				.hdr.type	 = PKT_PING,
-				.seq		 = recv_pkt->ping.seq,
-				.is_response = true,
-			};
-			return net_pkt_send(endpoint, (pkt_t *)&pkt);
-		}
-
-		case PKT_ERROR:
-			return NET_ERR_OK;
-
-		case PKT_SEND_UPDATE:
-			game_send_update(game, endpoint, NULL);
-			return NET_ERR_OK;
-
-		default: {
-			pkt_error_t pkt = {
-				.hdr.type = PKT_ERROR,
-				.error	  = GAME_ERR_INVALID_STATE,
-			};
-			return net_pkt_send(endpoint, (pkt_t *)&pkt);
-		}
-	}
 }

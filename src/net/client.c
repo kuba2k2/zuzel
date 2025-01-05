@@ -134,10 +134,15 @@ cleanup:
 		SDL_DestroyMutex(net->endpoint.next->mutex);
 		free(net->endpoint.next);
 	}
-	// stop the client
-	net_endpoint_free(&net->endpoint);
-	SDL_DestroyMutex(net->endpoint.mutex);
-	// free the server's structure
+	if (net->game == NULL) {
+		// no game joined - close the pipe
+		net_endpoint_free(&net->endpoint);
+		SDL_DestroyMutex(net->endpoint.mutex);
+	} else {
+		// game was joined - pass endpoint to game thread
+		game_add_endpoint(net->game, &net->endpoint);
+	}
+	// free the client's structure
 	free(net);
 #if WIN32
 	WSACleanup();
@@ -161,11 +166,14 @@ static net_err_t net_client_select_read_cb(net_endpoint_t *endpoint, net_t *net)
 
 	if (pkt->hdr.type == PKT_GAME_DATA && !pkt->game_data.is_list) {
 		// game joined - hand over to game thread
-		LT_I("Client: joined game %s", pkt->game_data.key);
+		client->game = game_init((pkt_game_data_t *)pkt);
+		if (client->game == NULL)
+			return NET_ERR_CLIENT_CLOSED;
+		LT_I("Client: joined game %s", client->game->key);
 		// send game event to UI
 		SDL_Event event = {
 			.user.type	= SDL_USEREVENT_GAME,
-			.user.data1 = NULL,
+			.user.data1 = client->game,
 		};
 		SDL_PushEvent(&event);
 		// request the client to stop
