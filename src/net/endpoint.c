@@ -365,17 +365,19 @@ net_err_t net_endpoint_select(
 		DL_FOREACH(endpoints, endpoint) {
 			if (endpoint->type > NET_ENDPOINT_PIPE)
 				continue;
-			endpoint_list[num_events] = endpoint;
-			event_list[num_events]	  = endpoint->pipe.event;
-			if (endpoint->type != NET_ENDPOINT_PIPE)
-				// call WSAEventSelect() on sockets only (not on pipes)
-				WSAEventSelect(endpoint->fd, endpoint->pipe.event, mask);
 			if (endpoint->type == NET_ENDPOINT_TLS && SSL_pending(endpoint->ssl)) {
 				// immediately allow reading any previously-buffered TLS data
 				net_err_t err;
 				if (read_cb != NULL && (err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
 					error_cb(endpoint, param, err);
+				return NET_ERR_OK;
 			}
+			if (endpoint->type != NET_ENDPOINT_PIPE) {
+				// call WSAEventSelect() on sockets only (not on pipes)
+				WSAEventSelect(endpoint->fd, endpoint->pipe.event, mask);
+			}
+			endpoint_list[num_events] = endpoint;
+			event_list[num_events]	  = endpoint->pipe.event;
 			num_events++;
 		}
 	}
@@ -418,11 +420,13 @@ net_err_t net_endpoint_select(
 		net_err_t err;
 		if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
 			error_cb(endpoint, param, err);
+		return NET_ERR_OK;
 	}
 	if (network_events.lNetworkEvents & FD_CLOSE) {
 		LT_V("select()=FD_CLOSE, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
 		if (error_cb != NULL)
 			error_cb(endpoint, param, NET_ERR_CLIENT_CLOSED);
+		return NET_ERR_OK;
 	}
 
 	return NET_ERR_OK;
