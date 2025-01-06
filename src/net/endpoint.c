@@ -370,6 +370,7 @@ net_err_t net_endpoint_select(
 				net_err_t err;
 				if (read_cb != NULL && (err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
 					error_cb(endpoint, param, err);
+				SDL_UnlockMutex(mutex);
 				return NET_ERR_OK;
 			}
 			if (endpoint->type != NET_ENDPOINT_PIPE) {
