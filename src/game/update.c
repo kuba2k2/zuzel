@@ -3,9 +3,6 @@
 #include "game.h"
 
 void game_request_update(game_t *game) {
-	if (game->is_client)
-		// clients are not authoritative, so they don't send global updates
-		return;
 	// request a global state update
 	pkt_send_update_t pkt = {
 		.hdr.type = PKT_SEND_UPDATE,

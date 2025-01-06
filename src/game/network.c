@@ -9,7 +9,8 @@ void game_add_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_APPEND(game->endpoints, item);
 	}
-	if (endpoint->type <= NET_ENDPOINT_TLS)
+	if (endpoint->type <= NET_ENDPOINT_TLS && !game->is_client)
+		// clients don't send endpoint connection updates
 		game_request_update(game);
 }
 
@@ -17,7 +18,8 @@ void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_DELETE(game->endpoints, endpoint);
 	}
-	if (endpoint->type <= NET_ENDPOINT_TLS)
+	if (endpoint->type <= NET_ENDPOINT_TLS && !game->is_client)
+		// clients don't send endpoint connection updates
 		game_request_update(game);
 	net_endpoint_free(endpoint);
 	free(endpoint);
