@@ -22,11 +22,14 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	}
 
 	SDL_WITH_MUTEX(game->mutex) {
-		if (pkt_data == NULL)
+		if (pkt_data == NULL) {
 			game_set_data_default(game);
-		else
+		} else {
 			game_process_packet(game, (pkt_t *)pkt_data, NULL);
-		game->is_client = pkt_data != NULL;
+			game->is_client = true;
+			if (game_get_by_key(game->key) != NULL)
+				game->is_local = true;
+		}
 	}
 
 	// finally, start the game thread
