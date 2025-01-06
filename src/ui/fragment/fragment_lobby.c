@@ -94,21 +94,21 @@ static bool on_btn_game_rename(view_t *view, SDL_Event *e, ui_t *ui) {
 
 static bool on_btn_game_private(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = false;
-	game_request_update(GAME);
+	game_request_send_game_data(GAME);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_btn_game_public(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = true;
-	game_request_update(GAME);
+	game_request_send_game_data(GAME);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_speed_change(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->speed = view->data.slider.value;
-	game_request_update(GAME);
+	game_request_send_game_data(GAME);
 	ui_update_game(ui);
 	return false;
 }

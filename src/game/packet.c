@@ -6,7 +6,7 @@ typedef bool (*game_process_t)(game_t *game, pkt_t *recv_pkt, net_endpoint_t *so
 static bool process_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
-static bool process_pkt_send_update(game_t *game, pkt_send_update_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_send_game_data(game_t *game, pkt_send_game_data_t *recv_pkt, net_endpoint_t *source);
 
 const game_process_t process_list[PKT_MAX] = {
 	[PKT_PING]			  = (game_process_t)process_pkt_ping,
@@ -21,7 +21,7 @@ const game_process_t process_list[PKT_MAX] = {
 	[PKT_PLAYER_KEYPRESS] = (game_process_t)process_invalid_state,
 	[PKT_PLAYER_UPDATE]	  = (game_process_t)process_invalid_state,
 	[PKT_PLAYER_LEAVE]	  = (game_process_t)process_invalid_state,
-	[PKT_SEND_UPDATE]	  = (game_process_t)process_pkt_send_update,
+	[PKT_SEND_GAME_DATA]  = (game_process_t)process_pkt_send_game_data,
 };
 
 /**
@@ -78,7 +78,15 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 	return true;
 }
 
-static bool process_pkt_send_update(game_t *game, pkt_send_update_t *recv_pkt, net_endpoint_t *source) {
-	game_send_update(game, source, NULL);
+static bool process_pkt_send_game_data(game_t *game, pkt_send_game_data_t *recv_pkt, net_endpoint_t *source) {
+	pkt_game_data_t pkt = {
+		.hdr.type = PKT_GAME_DATA,
+		.is_list  = false,
+	};
+	game_data_fill_pkt(game, &pkt);
+
+	SDL_WITH_MUTEX(game->mutex) {
+		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);
+	}
 	return false;
 }

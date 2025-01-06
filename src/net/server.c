@@ -212,13 +212,13 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 				}
 			}
 			// send game list response
-			pkt_game_list_t pkt = {
+			pkt_game_list_t pkt_list = {
 				.hdr.type	 = PKT_GAME_LIST,
 				.page		 = recv_pkt->game_list.page,
 				.per_page	 = recv_pkt->game_list.per_page,
 				.total_count = total_count,
 			};
-			net_pkt_send(endpoint, (pkt_t *)&pkt);
+			net_pkt_send(endpoint, (pkt_t *)&pkt_list);
 			// send updates for the requested range
 			SDL_WITH_MUTEX(game_list_mutex) {
 				game_t *game;
@@ -232,7 +232,12 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 						index++;
 						continue;
 					} else {
-						game_send_update(game, NULL, endpoint);
+						pkt_game_data_t pkt_data = {
+							.hdr.type = PKT_GAME_DATA,
+							.is_list  = true,
+						};
+						game_data_fill_pkt(game, &pkt_data);
+						net_pkt_send(endpoint, (pkt_t *)&pkt_data);
 						if (++index >= last)
 							break;
 					}

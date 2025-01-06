@@ -11,7 +11,7 @@ void game_add_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	}
 	if (endpoint->type <= NET_ENDPOINT_TLS && !game->is_client)
 		// clients don't send endpoint connection updates
-		game_request_update(game);
+		game_request_send_game_data(game);
 }
 
 void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
@@ -20,7 +20,7 @@ void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	}
 	if (endpoint->type <= NET_ENDPOINT_TLS && !game->is_client)
 		// clients don't send endpoint connection updates
-		game_request_update(game);
+		game_request_send_game_data(game);
 	net_endpoint_free(endpoint);
 	free(endpoint);
 	// stop the game if there are no more endpoints

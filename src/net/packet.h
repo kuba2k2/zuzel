@@ -20,7 +20,7 @@ typedef enum {
 	PKT_PLAYER_KEYPRESS, //!< Player keypress information
 	PKT_PLAYER_UPDATE,	 //!< Player generic update
 	PKT_PLAYER_LEAVE,	 //!< Player leave event
-	PKT_SEND_UPDATE,	 //!< Broadcast game data request
+	PKT_SEND_GAME_DATA,	 //!< Request to broadcast game data
 	PKT_MAX,
 } pkt_type_t;
 
@@ -110,7 +110,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
 	pkt_hdr_t hdr;
-} pkt_send_update_t;
+} pkt_send_game_data_t;
 
 typedef union __attribute__((packed)) pkt_t {
 	pkt_hdr_t hdr;
@@ -127,5 +127,5 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_player_keypress_t player_keypress;
 	// pkt_player_update_t player_update;
 	pkt_player_leave_t player_leave;
-	pkt_send_update_t send_update;
+	pkt_send_game_data_t send_game_data;
 } pkt_t;
