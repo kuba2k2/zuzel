@@ -49,12 +49,22 @@ cleanup:
 	return NULL;
 }
 
+void game_stop(game_t *game) {
+	game->stop	   = true;
+	pkt_ping_t pkt = {
+		.hdr.type = PKT_PING,
+	};
+	game_send_packet_pipe(game, (pkt_t *)&pkt);
+}
+
 void game_free(game_t *game) {
 	if (game == NULL)
 		return;
 	// remove the game from the global list
-	SDL_WITH_MUTEX(game_list_mutex) {
-		DL_DELETE(game_list, game);
+	if (!game->is_client) {
+		SDL_WITH_MUTEX(game_list_mutex) {
+			DL_DELETE(game_list, game);
+		}
 	}
 	// close and free all endpoints
 	SDL_WITH_MUTEX(game->mutex) {
