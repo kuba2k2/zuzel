@@ -50,6 +50,8 @@ cleanup:
 }
 
 void game_stop(game_t *game) {
+	if (game == NULL)
+		return;
 	game->stop	   = true;
 	pkt_ping_t pkt = {
 		.hdr.type = PKT_PING,
@@ -126,6 +128,14 @@ static int game_thread(game_t *game) {
 	}
 
 cleanup:
+	if (game->is_client) {
+		// send game stop event to UI
+		SDL_Event event = {
+			.user.type	= SDL_USEREVENT_GAME,
+			.user.data1 = NULL,
+		};
+		SDL_PushEvent(&event);
+	}
 	LT_I("Game: stopping '%s' (key: %s)", game->name, game->key);
 	game_free(game);
 	return 0;
