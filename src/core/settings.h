@@ -15,6 +15,7 @@ typedef struct {
 
 	char *player_name;
 	char *game_name;
+	int game_speed;
 	char *public_server_address;
 	int server_port;
 

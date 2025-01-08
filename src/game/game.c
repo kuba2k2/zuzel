@@ -22,9 +22,26 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	}
 
 	SDL_WITH_MUTEX(game->mutex) {
+		// set some default settings
+		game->is_public = false;
+		game->speed		= SETTINGS->game_speed;
+		game->state		= GAME_IDLE;
+
 		if (pkt_data == NULL) {
-			game_set_data_default(game);
+			// new game created, set the server's default options
+			game_set_default_player_options(game);
+			// generate a game key
+			do {
+				char *ch = game->key;
+				for (int i = 0; i < sizeof(game->key) - 1; i++) {
+					int num = '0' + rand() % 36;
+					if (num > '9')
+						num += 'A' - '9' - 1;
+					*ch++ = (char)num;
+				}
+			} while (game_get_by_key(game->key) != NULL);
 		} else {
+			// joined a game, apply data from PKT_GAME_DATA
 			game_process_packet(game, (pkt_t *)pkt_data, NULL);
 			game->is_client = true;
 			if (game_get_by_key(game->key) != NULL)

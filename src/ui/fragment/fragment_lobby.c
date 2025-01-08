@@ -78,6 +78,13 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	btn_game_public->is_gone  = GAME->is_local;
 	hide_dialog(ui);
 
+	if (!GAME->is_local &&
+		(ui->connection.type == UI_CONNECT_NEW_PUBLIC || ui->connection.type == UI_CONNECT_NEW_PRIVATE)) {
+		// if the game was just created, set the player's customized data and send an update
+		game_set_default_player_options(GAME);
+		game_request_send_game_data(GAME);
+	}
+
 	ui_update_game(ui);
 	return true;
 
