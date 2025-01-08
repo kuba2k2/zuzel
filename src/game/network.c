@@ -33,6 +33,9 @@ void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
 }
 
 static void game_check_empty(game_t *game) {
+	if (game->is_client)
+		// clients don't need the expiry timer
+		return;
 	int endpoints = 0;
 	SDL_WITH_MUTEX(game->mutex) {
 		net_endpoint_t *item;
@@ -57,17 +60,4 @@ static uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
 	// wake up the game thread
 	game_request_send_game_data(game);
 	return 0;
-}
-
-void game_send_packet_pipe(game_t *game, pkt_t *pkt) {
-	net_endpoint_t *pipe = NULL;
-	SDL_WITH_MUTEX(game->mutex) {
-		DL_FOREACH(game->endpoints, pipe) {
-			if (pipe->type == NET_ENDPOINT_PIPE)
-				break;
-		}
-	}
-	if (pipe != NULL) {
-		net_pkt_send(pipe, pkt);
-	}
 }

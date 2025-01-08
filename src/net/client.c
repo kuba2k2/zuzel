@@ -20,7 +20,6 @@ net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 	net_endpoint_t *pipe;
 	MALLOC(pipe, sizeof(*pipe), return NULL);
 	net_endpoint_pipe(pipe);
-	pipe->pipe.broadcast_sdl = true;
 	// append to doubly-linked list for net_endpoint_select()
 	pipe->prev			  = &client->endpoint;
 	client->endpoint.next = pipe;
@@ -163,7 +162,7 @@ static net_err_t net_client_select_read_cb(net_endpoint_t *endpoint, net_t *net)
 	if (ret != NET_ERR_OK_PACKET)
 		// continue if packet is not fully received yet
 		return NET_ERR_OK;
-	pkt_t *pkt = &net->endpoint.recv.pkt;
+	pkt_t *pkt = &endpoint->recv.pkt;
 
 	if (pkt->hdr.type == PKT_GAME_DATA && !pkt->game_data.is_list) {
 		// game joined - hand over to game thread

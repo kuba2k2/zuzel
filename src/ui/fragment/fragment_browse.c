@@ -38,7 +38,7 @@ static void get_game_list(ui_t *ui, int page) {
 		.total_count = 0,
 	};
 	is_joining = false;
-	if (net_pkt_send(ui->client, (pkt_t *)&pkt) != NET_ERR_OK)
+	if (net_pkt_send_pipe(ui->client, (pkt_t *)&pkt) != NET_ERR_OK)
 		on_error(ui);
 }
 
@@ -117,7 +117,7 @@ static bool on_btn_join(view_t *view, SDL_Event *e, ui_t *ui) {
 	};
 	strncpy(pkt.key, row_key->data.text.text, GAME_KEY_LEN);
 	is_joining = true;
-	if (net_pkt_send(ui->client, (pkt_t *)&pkt) != NET_ERR_OK)
+	if (net_pkt_send_pipe(ui->client, (pkt_t *)&pkt) != NET_ERR_OK)
 		on_error(ui);
 	return true;
 }

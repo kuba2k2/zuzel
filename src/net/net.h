@@ -51,10 +51,10 @@ typedef struct net_endpoint_t {
 	int fd;					 //!< Socket descriptor
 
 	struct {
-		int fd[2];			//!< Pipe descriptor
-		long len;			//!< Pipe sent data length
-		void *event;		//!< Socket event (Windows only)
-		bool broadcast_sdl; //!< Whether net_pkt_broadcast() should send to SDL
+		int fd[2];	 //!< Pipe descriptor
+		long len;	 //!< Pipe sent data length
+		void *event; //!< Socket event (Windows only)
+		bool no_sdl; //!< Whether net_pkt_send() should avoid sending SDL events here
 	} pipe;
 
 	SSL_CTX *ssl_ctx; //!< OpenSSL context (optional)
@@ -83,6 +83,7 @@ typedef void (*net_select_err_cb_t)(net_endpoint_t *endpoint, void *param, net_e
 pkt_t *net_pkt_dup(pkt_t *pkt);
 net_err_t net_pkt_recv(net_endpoint_t *endpoint);
 net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt);
+net_err_t net_pkt_send_pipe(net_endpoint_t *endpoint, pkt_t *pkt);
 net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_t *source);
 
 // endpoint.c

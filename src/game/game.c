@@ -13,14 +13,6 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	game_t *game;
 	MALLOC(game, sizeof(*game), goto cleanup);
 
-	// create a pipe for incoming packets
-	{
-		net_endpoint_t pipe = {0};
-		net_endpoint_pipe(&pipe);
-		pipe.pipe.broadcast_sdl = true;
-		game_add_endpoint(game, &pipe);
-	}
-
 	SDL_WITH_MUTEX(game->mutex) {
 		// set some default settings
 		game->is_public = false;
@@ -42,11 +34,20 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 			} while (game_get_by_key(game->key) != NULL);
 		} else {
 			// joined a game, apply data from PKT_GAME_DATA
-			game_process_packet(game, (pkt_t *)pkt_data, NULL);
 			game->is_client = true;
+			game_process_packet(game, (pkt_t *)pkt_data, NULL);
 			if (game_get_by_key(game->key) != NULL)
 				game->is_local = true;
 		}
+	}
+
+	// create a pipe for incoming packets
+	{
+		net_endpoint_t pipe = {0};
+		net_endpoint_pipe(&pipe);
+		// servers shouldn't send SDL events as response to pipe packets
+		pipe.pipe.no_sdl = !game->is_client;
+		game_add_endpoint(game, &pipe);
 	}
 
 	// finally, start the game thread
@@ -76,7 +77,7 @@ void game_stop(game_t *game) {
 	pkt_ping_t pkt = {
 		.hdr.type = PKT_PING,
 	};
-	game_send_packet_pipe(game, (pkt_t *)&pkt);
+	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }
 
 void game_free(game_t *game) {

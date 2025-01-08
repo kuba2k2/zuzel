@@ -19,13 +19,12 @@ game_t *game_get_list(SDL_mutex **mutex);
 
 // data.c
 void game_set_default_player_options(game_t *game);
-void game_data_fill_pkt(game_t *game, pkt_game_data_t *pkt);
+void game_fill_game_data(game_t *game, pkt_game_data_t *pkt);
 void game_request_send_game_data(game_t *game);
 
 // network.c
 void game_add_endpoint(game_t *game, net_endpoint_t *endpoint);
 void game_del_endpoint(game_t *game, net_endpoint_t *endpoint);
-void game_send_packet_pipe(game_t *game, pkt_t *pkt);
 
 // utils.c
 void game_print_error(game_err_t error);

@@ -12,6 +12,8 @@ static const int pkt_len_list[] = {
 	sizeof(pkt_game_join_t),
 	sizeof(pkt_game_data_t),
 	sizeof(pkt_game_state_t),
+	sizeof(pkt_player_list_t),
+	sizeof(pkt_player_new_t),
 	sizeof(pkt_player_data_t),
 	sizeof(pkt_player_state_t),
 	sizeof(pkt_player_keypress_t),
@@ -30,6 +32,8 @@ static const char *pkt_name_list[] = {
 	"PKT_GAME_JOIN",
 	"PKT_GAME_DATA",
 	"PKT_GAME_STATE",
+	"PKT_PLAYER_LIST",
+	"PKT_PLAYER_NEW",
 	"PKT_PLAYER_DATA",
 	"PKT_PLAYER_STATE",
 	"PKT_PLAYER_KEYPRESS",
@@ -128,7 +132,9 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 }
 
 /**
- * Send a single pkt_t on the socket.
+ * Send a single pkt_t if the endpoint is a socket.
+ * If the endpoint is a pipe and if 'endpoint->pipe.no_sdl' is not set, send an SDL event.
+ * Otherwise, do nothing.
  *
  * @param endpoint where to send the packet to
  * @param pkt packet to send
@@ -137,6 +143,46 @@ net_err_t net_pkt_recv(net_endpoint_t *endpoint) {
 net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
 	pkt->hdr.protocol = NET_PROTOCOL;
 	pkt->hdr.len	  = pkt_len_list[pkt->hdr.type];
+
+	if (endpoint->type == NET_ENDPOINT_PIPE) {
+		if (endpoint->pipe.no_sdl)
+			return NET_ERR_OK;
+		SDL_Event user = {
+			.user.type	= SDL_USEREVENT_PACKET,
+			.user.data1 = net_pkt_dup(pkt),
+		};
+		SDL_PushEvent(&user);
+		LT_D("Packet %s sent (%d bytes) -> SDL", pkt_name_list[pkt->hdr.type], pkt->hdr.len);
+	} else {
+		net_err_t err;
+		if ((err = net_endpoint_send(endpoint, (const char *)pkt, pkt->hdr.len)) != NET_ERR_OK)
+			return err;
+		LT_D("Packet %s sent (%d bytes) -> %s", pkt_name_list[pkt->hdr.type], pkt->hdr.len, net_endpoint_str(endpoint));
+	}
+
+	if (SETTINGS->loglevel <= LT_LEVEL_VERBOSE)
+		hexdump((uint8_t *)pkt + sizeof(pkt_hdr_t), pkt->hdr.len - sizeof(pkt_hdr_t));
+
+	return NET_ERR_OK;
+}
+
+/**
+ * Find the first pipe endpoint in the list, write the packet to the pipe.
+ * Does not send SDL events.
+ *
+ * @param endpoint where to send the packet to
+ * @param pkt packet to send
+ * @return net_err_t
+ */
+net_err_t net_pkt_send_pipe(net_endpoint_t *endpoint, pkt_t *pkt) {
+	pkt->hdr.protocol = NET_PROTOCOL;
+	pkt->hdr.len	  = pkt_len_list[pkt->hdr.type];
+
+	while (endpoint != NULL && endpoint->type != NET_ENDPOINT_PIPE) {
+		endpoint = endpoint->next;
+	}
+	if (endpoint == NULL)
+		return NET_ERR_ENDPOINT_TYPE;
 
 	net_err_t err;
 	if ((err = net_endpoint_send(endpoint, (const char *)pkt, pkt->hdr.len)) != NET_ERR_OK)
@@ -150,7 +196,7 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
 }
 
 /**
- * Send a single pkt_t to all endpoints. For NET_ENDPOINT_PIPE endpoints, send an SDL event instead.
+ * Send a single pkt_t to all endpoints.
  *
  * @param endpoints where to send the packet to (DL list)
  * @param pkt packet to send
@@ -158,25 +204,14 @@ net_err_t net_pkt_send(net_endpoint_t *endpoint, pkt_t *pkt) {
  * @return net_err_t
  */
 net_err_t net_pkt_broadcast(net_endpoint_t *endpoints, pkt_t *pkt, net_endpoint_t *source) {
-	pkt->hdr.protocol = NET_PROTOCOL;
-	pkt->hdr.len	  = pkt_len_list[pkt->hdr.type];
-
 	net_err_t ret = NET_ERR_OK;
 	net_endpoint_t *endpoint;
 	DL_FOREACH(endpoints, endpoint) {
 		if (endpoint == source)
 			continue;
-		if (endpoint->type == NET_ENDPOINT_PIPE && endpoint->pipe.broadcast_sdl) {
-			SDL_Event user = {
-				.user.type	= SDL_USEREVENT_PACKET,
-				.user.data1 = net_pkt_dup(pkt),
-			};
-			SDL_PushEvent(&user);
-		} else {
-			ret = net_pkt_send(endpoint, pkt);
-			if (ret != NET_ERR_OK)
-				return ret;
-		}
+		ret = net_pkt_send(endpoint, pkt);
+		if (ret != NET_ERR_OK)
+			continue;
 	}
 	return ret;
 }

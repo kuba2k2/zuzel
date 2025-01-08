@@ -237,7 +237,7 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 							.hdr.type = PKT_GAME_DATA,
 							.is_list  = true,
 						};
-						game_data_fill_pkt(game, &pkt_data);
+						game_fill_game_data(game, &pkt_data);
 						net_pkt_send(endpoint, (pkt_t *)&pkt_data);
 						if (++index >= last)
 							break;

@@ -10,11 +10,13 @@ typedef enum {
 	PKT_PING = 1,		 //!< Ping/time sync
 	PKT_SUCCESS,		 //!< Success response
 	PKT_ERROR,			 //!< Error response
-	PKT_GAME_LIST,		 //!< Game list request
+	PKT_GAME_LIST,		 //!< List games request/response
 	PKT_GAME_NEW,		 //!< New game request
 	PKT_GAME_JOIN,		 //!< Join game request
 	PKT_GAME_DATA,		 //!< Game data
 	PKT_GAME_STATE,		 //!< Game state change
+	PKT_PLAYER_LIST,	 //!< List players request/response
+	PKT_PLAYER_NEW,		 //!< New player request
 	PKT_PLAYER_DATA,	 //!< Player data
 	PKT_PLAYER_STATE,	 //!< Player state change
 	PKT_PLAYER_KEYPRESS, //!< Player keypress information
@@ -84,10 +86,22 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
 	pkt_hdr_t hdr;
+	uint32_t total_count;
+} pkt_player_list_t;
+
+typedef struct __attribute__((packed)) {
+	pkt_hdr_t hdr;
+	char name[PLAYER_NAME_LEN + 1];
+} pkt_player_new_t;
+
+typedef struct __attribute__((packed)) {
+	pkt_hdr_t hdr;
 	uint32_t id;
 	char name[PLAYER_NAME_LEN + 1];
 	STRUCT_PADDING(name, PLAYER_NAME_LEN + 1);
 	uint32_t color;
+	uint32_t is_local;
+	player_state_t state : 32;
 } pkt_player_data_t;
 
 typedef struct __attribute__((packed)) {

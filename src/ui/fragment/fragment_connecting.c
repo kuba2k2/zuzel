@@ -44,7 +44,7 @@ static void on_connected(ui_t *ui) {
 				.hdr.type  = PKT_GAME_NEW,
 				.is_public = ui->connection.type != UI_CONNECT_NEW_PRIVATE,
 			};
-			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
+			send_err = net_pkt_send_pipe(ui->client, (pkt_t *)&pkt);
 			break;
 		}
 
@@ -57,7 +57,7 @@ static void on_connected(ui_t *ui) {
 				.hdr.type = PKT_GAME_JOIN,
 			};
 			strncpy(pkt.key, ui->connection.key, GAME_KEY_LEN);
-			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
+			send_err = net_pkt_send_pipe(ui->client, (pkt_t *)&pkt);
 			break;
 		}
 
@@ -66,7 +66,7 @@ static void on_connected(ui_t *ui) {
 				.hdr.type = PKT_GAME_JOIN,
 				.key	  = {0},
 			};
-			send_err = net_pkt_send(ui->client, (pkt_t *)&pkt);
+			send_err = net_pkt_send_pipe(ui->client, (pkt_t *)&pkt);
 			break;
 		}
 	}
