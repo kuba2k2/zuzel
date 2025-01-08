@@ -2,6 +2,7 @@
 
 #include "net.h"
 
+#if WIN32
 bool net_error_print() {
 	char *message = NULL;
 	FormatMessageA(
@@ -22,3 +23,8 @@ bool net_error_print() {
 	LocalFree(message);
 	return true;
 }
+#else
+bool net_error_print() {
+	return false;
+}
+#endif

@@ -14,7 +14,7 @@ typedef struct game_t game_t;
 game_t *game_init(pkt_game_data_t *pkt_data);
 void game_stop(game_t *game);
 void game_free(game_t *game);
-game_t *game_get_by_key(const char *key);
+game_t *game_get_by_key(char *key);
 game_t *game_get_list(SDL_mutex **mutex);
 
 // data.c

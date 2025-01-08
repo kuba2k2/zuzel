@@ -26,7 +26,7 @@
 	do {                                                                                                               \
 		size_t read = fread(buf, 1, size, file);                                                                       \
 		if (read != size) {                                                                                            \
-			LT_E("File reading failed, %llu != %llu bytes", read, (unsigned long long)size);                           \
+			LT_E("File reading failed, %llu != %llu bytes", (unsigned long long)read, (unsigned long long)size);       \
 			err;                                                                                                       \
 		}                                                                                                              \
 	} while (0)
@@ -68,7 +68,7 @@
 #define SOCK_ERROR(func, err)                                                                                          \
 	do {                                                                                                               \
 		if (!net_error_print())                                                                                        \
-			LT_F(func " failed; errno: %s", sys_errlist[errno]);                                                       \
+			LT_F(func " failed; errno: %s", strerror(errno));                                                          \
 		err;                                                                                                           \
 	} while (0)
 #endif

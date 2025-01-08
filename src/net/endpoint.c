@@ -80,12 +80,12 @@ net_err_t net_endpoint_listen(net_endpoint_t *endpoint) {
 	}
 
 	int sfd = (int)socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sfd == INVALID_SOCKET)
+	if (sfd == -1)
 		SOCK_ERROR("socket()", ret = NET_ERR_SOCKET; goto cleanup);
 
 	// enable address reuse
-	char on = 1;
-	if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) != 0)
+	int on = 1;
+	if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)) != 0)
 		SOCK_ERROR("setsockopt()", ret = NET_ERR_SETSOCKOPT; goto cleanup);
 
 	// bind the server socket to an address
@@ -118,7 +118,7 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 	WSAStartup(MAKEWORD(2, 0), &wsa_data);
 #endif
 
-	int addrlen = sizeof(client->addr);
+	socklen_t addrlen = sizeof(client->addr);
 
 	if ((client->fd = (int)accept(endpoint->fd, (struct sockaddr *)&client->addr, &addrlen)) < 0) {
 		ret = NET_ERR_ACCEPT;
@@ -129,7 +129,11 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 			ret = NET_ERR_SERVER_CLOSED;
 #else
 		if (errno == ECONNABORTED)
-			ret = NET_ERR_CONN_CLOSED;
+			ret = NET_ERR_CLIENT_CLOSED;
+		if (errno == ECONNRESET)
+			ret = NET_ERR_CLIENT_CLOSED;
+		if (errno == EINTR)
+			ret = NET_ERR_SERVER_CLOSED;
 #endif
 		if (ret == NET_ERR_ACCEPT)
 			SOCK_ERROR("accept()", );
@@ -175,7 +179,7 @@ net_err_t net_endpoint_connect(net_endpoint_t *endpoint) {
 	}
 
 	int cfd = (int)socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (cfd == INVALID_SOCKET)
+	if (cfd == -1)
 		SOCK_ERROR("socket()", ret = NET_ERR_SOCKET; goto cleanup);
 
 	// fill net_endpoint_t* first, so that disconnection is possible
@@ -211,7 +215,11 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 			SSL_shutdown(endpoint->ssl);
 
 		if (endpoint->fd > 0) {
+#if WIN32
 			closesocket(endpoint->fd);
+#else
+			close(endpoint->fd);
+#endif
 			endpoint->fd = 0;
 		}
 
@@ -258,7 +266,7 @@ void net_endpoint_free(net_endpoint_t *endpoint) {
 }
 
 net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *len) {
-	int recv_len;
+	long recv_len;
 	switch (endpoint->type) {
 		case NET_ENDPOINT_TCP:
 			recv_len = recv(endpoint->fd, buf, (int)*len, 0);
@@ -295,6 +303,8 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 			case WSAECONNABORTED:
 			case WSAECONNRESET:
 				return NET_ERR_CLIENT_CLOSED;
+			default:
+				break;
 		}
 #else
 		switch (errno) {
@@ -303,6 +313,8 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 			case ECONNABORTED:
 			case ECONNRESET:
 				return NET_ERR_CLIENT_CLOSED;
+			default:
+				break;
 		}
 #endif
 		// recv error
@@ -318,7 +330,7 @@ empty:
 }
 
 net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned int len) {
-	int send_len;
+	long send_len;
 	switch (endpoint->type) {
 		case NET_ENDPOINT_TCP:
 			send_len = send(endpoint->fd, buf, (int)len, 0);
@@ -431,5 +443,15 @@ net_err_t net_endpoint_select(
 	}
 
 	return NET_ERR_OK;
+}
+#else
+net_err_t net_endpoint_select(
+	net_endpoint_t *endpoints,
+	SDL_mutex *mutex,
+	net_select_read_cb_t read_cb,
+	net_select_err_cb_t error_cb,
+	void *param
+) {
+	return NET_ERR_SELECT;
 }
 #endif

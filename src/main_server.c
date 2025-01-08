@@ -2,6 +2,8 @@
 
 #include "include.h"
 
+#include <SDL_main.h>
+
 typedef void *(*pem_func_t)(BIO *, void *, void *, void *);
 
 static void *tls_read_pem(char *buf, pem_func_t func) {
@@ -13,7 +15,7 @@ static void *tls_read_pem(char *buf, pem_func_t func) {
 	return data;
 }
 
-int SDL_main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	MALLOC(SETTINGS, sizeof(*SETTINGS), return 1);
 	settings_load();
 

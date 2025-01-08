@@ -3,7 +3,6 @@
 #pragma once
 
 #include <fcntl.h>
-#include <io.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,9 +17,16 @@
 #include <openssl/ssl.h>
 #include <utlist.h>
 
-#ifdef __WIN32__
+#if WIN32
+#include <io.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #endif
 
 #include "core/config.h"

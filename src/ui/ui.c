@@ -3,7 +3,6 @@
 #include "ui.h"
 
 #include "font_res.h"
-#include "ui_res.h"
 
 ui_t *ui_init(SDL_Renderer *renderer) {
 	ui_t *ui;

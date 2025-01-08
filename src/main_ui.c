@@ -2,7 +2,9 @@
 
 #include "include.h"
 
-int SDL_main(int argc, char *argv[]) {
+#include <SDL_main.h>
+
+int main(int argc, char *argv[]) {
 	MALLOC(SETTINGS, sizeof(*SETTINGS), return 1);
 	settings_load();
 

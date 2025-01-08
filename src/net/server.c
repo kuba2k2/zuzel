@@ -57,8 +57,9 @@ static int net_server_listen(void *param) {
 	struct sockaddr_in saddr = {
 		.sin_family = AF_INET,
 		.sin_port	= htons(SETTINGS->server_port),
-		.sin_addr	= {{{0}}},
 	};
+	// listen on any address
+	memset(&saddr.sin_addr, 0, sizeof(saddr.sin_addr));
 	server->endpoint.addr = saddr;
 	if (net_endpoint_listen(&server->endpoint) != NET_ERR_OK)
 		goto error_start;

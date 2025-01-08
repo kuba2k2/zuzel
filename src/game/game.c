@@ -86,13 +86,20 @@ void game_free(game_t *game) {
 	free(game);
 }
 
-game_t *game_get_by_key(const char *key) {
+game_t *game_get_by_key(char *key) {
+	// make it uppercase
+	char *ch = key;
+	while (*ch != '\0') {
+		*ch = (char)toupper(*ch);
+		ch++;
+	}
+
 	game_t *game;
 	int count = 0;
 	SDL_WITH_MUTEX(game_list_mutex) {
 		DL_FOREACH(game_list, game) {
 			count++;
-			if (strnicmp(game->key, key, GAME_KEY_LEN) == 0)
+			if (strncmp(game->key, key, GAME_KEY_LEN) == 0)
 				break;
 		}
 	}
