@@ -67,6 +67,27 @@ cJSON *file_read_json(const char *filename) {
 	return json;
 }
 
+bool file_write_data(const char *filename, const char *data, int length) {
+	FILE *file;
+	FOPEN(file, filename, "wb", return false);
+	FWRITE(file, data, length, goto error);
+	fclose(file);
+	return true;
+
+error:
+	fclose(file);
+	return false;
+}
+
+bool file_write_json(const char *filename, cJSON *json) {
+	char *data = cJSON_Print(json);
+	if (data == NULL)
+		return false;
+	bool ret = file_write_data(filename, data, (int)strlen(data));
+	free(data);
+	return ret;
+}
+
 void json_read_string(cJSON *json, const char *key, char **value) {
 	cJSON *item = cJSON_GetObjectItem(json, key);
 	if (!cJSON_IsString(item) || value == NULL)

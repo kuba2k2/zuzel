@@ -30,6 +30,14 @@
 			err;                                                                                                       \
 		}                                                                                                              \
 	} while (0)
+#define FWRITE(file, buf, size, err)                                                                                   \
+	do {                                                                                                               \
+		size_t written = fwrite(buf, 1, size, file);                                                                   \
+		if (written != size) {                                                                                         \
+			LT_E("File writing failed, %llu != %llu bytes", (unsigned long long)written, (unsigned long long)size);    \
+			err;                                                                                                       \
+		}                                                                                                              \
+	} while (0)
 #define FSEEK(file, offset, origin, err)                                                                               \
 	do {                                                                                                               \
 		if (fseek(file, offset, origin) != 0) {                                                                        \
