@@ -8,6 +8,11 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 add_compile_options(-fdata-sections -ffunction-sections)
 add_link_options(-Wl,--gc-sections)
 
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+if (UNIX)
+    set(BUILD_SHARED_LIBS OFF)
+endif ()
+
 add_subdirectory("lib/")
 add_subdirectory("res/")
 add_subdirectory("src/")

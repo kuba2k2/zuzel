@@ -15,10 +15,8 @@ target_compile_options(cjson-static PRIVATE -Wno-float-conversion)
 set(SDL_AUDIO OFF)
 set(SDL_POWER OFF)
 set(SDL_SENSOR OFF)
-set(SDL_VIDEO OFF)
-set(SDL_LOADSO OFF)
+set(SDL_VIDEO ON)
 set(SDL_ATOMIC OFF)
-set(SDL_STATIC ON)
 set(SDL_CMAKE_DEBUG_POSTFIX "")
 set(SDL2_DISABLE_INSTALL ON)
 set(SDL2_DISABLE_UNINSTALL ON)
@@ -36,4 +34,3 @@ FetchContent_Declare(
         DOWNLOAD_EXTRACT_TIMESTAMP false
 )
 FetchContent_MakeAvailable(libressl)
-
