@@ -146,9 +146,17 @@ void lt_log(const uint8_t level, const char *format, ...) {
 }
 
 void lt_log_set_thread_name(const char *name) {
-	log_thread_t *log_thread;
+	SDL_threadID thread_id = SDL_ThreadID();
+	log_thread_t *log_thread, *tmp;
+	LL_FOREACH_SAFE(log_threads, log_thread, tmp) {
+		if (log_thread->id != thread_id)
+			continue;
+		LL_DELETE(log_threads, log_thread);
+		free(log_thread->name);
+		free(log_thread);
+	}
 	MALLOC(log_thread, sizeof(*log_thread), return);
-	log_thread->id	 = SDL_ThreadID();
+	log_thread->id	 = thread_id;
 	log_thread->name = strdup(name);
 	LL_APPEND(log_threads, log_thread);
 }

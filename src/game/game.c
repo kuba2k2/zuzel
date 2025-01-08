@@ -94,8 +94,8 @@ game_t *game_get_by_key(char *key) {
 		ch++;
 	}
 
-	game_t *game;
-	int count = 0;
+	game_t *game = NULL;
+	int count	 = 0;
 	SDL_WITH_MUTEX(game_list_mutex) {
 		DL_FOREACH(game_list, game) {
 			count++;

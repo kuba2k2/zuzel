@@ -52,7 +52,7 @@ typedef struct net_endpoint_t {
 
 	struct {
 		int fd[2];			//!< Pipe descriptor
-		int len;			//!< Pipe sent data length
+		long len;			//!< Pipe sent data length
 		void *event;		//!< Socket event (Windows only)
 		bool broadcast_sdl; //!< Whether net_pkt_broadcast() should send to SDL
 	} pipe;

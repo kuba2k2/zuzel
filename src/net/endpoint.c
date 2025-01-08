@@ -276,11 +276,11 @@ net_err_t net_endpoint_recv(net_endpoint_t *endpoint, char *buf, unsigned int *l
 			break;
 		case NET_ENDPOINT_PIPE:
 			if (endpoint->pipe.len == 0)
-				// nothing to receive - e.g. signaled by net_endpoint_close()
+				// nothing to receive - e.g. signaled by net_endpoint_close() on Windows
 				goto empty;
 			recv_len = read(endpoint->pipe.fd[PIPE_READ], buf, (int)*len);
-#if WIN32
 			endpoint->pipe.len -= recv_len;
+#if WIN32
 			if (endpoint->pipe.len)
 				WSASetEvent(endpoint->pipe.event);
 			else
@@ -340,8 +340,8 @@ net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned 
 			break;
 		case NET_ENDPOINT_PIPE:
 			send_len = write(endpoint->pipe.fd[PIPE_WRITE], buf, (int)len);
-#if WIN32
 			endpoint->pipe.len += send_len;
+#if WIN32
 			WSASetEvent(endpoint->pipe.event);
 #endif
 			break;
@@ -360,6 +360,11 @@ net_err_t net_endpoint_send(net_endpoint_t *endpoint, const char *buf, unsigned 
 }
 
 #if WIN32
+#define SELECT_MAX_FDS WSA_MAXIMUM_WAIT_EVENTS
+#else
+#define SELECT_MAX_FDS 32
+#endif
+
 net_err_t net_endpoint_select(
 	net_endpoint_t *endpoints,
 	SDL_mutex *mutex,
@@ -367,10 +372,13 @@ net_err_t net_endpoint_select(
 	net_select_err_cb_t error_cb,
 	void *param
 ) {
-	net_endpoint_t *endpoint_list[WSA_MAXIMUM_WAIT_EVENTS];
-	void *event_list[WSA_MAXIMUM_WAIT_EVENTS];
-	int num_events = 0;
-	int mask	   = FD_READ | FD_CLOSE;
+	net_endpoint_t *endpoint_list[SELECT_MAX_FDS];
+	int num_endpoints = 0;
+#if WIN32
+	void *event_list[SELECT_MAX_FDS];
+#else
+	struct pollfd pollfd_list[SELECT_MAX_FDS];
+#endif
 
 	SDL_WITH_MUTEX_OPTIONAL(mutex) {
 		net_endpoint_t *endpoint;
@@ -385,73 +393,102 @@ net_err_t net_endpoint_select(
 				SDL_UnlockMutex(mutex);
 				return NET_ERR_OK;
 			}
+#if WIN32
 			if (endpoint->type != NET_ENDPOINT_PIPE) {
 				// call WSAEventSelect() on sockets only (not on pipes)
-				WSAEventSelect(endpoint->fd, endpoint->pipe.event, mask);
+				WSAEventSelect(endpoint->fd, endpoint->pipe.event, FD_READ | FD_CLOSE);
 			}
-			endpoint_list[num_events] = endpoint;
-			event_list[num_events]	  = endpoint->pipe.event;
-			num_events++;
+			event_list[num_endpoints] = endpoint->pipe.event;
+#else
+			// pass a descriptor to poll(), depending on the endpoint type
+			pollfd_list[num_endpoints].fd =
+				endpoint->type == NET_ENDPOINT_PIPE ? endpoint->pipe.fd[PIPE_READ] : endpoint->fd;
+			pollfd_list[num_endpoints].events = POLLIN; // implicitly: POLLERR | POLLHUP | POLLNVAL
+#endif
+			endpoint_list[num_endpoints] = endpoint;
+			num_endpoints++;
 		}
 	}
 
-	unsigned int ret = WSAWaitForMultipleEvents(num_events, event_list, false, 5000, true);
+#if WIN32
+	unsigned int ret = WSAWaitForMultipleEvents(num_endpoints, event_list, false, 5000, true);
 	if (ret == WSA_WAIT_FAILED)
 		SOCK_ERROR("WSAWaitForMultipleEvents()", return NET_ERR_SELECT);
 	if (ret == WSA_WAIT_IO_COMPLETION)
 		return NET_ERR_OK;
 	if (ret == WSA_WAIT_TIMEOUT)
 		return NET_ERR_OK;
+#else
+	int ret = poll(pollfd_list, num_endpoints, 5000);
+	if (ret == 0) // timeout
+		return NET_ERR_OK;
+	if (ret == -1)
+		SOCK_ERROR("select()", return NET_ERR_SELECT);
+#endif
+
 	if (read_cb == NULL)
 		return NET_ERR_OK;
 
-	unsigned int index		 = ret - WSA_WAIT_EVENT_0;
-	net_endpoint_t *endpoint = endpoint_list[index];
+	// on Windows, only check the first available event
+	// on Linux, check all endpoints for events
+#if WIN32
+	for (unsigned int index = ret - WSA_WAIT_EVENT_0, i = 0; i < 1; i++)
+#else
+	for (unsigned int index = 0; index < num_endpoints; index++)
+#endif
+	{
+		net_endpoint_t *endpoint = endpoint_list[index];
 
-	if (endpoint->type == NET_ENDPOINT_PIPE) {
-		// pipe event signaled
-		net_err_t err;
-		if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
-			error_cb(endpoint, param, err);
-		return NET_ERR_OK;
-	}
+#if WIN32
+		if (endpoint->type == NET_ENDPOINT_PIPE) {
+			// pipe event signaled
+			net_err_t err;
+			if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
+				error_cb(endpoint, param, err);
+			continue;
+		}
+#endif
 
-	WSANETWORKEVENTS network_events;
-	if (WSAEnumNetworkEvents(endpoint->fd, event_list[index], &network_events) != 0) {
-		net_err_t err;
-		if (WSAGetLastError() == WSAENOTSOCK)
-			err = NET_ERR_CLIENT_CLOSED;
-		else
-			SOCK_ERROR("WSAEnumNetworkEvents()", err = NET_ERR_SELECT);
-		if (error_cb != NULL)
-			error_cb(endpoint, param, err);
-		return NET_ERR_OK;
-	}
+#if WIN32
+		WSANETWORKEVENTS network_events;
+		if (WSAEnumNetworkEvents(endpoint->fd, event_list[index], &network_events) != 0) {
+			net_err_t err;
+			if (WSAGetLastError() == WSAENOTSOCK)
+				err = NET_ERR_CLIENT_CLOSED;
+			else
+				SOCK_ERROR("WSAEnumNetworkEvents()", err = NET_ERR_SELECT);
+			if (error_cb != NULL)
+				error_cb(endpoint, param, err);
+			continue;
+		}
+#else
+		short events = pollfd_list[index].revents;
+#endif
 
-	if (network_events.lNetworkEvents & FD_READ) {
-		LT_V("select()=FD_READ, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
-		net_err_t err;
-		if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
-			error_cb(endpoint, param, err);
-		return NET_ERR_OK;
-	}
-	if (network_events.lNetworkEvents & FD_CLOSE) {
-		LT_V("select()=FD_CLOSE, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
-		if (error_cb != NULL)
-			error_cb(endpoint, param, NET_ERR_CLIENT_CLOSED);
-		return NET_ERR_OK;
+#if WIN32
+		if (network_events.lNetworkEvents & FD_READ)
+#else
+		if (events & POLLIN)
+#endif
+		{
+			LT_V("select()=READ, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
+			net_err_t err;
+			if ((err = read_cb(endpoint, param)) != NET_ERR_OK && error_cb != NULL)
+				error_cb(endpoint, param, err);
+			continue;
+		}
+
+#if WIN32
+		if (network_events.lNetworkEvents & FD_CLOSE)
+#else
+		if (events & (POLLHUP | POLLERR | POLLNVAL))
+#endif
+		{
+			LT_V("select()=CLOSE, index=%u, endpoint=%s", index, net_endpoint_str(endpoint));
+			if (error_cb != NULL)
+				error_cb(endpoint, param, NET_ERR_CLIENT_CLOSED);
+		}
 	}
 
 	return NET_ERR_OK;
 }
-#else
-net_err_t net_endpoint_select(
-	net_endpoint_t *endpoints,
-	SDL_mutex *mutex,
-	net_select_read_cb_t read_cb,
-	net_select_err_cb_t error_cb,
-	void *param
-) {
-	return NET_ERR_SELECT;
-}
-#endif
