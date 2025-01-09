@@ -29,6 +29,7 @@ static bool in_player_rename = false;
 static bool in_quit_confirm	 = false;
 static bool in_ban_confirm	 = false;
 
+static void on_quit(ui_t *ui);
 static void on_error(ui_t *ui);
 static void hide_dialog(ui_t *ui);
 static void show_dialog_edit(ui_t *ui, const char *title, const char *value, int max_length);
@@ -38,7 +39,6 @@ static void ui_update_game(ui_t *ui) {
 	char buf[64];
 
 	gfx_view_set_text(text_name, GAME->name);
-	gfx_view_set_text(text_key, GAME->key);
 	snprintf(buf, sizeof(buf), "Speed: %d", GAME->speed);
 	gfx_view_set_text(slider_speed, buf);
 	slider_speed->data.slider.value = (int)GAME->speed;
@@ -78,11 +78,31 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	btn_game_public->is_gone  = GAME->is_local;
 	hide_dialog(ui);
 
-	if (!GAME->is_local &&
-		(ui->connection.type == UI_CONNECT_NEW_PUBLIC || ui->connection.type == UI_CONNECT_NEW_PRIVATE)) {
-		// if the game was just created, set the player's customized data and send an update
-		game_set_default_player_options(GAME);
-		game_request_send_game_data(GAME);
+	switch (ui->connection.type) {
+		case UI_CONNECT_NEW_PUBLIC:
+		case UI_CONNECT_NEW_PRIVATE:
+			// the game was just created, set the player's customized data and send an update
+			game_set_default_player_options(GAME);
+			game_request_send_game_data(GAME);
+			// show the game key
+			gfx_view_set_text(text_key, GAME->key);
+			break;
+
+		case UI_CONNECT_NEW_LOCAL:
+			// TODO show the local address
+			gfx_view_set_text(text_key, "");
+			break;
+
+		case UI_CONNECT_JOIN_BROWSE:
+		case UI_CONNECT_JOIN_KEY:
+			// show the game key
+			gfx_view_set_text(text_key, GAME->key);
+			break;
+
+		case UI_CONNECT_JOIN_ADDRESS:
+			// show the connection address
+			gfx_view_set_text(text_key, ui->connection.address);
+			break;
 	}
 
 	ui_update_game(ui);
@@ -138,14 +158,18 @@ static bool on_speed_change(view_t *view, SDL_Event *e, ui_t *ui) {
 }
 
 static bool on_btn_quit(view_t *view, SDL_Event *e, ui_t *ui) {
-	in_quit_confirm = true;
-	in_ban_confirm	= false;
-	show_dialog_prompt(
-		ui,
-		"Really Quit?",
-		GAME->is_local ? "This is a local game:\nother players will be disconnected!"
-					   : "Other players will continue playing."
-	);
+	if (GAME->player_count == 1) {
+		// don't ask if we're the only player
+		on_quit(ui);
+		return true;
+	}
+	in_quit_confirm		= true;
+	in_ban_confirm		= false;
+	const char *message = "Other players will continue playing.";
+	if (ui->connection.type == UI_CONNECT_NEW_LOCAL) {
+		message = "This is a local game:\nother players will be disconnected!";
+	}
+	show_dialog_prompt(ui, "Really Quit?", message);
 	return true;
 }
 
@@ -207,10 +231,7 @@ static bool on_dialog_edit_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 
 static bool on_dialog_prompt_yes(view_t *view, SDL_Event *e, ui_t *ui) {
 	if (in_quit_confirm) {
-		game_stop(GAME);
-		net_client_stop();
-		net_server_stop();
-		ui_state_set(ui, UI_STATE_MAIN);
+		on_quit(ui);
 	}
 	hide_dialog(ui);
 	return true;
@@ -219,6 +240,13 @@ static bool on_dialog_prompt_yes(view_t *view, SDL_Event *e, ui_t *ui) {
 static bool on_dialog_prompt_no(view_t *view, SDL_Event *e, ui_t *ui) {
 	hide_dialog(ui);
 	return true;
+}
+
+static void on_quit(ui_t *ui) {
+	game_stop(GAME);
+	net_client_stop();
+	net_server_stop();
+	ui_state_set(ui, UI_STATE_MAIN);
 }
 
 static void on_error(ui_t *ui) {
