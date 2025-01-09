@@ -51,7 +51,7 @@ static void game_check_empty(game_t *game, bool endpoint_deleted) {
 	if (endpoints > 1)
 		return;
 
-	if (game->is_server) {
+	if (game->is_server && !game->is_local) {
 		LT_I("Game: empty, setting expiry timer");
 		game->expiry_timer = SDL_AddTimer(60000, (SDL_TimerCallback)game_expiry_cb, game);
 	} else {

@@ -106,8 +106,10 @@ net_err_t net_endpoint_select(
 	void *param
 );
 
-// errors.c
+// utils.c
 bool net_error_print();
+bool net_resolve_ip(const char *address, struct in_addr *addr);
+char *net_get_local_ips();
 
 // server.c
 net_t *net_server_start(bool headless);

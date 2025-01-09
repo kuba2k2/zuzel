@@ -70,28 +70,14 @@ static int net_client_connect(char *address) {
 		port	  = atoi(port_str + 1);
 	}
 
-	// resolve the host name
-	struct addrinfo hints = {
-		.ai_family	 = AF_INET,
-		.ai_socktype = SOCK_STREAM,
-		.ai_protocol = IPPROTO_TCP,
-	};
-	struct addrinfo *info = NULL;
-	int gai_error		  = getaddrinfo(address, NULL, &hints, &info);
-	free(address);
-#if WIN32
-	WSASetLastError(gai_error); // fix for WSANOTINITIALISED not being delivered otherwise
-#endif
-	if (gai_error != 0)
-		SOCK_ERROR("getaddrinfo()", goto error_start);
-
 	// build the destination server address
 	struct sockaddr_in saddr = {
 		.sin_family = AF_INET,
 		.sin_port	= htons(port),
-		.sin_addr	= ((struct sockaddr_in *)info->ai_addr)->sin_addr,
 	};
-	freeaddrinfo(info);
+	// resolve the host name
+	if (!net_resolve_ip(address, &saddr.sin_addr))
+		goto error_start;
 
 	// start the TCP client
 	client->endpoint.addr = saddr;
@@ -144,6 +130,7 @@ cleanup:
 	}
 	// free the client's structure
 	free(net);
+	free(address);
 #if WIN32
 	WSACleanup();
 #endif

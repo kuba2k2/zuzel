@@ -38,6 +38,8 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 		} else {
 			// joined a game, apply data from PKT_GAME_DATA
 			game_process_packet(game, (pkt_t *)pkt_data, NULL);
+			// fetch the local IP addresses (for UI)
+			game->local_ips = net_get_local_ips();
 		}
 	}
 
@@ -101,6 +103,8 @@ void game_free(game_t *game) {
 	}
 	// free remaining members
 	SDL_DestroyMutex(game->mutex);
+	SDL_RemoveTimer(game->expiry_timer);
+	free(game->local_ips);
 	free(game);
 }
 

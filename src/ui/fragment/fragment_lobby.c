@@ -89,8 +89,8 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			break;
 
 		case UI_CONNECT_NEW_LOCAL:
-			// TODO show the local address
-			gfx_view_set_text(text_key, "");
+			// show the local IP address(es)
+			gfx_view_set_text(text_key, GAME->local_ips);
 			break;
 
 		case UI_CONNECT_JOIN_BROWSE:
