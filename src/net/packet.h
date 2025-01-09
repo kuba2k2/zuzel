@@ -4,7 +4,7 @@
 
 #include "include.h"
 
-#include "game/structs.h"
+#include "game/game_structs.h"
 
 typedef enum {
 	PKT_PING = 1,		 //!< Ping/time sync

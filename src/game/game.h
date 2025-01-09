@@ -4,7 +4,7 @@
 
 #include "include.h"
 
-#include "structs.h"
+#include "game_structs.h"
 
 typedef union pkt_t pkt_t;
 typedef struct pkt_game_data_t pkt_game_data_t;
