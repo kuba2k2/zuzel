@@ -74,6 +74,7 @@ typedef struct net_t {
 	net_endpoint_t endpoint; //!< Socket endpoint of the other party
 	bool stop;				 //!< Whether the thread should stop gracefully
 	game_t *game;			 //!< Joined game (client only)
+	bool is_local;			 //!< Whether it's a local game server
 } net_t;
 
 typedef net_err_t (*net_select_read_cb_t)(net_endpoint_t *endpoint, void *param);

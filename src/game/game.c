@@ -21,6 +21,7 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 
 		if (pkt_data == NULL) {
 			// new game created, set the server's default options
+			game->is_server = true;
 			game_set_default_player_options(game);
 			// generate a game key
 			do {
@@ -34,10 +35,7 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 			} while (game_get_by_key(game->key) != NULL);
 		} else {
 			// joined a game, apply data from PKT_GAME_DATA
-			game->is_client = true;
 			game_process_packet(game, (pkt_t *)pkt_data, NULL);
-			if (game_get_by_key(game->key) != NULL)
-				game->is_local = true;
 		}
 	}
 
@@ -46,7 +44,7 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 		net_endpoint_t pipe = {0};
 		net_endpoint_pipe(&pipe);
 		// servers shouldn't send SDL events as response to pipe packets
-		pipe.pipe.no_sdl = !game->is_client;
+		pipe.pipe.no_sdl = game->is_server;
 		game_add_endpoint(game, &pipe);
 	}
 
@@ -56,7 +54,7 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	if (thread == NULL)
 		SDL_ERROR("SDL_CreateThread()", goto cleanup);
 
-	if (!game->is_client) {
+	if (game->is_server) {
 		// only use game_list server-side
 		SDL_WITH_MUTEX(game_list_mutex) {
 			DL_APPEND(game_list, game);
@@ -84,7 +82,7 @@ void game_free(game_t *game) {
 	if (game == NULL)
 		return;
 	// remove the game from the global list
-	if (!game->is_client) {
+	if (game->is_server) {
 		SDL_WITH_MUTEX(game_list_mutex) {
 			DL_DELETE(game_list, game);
 		}
@@ -136,7 +134,7 @@ static int game_thread(game_t *game) {
 	if (game == NULL)
 		return -1;
 	char thread_name[19];
-	snprintf(thread_name, sizeof(thread_name), "game-%s-%s", game->is_client ? "client" : "server", game->key);
+	snprintf(thread_name, sizeof(thread_name), "game-%s-%s", game->is_server ? "server" : "client", game->key);
 	lt_log_set_thread_name(thread_name);
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);
@@ -156,7 +154,7 @@ static int game_thread(game_t *game) {
 	}
 
 cleanup:
-	if (game->is_client) {
+	if (!game->is_server) {
 		// send game stop event to UI
 		SDL_Event event = {
 			.user.type	= SDL_USEREVENT_GAME,

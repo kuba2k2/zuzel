@@ -15,6 +15,7 @@ net_t *net_server_start(bool headless) {
 
 	// set the connection protocol
 	server->endpoint.type = headless ? NET_ENDPOINT_TLS : NET_ENDPOINT_TCP;
+	server->is_local	  = !headless;
 
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)net_server_listen, "server", NULL);
 	if (headless)
@@ -189,6 +190,8 @@ exit_thread:
 }
 
 static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
+	if (server == NULL)
+		return NET_ERR_SERVER_CLOSED;
 	switch (recv_pkt->hdr.type) {
 		case PKT_PING: {
 			pkt_ping_t pkt = {
@@ -250,6 +253,7 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 		case PKT_GAME_NEW: {
 			game_t *game	= game_init(NULL);
 			game->is_public = recv_pkt->game_new.is_public;
+			game->is_local	= server->is_local;
 			// pass the endpoint to the game thread, duplicating it
 			game_add_endpoint(game, endpoint);
 			return NET_ERR_OK_PACKET;

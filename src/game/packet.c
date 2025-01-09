@@ -78,6 +78,7 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 		strncpy(game->name, recv_pkt->name, sizeof(game->name) - 1);
 
 	game->is_public = recv_pkt->is_public;
+	game->is_local	= recv_pkt->is_local;
 	game->speed		= recv_pkt->speed;
 
 	return true;

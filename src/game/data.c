@@ -30,6 +30,7 @@ void game_fill_game_data(game_t *game, pkt_game_data_t *pkt) {
 	}
 
 	pkt->is_public = game->is_public;
+	pkt->is_local  = game->is_local;
 	pkt->speed	   = game->speed;
 	pkt->state	   = game->state;
 	pkt->players   = endpoints - 1; // all except the pipe

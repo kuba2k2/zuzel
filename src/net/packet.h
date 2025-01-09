@@ -74,6 +74,7 @@ typedef struct __attribute__((packed)) pkt_game_data_t {
 	char name[GAME_NAME_LEN + 1];
 	STRUCT_PADDING(name, GAME_NAME_LEN + 1);
 	uint32_t is_public;
+	uint32_t is_local;
 	uint32_t speed;
 	game_state_t state : 32;
 	uint32_t players;
