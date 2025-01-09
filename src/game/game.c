@@ -14,6 +14,8 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	MALLOC(game, sizeof(*game), goto cleanup);
 
 	SDL_WITH_MUTEX(game->mutex) {
+		// create an expiry timer (initially 5000 ms)
+		game->expiry_timer = SDL_AddTimer(5000, (SDL_TimerCallback)game_expiry_cb, game);
 		// set some default settings
 		game->is_public = false;
 		game->speed		= SETTINGS->game_speed;
@@ -100,6 +102,16 @@ void game_free(game_t *game) {
 	// free remaining members
 	SDL_DestroyMutex(game->mutex);
 	free(game);
+}
+
+uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
+	LT_I("Game: expired '%s' (key: %s)", game->name, game->key);
+	SDL_WITH_MUTEX(game->mutex) {
+		game->stop = true;
+	}
+	// wake up the game thread
+	game_request_send_game_data(game);
+	return 0;
 }
 
 game_t *game_get_by_key(char *key) {

@@ -3,7 +3,6 @@
 #include "game.h"
 
 static void game_check_empty(game_t *game, bool endpoint_deleted);
-static uint32_t game_expiry_cb(uint32_t interval, game_t *game);
 
 void game_add_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	net_endpoint_t *item = net_endpoint_dup(endpoint);
@@ -38,6 +37,9 @@ static void game_check_empty(game_t *game, bool endpoint_deleted) {
 		net_endpoint_t *item;
 		DL_COUNT(game->endpoints, item, endpoints);
 	}
+	if (!endpoint_deleted && endpoints == 1)
+		// avoid messing with the timer on pipe endpoint adding
+		return;
 
 	if (game->expiry_timer != 0) {
 		LT_I("Game: clearing expiry timer");
@@ -57,14 +59,4 @@ static void game_check_empty(game_t *game, bool endpoint_deleted) {
 		LT_I("Game: empty, stopping immediately");
 		game->stop = true;
 	}
-}
-
-static uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
-	LT_I("Game: expired '%s' (key: %s)", game->name, game->key);
-	SDL_WITH_MUTEX(game->mutex) {
-		game->stop = true;
-	}
-	// wake up the game thread
-	game_request_send_game_data(game);
-	return 0;
 }
