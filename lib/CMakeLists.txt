@@ -30,7 +30,7 @@ set(LIBRESSL_APPS OFF)
 set(LIBRESSL_TESTS OFF)
 FetchContent_Declare(
         libressl
-        URL https://github.com/libressl/portable/releases/download/v3.9.2/libressl-3.9.2.tar.gz
         DOWNLOAD_EXTRACT_TIMESTAMP false
+        URL https://github.com/libressl/portable/releases/download/v3.9.2/libressl-3.9.2.tar.gz
 )
 FetchContent_MakeAvailable(libressl)
