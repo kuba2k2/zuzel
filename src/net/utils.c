@@ -81,12 +81,21 @@ char *net_get_local_ips() {
 
 #if WIN32
 	LL_FOREACH2(infos, info, ai_next) {
+		if (info->ai_addr == NULL)
+			continue;
 		const char *addr = inet_ntoa(((struct sockaddr_in *)info->ai_addr)->sin_addr);
 #else
 	LL_FOREACH2(ifaddrs, ifaddr, ifa_next) {
-		const char *addr = inet_ntoa(((struct sockaddr_in *)ifaddr->ifa_addr)->sin_addr);
-		if (ifaddr->ifa_addr->sa_family != AF_INET)
+		if (ifaddr->ifa_addr == NULL)
 			continue;
+		if (ifaddr->ifa_addr->sa_family != AF_INET)
+			// allow IPv4 only
+			continue;
+		if (strncmp(ifaddr->ifa_name, "br-", 3) == 0 || strncmp(ifaddr->ifa_name, "veth", 4) == 0 ||
+			strncmp(ifaddr->ifa_name, "docker", 6) == 0)
+			// skip some virtual interfaces
+			continue;
+		const char *addr = inet_ntoa(((struct sockaddr_in *)ifaddr->ifa_addr)->sin_addr);
 #endif
 		if (strncmp(addr, "169.254.", 8) == 0 || strcmp(addr, "127.0.0.1") == 0 || strcmp(addr, "0.0.0.0") == 0)
 			// skip link-local and localhost
