@@ -82,6 +82,15 @@ void game_stop(game_t *game) {
 	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }
 
+void game_stop_all() {
+	SDL_WITH_MUTEX(game_list_mutex) {
+		game_t *game, *tmp;
+		DL_FOREACH_SAFE(game_list, game, tmp) {
+			game_stop(game);
+		}
+	}
+}
+
 void game_free(game_t *game) {
 	if (game == NULL)
 		return;

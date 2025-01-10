@@ -126,6 +126,8 @@ error_start:
 	SDL_PushEvent(&event);
 
 cleanup:
+	// stop all games served locally
+	game_stop_all();
 	// mark this server as 'stopping'
 	server->stop = true;
 	net_t *net	 = server;
