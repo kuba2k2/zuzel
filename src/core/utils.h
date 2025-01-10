@@ -46,6 +46,7 @@ typedef struct view_text_t view_text_t;
 typedef struct view_inflate_on_event_t view_inflate_on_event_t;
 
 void hexdump(const void *buf, size_t len);
+char *strncpy2(char *dest, const char *src, size_t count);
 char *file_read_data(const char *filename);
 cJSON *file_read_json(const char *filename);
 bool file_write_data(const char *filename, const char *data, int length);

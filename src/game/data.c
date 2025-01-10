@@ -6,7 +6,7 @@ void game_set_default_player_options(game_t *game) {
 	SDL_WITH_MUTEX(game->mutex) {
 		// generate a game name
 		if (SETTINGS->game_name != NULL)
-			strncpy(game->name, SETTINGS->game_name, sizeof(game->name) - 1);
+			strncpy2(game->name, SETTINGS->game_name, GAME_NAME_LEN);
 		else
 			snprintf(game->name, sizeof(game->name), "%s's Game", SETTINGS->player_name);
 
@@ -34,6 +34,6 @@ void game_fill_game_data(game_t *game, pkt_game_data_t *pkt) {
 	pkt->speed	   = game->speed;
 	pkt->state	   = game->state;
 	pkt->players   = endpoints - 1; // all except the pipe
-	strncpy(pkt->key, game->key, GAME_KEY_LEN);
-	strncpy(pkt->name, game->name, GAME_NAME_LEN);
+	memcpy(pkt->key, game->key, min(sizeof(pkt->key), sizeof(game->key)));
+	memcpy(pkt->name, game->name, min(sizeof(pkt->name), sizeof(game->name)));
 }

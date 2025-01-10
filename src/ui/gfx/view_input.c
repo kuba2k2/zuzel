@@ -37,9 +37,9 @@ static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflat
 	json_read_gfx_view_text(json, "placeholder", &input->data.input.placeholder);
 	json_read_int(json, "max_length", &input->data.input.max_length);
 
-	MALLOC(input->data.input.value, input->data.input.max_length + 2, return);
+	MALLOC(input->data.input.value, input->data.input.max_length + 1, return);
 	if (input->data.input.text.text != NULL) {
-		strncpy(input->data.input.value, input->data.input.text.text, input->data.input.max_length);
+		strncpy2(input->data.input.value, input->data.input.text.text, input->data.input.max_length);
 		input->data.input.pos = strlen(input->data.input.value);
 	}
 }
@@ -47,8 +47,8 @@ static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflat
 static void gfx_view_clone_input(view_t *src, view_t *dst) {
 	dst->data.input.text.text		 = strdup(dst->data.input.text.text);
 	dst->data.input.placeholder.text = strdup(dst->data.input.placeholder.text);
-	MALLOC(dst->data.input.value, dst->data.input.max_length + 2, return);
-	strncpy(dst->data.input.value, src->data.input.value, dst->data.input.max_length);
+	MALLOC(dst->data.input.value, dst->data.input.max_length + 1, return);
+	strncpy2(dst->data.input.value, dst->data.input.text.text, dst->data.input.max_length);
 }
 
 static void gfx_view_free_input(view_t *input) {
@@ -80,9 +80,9 @@ static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input) {
 	gfx_draw_rect(renderer, x + 2, y + 2, w - 4, h - 4, false);
 	gfx_draw_rect(renderer, x + 3, y + 3, w - 6, h - 6, false);
 
-	char *text	 = input->data.input.value;
-	int text_len = strlen(text);
-	int pos		 = input->data.input.pos;
+	char *text		= input->data.input.value;
+	size_t text_len = strlen(text);
+	size_t pos		= input->data.input.pos;
 
 	bool focused = input->is_focused && !input->in_event;
 
@@ -163,12 +163,12 @@ static bool gfx_view_on_event_input(view_t *input, SDL_Event *e, void *param) {
 	if (!input->in_event)
 		return false;
 
-	char *text	 = input->data.input.value;
-	int text_len = strlen(text);
-	int max_len	 = input->data.input.max_length;
-	int pos		 = input->data.input.pos;
-	bool changed = false;
-	char *chars	 = NULL;
+	char *text		= input->data.input.value;
+	size_t text_len = strlen(text);
+	int max_len		= input->data.input.max_length;
+	size_t pos		= input->data.input.pos;
+	bool changed	= false;
+	char *chars		= NULL;
 
 	switch (e->type) {
 		case SDL_KEYDOWN:
@@ -197,8 +197,8 @@ static bool gfx_view_on_event_input(view_t *input, SDL_Event *e, void *param) {
 	}
 
 	if (chars != NULL && text_len < max_len) {
-		int chars_len = strlen(chars);
-		chars_len	  = min(chars_len, max_len - text_len);
+		size_t chars_len = strlen(chars);
+		chars_len		 = min(chars_len, max_len - text_len);
 		memmove(&text[pos + chars_len], &text[pos], text_len - pos + 1);
 		memcpy(&text[pos], chars, chars_len);
 		text_len += chars_len;

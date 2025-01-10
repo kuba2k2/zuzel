@@ -115,7 +115,7 @@ static bool on_btn_join(view_t *view, SDL_Event *e, ui_t *ui) {
 	pkt_game_join_t pkt = {
 		.hdr.type = PKT_GAME_JOIN,
 	};
-	strncpy(pkt.key, row_key->data.text.text, GAME_KEY_LEN);
+	strncpy2(pkt.key, row_key->data.text.text, GAME_KEY_LEN);
 	is_joining = true;
 	if (net_pkt_send_pipe(ui->client, (pkt_t *)&pkt) != NET_ERR_OK)
 		on_error(ui);

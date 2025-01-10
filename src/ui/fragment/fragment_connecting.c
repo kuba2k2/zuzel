@@ -56,7 +56,7 @@ static void on_connected(ui_t *ui) {
 			pkt_game_join_t pkt = {
 				.hdr.type = PKT_GAME_JOIN,
 			};
-			strncpy(pkt.key, ui->connection.key, GAME_KEY_LEN);
+			strncpy2(pkt.key, ui->connection.key, GAME_KEY_LEN);
 			send_err = net_pkt_send_pipe(ui->client, (pkt_t *)&pkt);
 			break;
 		}

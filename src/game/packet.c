@@ -69,13 +69,13 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 	if (game->key[0] == '\0') {
 		// first-time initialization
 		if (recv_pkt->key[0] != '\0')
-			strncpy(game->key, recv_pkt->key, sizeof(game->key) - 1);
+			memcpy(game->key, recv_pkt->key, sizeof(game->key));
 		game->state = recv_pkt->state;
 	}
 
 	// update game name
 	if (recv_pkt->name[0] != '\0')
-		strncpy(game->name, recv_pkt->name, sizeof(game->name) - 1);
+		memcpy(game->name, recv_pkt->name, sizeof(game->name));
 
 	game->is_public	   = recv_pkt->is_public;
 	game->is_local	   = recv_pkt->is_local;

@@ -197,8 +197,8 @@ static void show_dialog_edit(ui_t *ui, const char *title, const char *value, int
 	gfx_view_set_text(dialog_edit_title, title);
 	// set input value
 	free(dialog_edit_input->data.input.value);
-	MALLOC(dialog_edit_input->data.input.value, max_length + 2, return);
-	strncpy(dialog_edit_input->data.input.value, value, max_length);
+	MALLOC(dialog_edit_input->data.input.value, max_length + 1, return);
+	strncpy2(dialog_edit_input->data.input.value, value, max_length);
 	dialog_edit_input->data.input.max_length = max_length;
 	dialog_edit_input->data.input.pos		 = strlen(dialog_edit_input->data.input.value);
 	ui->force_layout						 = true;
@@ -220,7 +220,7 @@ static bool on_dialog_edit_input(view_t *view, SDL_Event *e, ui_t *ui) {
 
 static bool on_dialog_edit_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 	if (in_game_rename) {
-		strncpy(GAME->name, dialog_edit_input->data.input.value, GAME_NAME_LEN);
+		strncpy2(GAME->name, dialog_edit_input->data.input.value, GAME_NAME_LEN);
 		game_request_send_game_data(GAME);
 		ui_update_game(ui);
 		in_game_rename = false;

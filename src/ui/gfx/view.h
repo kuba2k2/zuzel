@@ -99,7 +99,7 @@ typedef struct view_t {
 			view_text_t placeholder;
 			int max_length;
 			char *value;
-			int pos;
+			size_t pos;
 		} input;
 
 		struct {

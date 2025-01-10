@@ -191,23 +191,22 @@ char *lt_log_get_errors(int wrap) {
 		char *message	= error->message;
 		do {
 			char *space = strchr(message, ' ');
-			int word_len;
+			size_t word_len;
 			if (space != NULL)
 				word_len = space - message + 1;
 			else
 				word_len = strlen(message);
 			if (wrap != 0 && line_len + word_len > wrap) {
-				strcpy(write_head, "\n");
-				write_head += sizeof("\n") - 1;
-				line_len = 0;
+				*write_head++ = '\n';
+				line_len	  = 0;
 			}
-			strncpy(write_head, message, word_len);
+			memcpy(write_head, message, word_len);
 			message += word_len;
 			write_head += word_len;
 			line_len += word_len;
 		} while (*message != '\0');
 
-		strcpy(write_head, "\n\n");
+		memcpy(write_head, "\n\n", sizeof("\n\n") - 1);
 		write_head += sizeof("\n\n") - 1;
 
 		DL_DELETE(log_errors, error);

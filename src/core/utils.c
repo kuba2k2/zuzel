@@ -31,6 +31,12 @@ void hexdump(const void *buf, size_t len) {
 	SDL_UnlockMutex(log_mutex);
 }
 
+char *strncpy2(char *dest, const char *src, size_t count) {
+	strncpy(dest, src, count);
+	dest[count] = '\0';
+	return dest;
+}
+
 char *file_read_data(const char *filename) {
 	FILE *file;
 	FOPEN(file, filename, "rb", return NULL);

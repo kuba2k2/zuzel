@@ -12,9 +12,11 @@ target_link_libraries(${PROJECT_NAME}-common PUBLIC uthash)
 target_link_libraries(${PROJECT_NAME}-common PUBLIC cjson-static)
 target_link_libraries(${PROJECT_NAME}-common PUBLIC ssl)
 
-IF (WIN32)
+if (WIN32)
     target_link_libraries(${PROJECT_NAME}-common PUBLIC ws2_32)
-ENDIF ()
+else ()
+    target_link_libraries(${PROJECT_NAME}-common PUBLIC m dl)
+endif ()
 
 # UI executable
 file(GLOB SOURCES "main_ui.c" "ui/*.c" "ui/*/*.c")
