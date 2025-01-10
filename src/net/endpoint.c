@@ -134,6 +134,10 @@ net_err_t net_endpoint_accept(const net_endpoint_t *endpoint, net_endpoint_t *cl
 			ret = NET_ERR_CLIENT_CLOSED;
 		if (errno == EINTR)
 			ret = NET_ERR_SERVER_CLOSED;
+		if (errno == EBADF)
+			ret = NET_ERR_SERVER_CLOSED;
+		if (errno == EINVAL)
+			ret = NET_ERR_SERVER_CLOSED;
 #endif
 		if (ret == NET_ERR_ACCEPT)
 			SOCK_ERROR("accept()", );
@@ -218,6 +222,7 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 #if WIN32
 			closesocket(endpoint->fd);
 #else
+			shutdown(endpoint->fd, SHUT_RDWR);
 			close(endpoint->fd);
 #endif
 			endpoint->fd = 0;
