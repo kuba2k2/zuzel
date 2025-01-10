@@ -166,5 +166,8 @@ void gfx_view_set_text(view_t *view, const char *text) {
 	if (view == NULL)
 		return;
 	free(view->data.text.text);
-	view->data.text.text = strdup(text);
+	if (text == NULL)
+		view->data.text.text = NULL;
+	else
+		view->data.text.text = strdup(text);
 }

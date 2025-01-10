@@ -24,6 +24,7 @@
 #else
 #include <arpa/inet.h>
 #include <errno.h>
+#include <ifaddrs.h>
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>

@@ -23,7 +23,7 @@ void game_request_send_game_data(game_t *game) {
 }
 
 void game_fill_game_data(game_t *game, pkt_game_data_t *pkt) {
-	int endpoints;
+	int endpoints = 0;
 	SDL_WITH_MUTEX(game->mutex) {
 		net_endpoint_t *item;
 		DL_COUNT(game->endpoints, item, endpoints);

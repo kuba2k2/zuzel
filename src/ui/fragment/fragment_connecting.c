@@ -35,7 +35,7 @@ static void on_connected(ui_t *ui) {
 	if (ui->client == NULL)
 		return;
 
-	net_err_t send_err;
+	net_err_t send_err = NET_ERR_OK;
 	switch (ui->connection.type) {
 		case UI_CONNECT_NEW_PUBLIC:
 		case UI_CONNECT_NEW_PRIVATE:
