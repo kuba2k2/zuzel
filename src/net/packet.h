@@ -26,7 +26,7 @@ typedef enum {
 	PKT_MAX,
 } pkt_type_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_hdr_t {
 	uint8_t protocol;
 	STRUCT_PADDING(protocol, sizeof(uint8_t));
 	pkt_type_t type : 32;
@@ -34,34 +34,34 @@ typedef struct __attribute__((packed)) {
 	uint32_t reserved;
 } pkt_hdr_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_ping_t {
 	pkt_hdr_t hdr;
 	uint32_t seq;
 	uint32_t is_response;
 } pkt_ping_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_success_t {
 	pkt_hdr_t hdr;
 } pkt_success_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_error_t {
 	pkt_hdr_t hdr;
 	game_err_t error : 32;
 } pkt_error_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_game_list_t {
 	pkt_hdr_t hdr;
 	uint32_t page;
 	uint32_t per_page;
 	uint32_t total_count;
 } pkt_game_list_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_game_new_t {
 	pkt_hdr_t hdr;
 	uint32_t is_public;
 } pkt_game_new_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_game_join_t {
 	pkt_hdr_t hdr;
 	char key[GAME_KEY_LEN + 1];
 } pkt_game_join_t;
@@ -80,22 +80,22 @@ typedef struct __attribute__((packed)) pkt_game_data_t {
 	uint32_t players;
 } pkt_game_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_game_state_t {
 	pkt_hdr_t hdr;
 	game_state_t state : 32;
 } pkt_game_state_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_player_list_t {
 	pkt_hdr_t hdr;
 	uint32_t total_count;
 } pkt_player_list_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_player_new_t {
 	pkt_hdr_t hdr;
 	char name[PLAYER_NAME_LEN + 1];
 } pkt_player_new_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_player_data_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 	char name[PLAYER_NAME_LEN + 1];
@@ -105,25 +105,25 @@ typedef struct __attribute__((packed)) {
 	player_state_t state : 32;
 } pkt_player_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_player_state_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 	player_state_t state : 32;
 } pkt_player_state_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_player_keypress_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 	uint32_t time;
 	player_pos_state_t pos_state : 32;
 } pkt_player_keypress_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_player_leave_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 } pkt_player_leave_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed)) pkt_send_game_data_t {
 	pkt_hdr_t hdr;
 } pkt_send_game_data_t;
 
