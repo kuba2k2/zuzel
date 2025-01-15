@@ -3,7 +3,8 @@
 #include "game.h"
 
 typedef bool (*game_process_t)(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
-static bool process_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
+bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
+bool send_err_server_error(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_send_game_data(game_t *game, pkt_send_game_data_t *recv_pkt, net_endpoint_t *source);
@@ -11,20 +12,20 @@ static bool process_pkt_send_game_data(game_t *game, pkt_send_game_data_t *recv_
 const game_process_t process_list[] = {
 	NULL,
 	(game_process_t)process_pkt_ping,			// PKT_PING
-	(game_process_t)process_invalid_state,		// PKT_SUCCESS
+	(game_process_t)send_err_invalid_state,		// PKT_SUCCESS
 	NULL,										// PKT_ERROR
-	(game_process_t)process_invalid_state,		// PKT_GAME_LIST
-	(game_process_t)process_invalid_state,		// PKT_GAME_NEW
-	(game_process_t)process_invalid_state,		// PKT_GAME_JOIN
+	(game_process_t)send_err_invalid_state,		// PKT_GAME_LIST (server-only)
+	(game_process_t)send_err_invalid_state,		// PKT_GAME_NEW (server-only)
+	(game_process_t)send_err_invalid_state,		// PKT_GAME_JOIN (server-only)
 	(game_process_t)process_pkt_game_data,		// PKT_GAME_DATA
-	(game_process_t)process_invalid_state,		// PKT_GAME_STATE
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_LIST
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_NEW
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_DATA
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_STATE
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_KEYPRESS
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_UPDATE
-	(game_process_t)process_invalid_state,		// PKT_PLAYER_LEAVE
+	(game_process_t)send_err_invalid_state,		// PKT_GAME_STATE
+	(game_process_t)send_err_invalid_state,		// PKT_PLAYER_LIST
+	(game_process_t)process_pkt_player_new,		// PKT_PLAYER_NEW
+	(game_process_t)send_err_invalid_state,		// PKT_PLAYER_DATA
+	(game_process_t)send_err_invalid_state,		// PKT_PLAYER_STATE
+	(game_process_t)send_err_invalid_state,		// PKT_PLAYER_KEYPRESS
+	(game_process_t)send_err_invalid_state,		// PKT_PLAYER_UPDATE
+	(game_process_t)send_err_invalid_state,		// PKT_PLAYER_LEAVE
 	(game_process_t)process_pkt_send_game_data, // PKT_SEND_GAME_DATA
 };
 
@@ -40,19 +41,12 @@ bool game_process_packet(game_t *game, pkt_t *pkt, net_endpoint_t *source) {
 	BUILD_BUG_ON(sizeof(process_list) != sizeof(*process_list) * PKT_MAX);
 	game_process_t func = process_list[pkt->hdr.type];
 	if (func == NULL)
-		// no processing function defined, simply ignore the packet
-		return false;
+		// no processing function defined
+		// server: ignore the packet
+		// client: send packet to other endpoint
+		return game->is_server ? false : true;
 	// call the processing function
 	return func(game, pkt, source);
-}
-
-static bool process_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source) {
-	pkt_error_t pkt = {
-		.hdr.type = PKT_ERROR,
-		.error	  = GAME_ERR_INVALID_STATE,
-	};
-	net_pkt_send(source, (pkt_t *)&pkt);
-	return false;
 }
 
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source) {
@@ -90,7 +84,7 @@ static bool process_pkt_send_game_data(game_t *game, pkt_send_game_data_t *recv_
 		.hdr.type = PKT_GAME_DATA,
 		.is_list  = false,
 	};
-	game_fill_game_data(game, &pkt);
+	game_fill_data_pkt(game, &pkt);
 
 	SDL_WITH_MUTEX(game->mutex) {
 		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);

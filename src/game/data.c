@@ -22,7 +22,7 @@ void game_request_send_game_data(game_t *game) {
 	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }
 
-void game_fill_game_data(game_t *game, pkt_game_data_t *pkt) {
+void game_fill_data_pkt(game_t *game, pkt_game_data_t *pkt) {
 	int endpoints = 0;
 	SDL_WITH_MUTEX(game->mutex) {
 		net_endpoint_t *item;
