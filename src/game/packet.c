@@ -8,6 +8,7 @@ static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t 
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t *recv_pkt, net_endpoint_t *source);
 
 const game_process_t process_list[] = {
@@ -26,7 +27,7 @@ const game_process_t process_list[] = {
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_STATE
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_KEYPRESS
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_UPDATE
-	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LEAVE
+	(game_process_t)process_pkt_player_leave,	   // PKT_PLAYER_LEAVE
 	(game_process_t)process_pkt_request_send_data, // PKT_REQUEST_SEND_DATA
 };
 
@@ -87,16 +88,10 @@ static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net
 	player_t *player = player_init(game, recv_pkt->name);
 	if (player == NULL)
 		goto error;
-	LT_I("Game: created player #%d '%s'", player->id, player->name);
-	player->endpoint = source;
 
 	// add to players list
-	SDL_WITH_MUTEX(game->mutex) {
-		DL_APPEND(game->players, player);
-	}
-	// broadcast all players' data
-	game_request_send_data(game, false, true);
-
+	player->endpoint = source;
+	game_add_player(game, player);
 	return false;
 
 error:
@@ -109,15 +104,18 @@ error:
 
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source) {
 	player_t *player = game_get_player_by_id(game, recv_pkt->id);
+	if (game->is_server) {
+		if (player == NULL)
+			// player not found
+			return false;
+		if (source != player->endpoint)
+			// disallow modifying other players' data
+			return false;
+	}
 
-	// check if player found
+	// client: create a player if not found
 	bool is_new_player = false;
 	if (player == NULL) {
-		if (game->is_server) {
-			// server can't create player here
-			game_send_error(source, GAME_ERR_NO_PLAYER);
-			return false;
-		}
 		// client has to create missing players
 		player = player_init(game, recv_pkt->name);
 		if (player == NULL)
@@ -130,10 +128,6 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		);
 		is_new_player = true;
 	}
-
-	if (game->is_server && source != player->endpoint)
-		// disallow modifying foreign players' data
-		return false;
 
 	// update player data
 	player->id	  = recv_pkt->id; // safe; either a new player or the ID is already the same
@@ -149,12 +143,9 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		player->is_local = true;
 	}
 
-	// add to players list (client-only)
-	if (is_new_player) {
-		SDL_WITH_MUTEX(game->mutex) {
-			DL_APPEND(game->players, player);
-		}
-	}
+	// client: add to players list
+	if (is_new_player)
+		game_add_player(game, player);
 
 	if (game->is_server)
 		// before broadcasting from server, clear 'is_local'
@@ -163,50 +154,80 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 	return true;
 }
 
+static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source) {
+	player_t *player = game_get_player_by_id(game, recv_pkt->id);
+	if (player == NULL)
+		// player not found
+		return false;
+
+	// allow leaving as self, as well as kicking others out
+	// remove the player (also, server: send leave event)
+	game_del_player(game, player);
+	// client: send to other endpoint
+	return !game->is_server;
+}
+
 static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t *recv_pkt, net_endpoint_t *source) {
 	if (source->type != NET_ENDPOINT_PIPE)
 		// only accept packets on pipe
 		return false;
 
-	SDL_LOCK_MUTEX(game->mutex);
+	net_endpoint_t *join_endpoint = (void *)recv_pkt->join_endpoint;
+	unsigned int leave_player	  = recv_pkt->leave_player;
+	bool updated_game			  = recv_pkt->updated_game;
+	player_t *updated_player	  = NULL;
+	if (recv_pkt->updated_player)
+		DL_SEARCH_SCALAR(game->players, updated_player, id, recv_pkt->updated_player);
 
-	// make a game data packet
-	pkt_game_data_t pkt_game_data = {
-		.hdr.type = PKT_GAME_DATA,
-		.is_list  = false,
-	};
-	game_fill_data_pkt(game, &pkt_game_data);
+	if (join_endpoint != NULL || updated_game) {
+		// server: endpoint joined
+		// client: data updated locally
+		pkt_game_data_t pkt = {
+			.hdr.type = PKT_GAME_DATA,
+			.is_list  = false,
+		};
+		game_fill_data_pkt(game, &pkt);
+		if (join_endpoint != NULL)
+			net_pkt_send(join_endpoint, (pkt_t *)&pkt);
+		else
+			net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);
+	}
 
-	// iterate over all connected endpoints
-	net_endpoint_t *endpoint;
-	DL_FOREACH(game->endpoints, endpoint) {
-		if (endpoint == source)
-			// skip pipe
-			continue;
-
-		// send game data
-		if (recv_pkt->send_game) {
-			net_pkt_send(endpoint, (pkt_t *)&pkt_game_data);
-		}
-
-		// send all players' data
-		if (recv_pkt->send_players) {
-			player_t *player;
-			DL_FOREACH(game->players, player) {
-				if (!game->is_server && !player->is_local)
-					// client: only send updates for local players
-					continue;
-				pkt_player_data_t pkt_player_data = {
-					.hdr.type = PKT_PLAYER_DATA,
-					.is_local = player->endpoint == endpoint,
-				};
-				player_fill_data_pkt(game, player, &pkt_player_data);
-				net_pkt_send(endpoint, (pkt_t *)&pkt_player_data);
-			}
+	if (join_endpoint != NULL) {
+		// server: endpoint joined
+		player_t *player;
+		DL_FOREACH(game->players, player) {
+			pkt_player_data_t pkt = {
+				.hdr.type = PKT_PLAYER_DATA,
+				.is_local = player->endpoint == join_endpoint,
+			};
+			player_fill_data_pkt(game, player, &pkt);
+			net_pkt_send(join_endpoint, (pkt_t *)&pkt);
 		}
 	}
 
-	SDL_UNLOCK_MUTEX(game->mutex);
+	if (updated_player != NULL) {
+		pkt_player_data_t pkt = {
+			.hdr.type = PKT_PLAYER_DATA,
+		};
+		player_fill_data_pkt(game, updated_player, &pkt);
+		net_endpoint_t *endpoint;
+		DL_FOREACH(game->endpoints, endpoint) {
+			if (endpoint == source)
+				// skip the pipe
+				continue;
+			pkt.is_local = updated_player->endpoint == endpoint;
+			net_pkt_send(endpoint, (pkt_t *)&pkt);
+		}
+	}
+
+	if (leave_player != 0) {
+		pkt_player_leave_t pkt = {
+			.hdr.type = PKT_PLAYER_LEAVE,
+			.id		  = leave_player,
+		};
+		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);
+	}
 
 	return false;
 }

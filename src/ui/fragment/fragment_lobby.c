@@ -85,7 +85,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		case UI_CONNECT_NEW_PRIVATE:
 			// the game was just created, set the player's customized data and send an update
 			game_set_default_player_options(GAME);
-			game_request_send_data(GAME, true, false);
+			game_request_send_update(GAME, true, 0);
 			// show the game key
 			gfx_view_set_text(text_key, GAME->key);
 			break;
@@ -107,13 +107,18 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			break;
 	}
 
-	// the device just joined a game, create a player implicitly
 	SDL_WITH_MUTEX(GAME->mutex) {
-		pkt_player_new_t pkt = {
-			.hdr.type = PKT_PLAYER_NEW,
-		};
-		strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
-		net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
+		// find a locally-controlled player
+		player_t *local_player;
+		DL_SEARCH_SCALAR(GAME->players, local_player, is_local, true);
+		if (local_player == NULL) {
+			// create a player if not yet added
+			pkt_player_new_t pkt = {
+				.hdr.type = PKT_PLAYER_NEW,
+			};
+			strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
+			net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
+		}
 	}
 
 	ui_update_game(ui);
@@ -122,6 +127,17 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 error:
 	on_error(ui);
 	return false;
+}
+
+static bool on_hide(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
+	if (players_list == NULL || players_row == NULL)
+		return false;
+	// free the current list box contents
+	gfx_view_free(players_list->children);
+	players_list->children = NULL;
+	// put the cloned row back into the list
+	DL_APPEND(players_list->children, players_row);
+	return true;
 }
 
 static void ui_update_game(ui_t *ui) {
@@ -236,21 +252,21 @@ static bool on_btn_game_rename(view_t *view, SDL_Event *e, ui_t *ui) {
 
 static bool on_btn_game_private(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = false;
-	game_request_send_data(GAME, true, false);
+	game_request_send_update(GAME, true, 0);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_btn_game_public(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = true;
-	game_request_send_data(GAME, true, false);
+	game_request_send_update(GAME, true, 0);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_speed_change(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->speed = view->data.slider.value;
-	game_request_send_data(GAME, true, false);
+	game_request_send_update(GAME, true, 0);
 	ui_update_game(ui);
 	return false;
 }
@@ -319,13 +335,13 @@ static bool on_dialog_edit_input(view_t *view, SDL_Event *e, ui_t *ui) {
 static bool on_dialog_edit_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 	if (in_game_rename) {
 		strncpy2(GAME->name, dialog_edit_input->data.input.value, GAME_NAME_LEN);
-		game_request_send_data(GAME, true, false);
+		game_request_send_update(GAME, true, 0);
 		ui_update_game(ui);
 		in_game_rename = false;
 	}
 	if (in_player_rename && selected_player != NULL) {
 		strncpy2(selected_player->name, dialog_edit_input->data.input.value, PLAYER_NAME_LEN);
-		game_request_send_data(GAME, false, true);
+		game_request_send_update(GAME, false, selected_player->id);
 		ui_update_player(ui, selected_player->id);
 		in_player_rename = false;
 	}
@@ -411,6 +427,7 @@ static const view_inflate_on_event_t inflate_on_event[] = {
 
 fragment_t fragment_lobby = {
 	.on_show		  = on_show,
+	.on_hide		  = on_hide,
 	.on_event		  = on_event,
 	.inflate_on_event = inflate_on_event,
 };

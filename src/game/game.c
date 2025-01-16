@@ -131,7 +131,10 @@ uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
 		game->stop = true;
 	}
 	// wake up the game thread
-	game_request_send_data(game, false, false);
+	pkt_ping_t ping = {
+		.hdr.type = PKT_PING,
+	};
+	net_pkt_send_pipe(game->endpoints, (pkt_t *)&ping);
 	return 0;
 }
 

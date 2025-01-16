@@ -33,11 +33,11 @@ player_t *game_get_player_by_id(game_t *game, unsigned int id) {
 	return player;
 }
 
-void game_request_send_data(game_t *game, bool send_game, bool send_players) {
+void game_request_send_update(game_t *game, bool updated_game, unsigned int updated_player) {
 	pkt_request_send_data_t pkt = {
-		.hdr.type	  = PKT_REQUEST_SEND_DATA,
-		.send_game	  = send_game,
-		.send_players = send_players,
+		.hdr.type		= PKT_REQUEST_SEND_DATA,
+		.updated_game	= updated_game,
+		.updated_player = updated_player,
 	};
 	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }

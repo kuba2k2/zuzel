@@ -23,11 +23,13 @@ void game_set_default_player_options(game_t *game);
 int game_get_player_count(game_t *game);
 player_t *game_get_player_by_id(game_t *game, unsigned int id);
 void game_fill_data_pkt(game_t *game, pkt_game_data_t *pkt);
-void game_request_send_data(game_t *game, bool send_game, bool send_players);
+void game_request_send_update(game_t *game, bool updated_game, unsigned int updated_player);
 
 // network.c
 void game_add_endpoint(game_t *game, net_endpoint_t *endpoint);
 void game_del_endpoint(game_t *game, net_endpoint_t *endpoint);
+void game_add_player(game_t *game, player_t *player);
+void game_del_player(game_t *game, player_t *player);
 
 // utils.c
 void game_print_error(game_err_t error);

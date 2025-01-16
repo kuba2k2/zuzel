@@ -126,8 +126,10 @@ typedef struct __attribute__((packed)) pkt_player_leave_t {
 
 typedef struct __attribute__((packed)) pkt_send_game_data_t {
 	pkt_hdr_t hdr;
-	bool send_game;
-	bool send_players;
+	uintptr_t join_endpoint; //!< Pointer to the endpoint that just joined
+	uint32_t leave_player;	 //!< ID of the player that just left
+	uint32_t updated_game;	 //!< Whether the game data was updated (0/1)
+	uint32_t updated_player; //!< ID of the player that was updated
 } pkt_request_send_data_t;
 
 typedef union __attribute__((packed)) pkt_t {

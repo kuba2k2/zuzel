@@ -4,31 +4,100 @@
 
 static void game_check_empty(game_t *game, bool endpoint_deleted);
 
+/**
+ * Duplicate an endpoint and add to the game.
+ * Clear the game expiry timer.
+ */
 void game_add_endpoint(game_t *game, net_endpoint_t *endpoint) {
+	// this needs to be thread-safe - it's used in net_client and net_server
 	net_endpoint_t *item = net_endpoint_dup(endpoint);
 	if (item == NULL)
 		return;
+	LT_I("Game: adding endpoint %s", net_endpoint_str(endpoint));
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_APPEND(game->endpoints, item);
 	}
-	if (endpoint->type <= NET_ENDPOINT_TLS && game->is_server)
-		// clients don't send endpoint connection updates
-		game_request_send_data(game, true, false);
-	// cancel the expiry timer
+	// check if game is empty
 	game_check_empty(game, false);
+	if (!game->is_server || endpoint->type == NET_ENDPOINT_PIPE)
+		// clients don't send data updates
+		// pipes don't need data updates
+		return;
+	// send a data update to the newly-joined endpoint
+	pkt_request_send_data_t pkt = {
+		.hdr.type	   = PKT_REQUEST_SEND_DATA,
+		.join_endpoint = (uintptr_t)item,
+	};
+	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }
 
+/**
+ * Close/free and remove an endpoint from the game.
+ * Call game_del_player() on all players using this endpoint.
+ * Schedule the game expiry timer.
+ */
 void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
-	SDL_WITH_MUTEX(game->mutex) {
-		DL_DELETE(game->endpoints, endpoint);
-	}
-	if (endpoint->type <= NET_ENDPOINT_TLS && game->is_server)
-		// clients don't send endpoint connection updates
-		game_request_send_data(game, true, false);
+	LT_I("Game: deleting endpoint %s", net_endpoint_str(endpoint));
+	net_endpoint_type_t type = endpoint->type;
+	DL_DELETE(game->endpoints, endpoint);
 	net_endpoint_free(endpoint);
 	free(endpoint);
-	// stop the game if there are no more endpoints
+	// check if game is empty
 	game_check_empty(game, true);
+	if (type == NET_ENDPOINT_PIPE)
+		return;
+	// delete all players using this endpoint
+	player_t *player, *tmp;
+	DL_FOREACH_SAFE(game->players, player, tmp) {
+		if (player->endpoint != endpoint)
+			continue;
+		player->endpoint = NULL;
+		game_del_player(game, player);
+	}
+}
+
+/**
+ * Add a player to the game.
+ * If server, send player data to every endpoint (incl. the one creating the player).
+ */
+void game_add_player(game_t *game, player_t *player) {
+	LT_I("Game: adding player #%d '%s'", player->id, player->name);
+	DL_APPEND(game->players, player);
+	if (game->is_server) {
+		// only servers send player list updates
+		pkt_request_send_data_t pkt = {
+			.hdr.type		= PKT_REQUEST_SEND_DATA,
+			.updated_player = player->id,
+		};
+		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+	}
+}
+
+/**
+ * Remove (and free) a player from the game.
+ * If server, send player leave to every endpoint (incl. the one leaving).
+ */
+void game_del_player(game_t *game, player_t *player) {
+	LT_I("Game: deleting player #%d '%s'", player->id, player->name);
+	DL_DELETE(game->players, player);
+	if (game->is_server) {
+		// only servers send player list updates
+		pkt_request_send_data_t pkt = {
+			.hdr.type	  = PKT_REQUEST_SEND_DATA,
+			.leave_player = player->id,
+		};
+		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+	}
+	net_endpoint_t *player_endpoint = player->endpoint;
+	player_free(player);
+	if (player_endpoint == NULL)
+		// endpoint cleared in game_del_endpoint() - nothing to do
+		return;
+	// search any other players on the same endpoint
+	DL_SEARCH_SCALAR(game->players, player, endpoint, player_endpoint);
+	// close the endpoint if no more players are connected
+	if (player == NULL)
+		game_del_endpoint(game, player_endpoint);
 }
 
 static void game_check_empty(game_t *game, bool endpoint_deleted) {

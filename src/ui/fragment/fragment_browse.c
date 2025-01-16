@@ -63,6 +63,8 @@ error:
 }
 
 static bool on_hide(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
+	if (list == NULL || cloned_row == NULL)
+		return false;
 	// free the current list box contents
 	gfx_view_free(list->children);
 	list->children = NULL;
