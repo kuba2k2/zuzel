@@ -15,6 +15,7 @@ void settings_load() {
 	SETTINGS->server_port			= 1234;
 	SETTINGS->tls_cert_file			= strdup("server.crt");
 	SETTINGS->tls_key_file			= strdup("server.key");
+	SETTINGS->net_slowdown			= false;
 
 	cJSON *json = file_read_json("settings.json");
 	if (json == NULL)
@@ -32,6 +33,7 @@ void settings_load() {
 	json_read_int(json, "server_port", &SETTINGS->server_port);
 	json_read_string(json, "tls_cert_file", &SETTINGS->tls_cert_file);
 	json_read_string(json, "tls_key_file", &SETTINGS->tls_key_file);
+	json_read_bool(json, "net_slowdown", &SETTINGS->net_slowdown);
 
 	LT_I("Loaded settings:");
 	LT_I(" - loglevel: %d", SETTINGS->loglevel);
@@ -45,6 +47,7 @@ void settings_load() {
 	LT_I(" - server_port: %d", SETTINGS->server_port);
 	LT_I(" - tls_cert_file: \"%s\"", SETTINGS->tls_cert_file);
 	LT_I(" - tls_key_file: \"%s\"", SETTINGS->tls_key_file);
+	LT_I(" - net_slowdown: %s", SETTINGS->net_slowdown ? "true" : "false");
 
 	cJSON_Delete(json);
 }
@@ -63,6 +66,7 @@ bool settings_save() {
 	cJSON_AddNumberToObject(json, "server_port", SETTINGS->server_port);
 	cJSON_AddStringToObject(json, "tls_cert_file", SETTINGS->tls_cert_file);
 	cJSON_AddStringToObject(json, "tls_key_file", SETTINGS->tls_key_file);
+	cJSON_AddBoolToObject(json, "net_slowdown", SETTINGS->net_slowdown);
 
 	bool ret = file_write_json("settings.json", json);
 	cJSON_Delete(json);

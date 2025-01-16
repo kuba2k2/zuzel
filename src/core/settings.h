@@ -23,6 +23,8 @@ typedef struct {
 	X509 *tls_cert;
 	char *tls_key_file;
 	RSA *tls_key;
+
+	bool net_slowdown;
 } settings_t;
 
 void settings_load();

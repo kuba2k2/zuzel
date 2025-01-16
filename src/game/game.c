@@ -175,7 +175,8 @@ static int game_thread(game_t *game) {
 		);
 		if (err != NET_ERR_OK)
 			goto cleanup;
-		SDL_Delay(100);
+		if (SETTINGS->net_slowdown)
+			SDL_Delay(100);
 	}
 
 cleanup:
