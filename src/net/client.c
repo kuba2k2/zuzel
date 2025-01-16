@@ -107,9 +107,6 @@ static int net_client_connect(char *address) {
 	}
 
 cleanup:
-	// send a 'closed' event
-	event.user.code = false;
-	SDL_PushEvent(&event);
 	// mark this client as 'stopping'
 	client->stop = true;
 	net_t *net	 = client;
@@ -124,9 +121,16 @@ cleanup:
 		// no game joined - close the pipe
 		net_endpoint_free(&net->endpoint);
 		SDL_DestroyMutex(net->endpoint.mutex);
+		// send a 'closed' event to UI
+		event.user.code = false;
+		SDL_PushEvent(&event);
 	} else {
 		// game was joined - pass endpoint to game thread
 		game_add_endpoint(net->game, &net->endpoint);
+		// send a 'game' event to UI
+		event.user.type	 = SDL_USEREVENT_GAME;
+		event.user.data1 = net->game;
+		SDL_PushEvent(&event);
 	}
 	// free the client's structure
 	free(net);
@@ -157,12 +161,6 @@ static net_err_t net_client_select_read_cb(net_endpoint_t *endpoint, net_t *net)
 		if (net->game == NULL)
 			return NET_ERR_CLIENT_CLOSED;
 		LT_I("Client: joined game %s", net->game->key);
-		// send game event to UI
-		SDL_Event event = {
-			.user.type	= SDL_USEREVENT_GAME,
-			.user.data1 = net->game,
-		};
-		SDL_PushEvent(&event);
 		// request the client to stop
 		net->stop = true;
 		return NET_ERR_OK;
