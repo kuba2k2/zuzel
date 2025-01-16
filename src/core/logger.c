@@ -73,10 +73,8 @@ void lt_log(const uint8_t level, const char *format, ...) {
 
 #if LT_LOGGER_TASK
 	log_thread_t *thread;
-	LL_FOREACH(log_threads, thread) {
-		if (thread->id == SDL_ThreadID())
-			break;
-	}
+	SDL_threadID thread_id = SDL_ThreadID();
+	LL_SEARCH_SCALAR(log_threads, thread, id, thread_id);
 #endif
 
 #if LT_LOGGER_COLOR

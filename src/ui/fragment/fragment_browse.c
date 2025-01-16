@@ -95,10 +95,7 @@ static bool on_btn_join(view_t *view, SDL_Event *e, ui_t *ui) {
 
 	// find the highlighted row
 	view_t *row;
-	DL_FOREACH(list->children, row) {
-		if (row->children->is_gone == false)
-			break;
-	}
+	DL_SEARCH_SCALAR(list->children, row, children->is_gone, false);
 	if (row == NULL)
 		return false;
 	// get the game key view
