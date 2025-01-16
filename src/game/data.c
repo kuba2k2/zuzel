@@ -24,6 +24,15 @@ int game_get_player_count(game_t *game) {
 	return players;
 }
 
+player_t *game_get_player_by_id(game_t *game, unsigned int id) {
+	player_t *player = NULL;
+	// find player by ID
+	SDL_WITH_MUTEX(game->mutex) {
+		DL_SEARCH_SCALAR(game->players, player, id, id);
+	}
+	return player;
+}
+
 void game_request_send_data(game_t *game, bool send_game, bool send_players) {
 	pkt_request_send_data_t pkt = {
 		.hdr.type	  = PKT_REQUEST_SEND_DATA,

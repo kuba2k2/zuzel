@@ -21,6 +21,7 @@ game_t *game_get_list(SDL_mutex **mutex);
 // data.c
 void game_set_default_player_options(game_t *game);
 int game_get_player_count(game_t *game);
+player_t *game_get_player_by_id(game_t *game, unsigned int id);
 void game_fill_data_pkt(game_t *game, pkt_game_data_t *pkt);
 void game_request_send_data(game_t *game, bool send_game, bool send_players);
 

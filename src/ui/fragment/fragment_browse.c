@@ -135,10 +135,10 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 	switch (pkt->hdr.type) {
 		case PKT_GAME_LIST:
 			ui->force_layout	  = true;
-			current_page		  = pkt->game_list.page;
+			current_page		  = (int)pkt->game_list.page;
 			btn_prev->is_disabled = current_page == 0;
 			int total_pages =
-				pkt->game_list.total_count ? ((pkt->game_list.total_count - 1) / pkt->game_list.per_page + 1) : 1;
+				pkt->game_list.total_count ? (int)((pkt->game_list.total_count - 1) / pkt->game_list.per_page + 1) : 1;
 			btn_next->is_disabled = current_page >= total_pages - 1;
 			btn_join->is_disabled = true;
 			snprintf(

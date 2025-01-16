@@ -22,7 +22,11 @@ player_t *player_init(game_t *game, char *name) {
 	SDL_WITH_MUTEX(player->mutex) {
 		player->game  = game;
 		player->state = PLAYER_IDLE;
-		player->id	  = rand() % (100 - 10) + 10; // 10..99
+
+		do {
+			player->id = rand() % (100 - 10) + 10; // 10..99
+		} while (game_get_player_by_id(game, player->id) != NULL);
+
 		if (name != NULL)
 			strncpy2(player->name, name, sizeof(player->name) - 1);
 

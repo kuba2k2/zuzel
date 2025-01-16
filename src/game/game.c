@@ -110,6 +110,14 @@ void game_free(game_t *game) {
 			free(endpoint);
 		}
 	}
+	// free all players
+	SDL_WITH_MUTEX(game->mutex) {
+		player_t *player, *tmp;
+		DL_FOREACH_SAFE(game->players, player, tmp) {
+			DL_DELETE(game->players, player);
+			player_free(player);
+		}
+	}
 	// free remaining members
 	SDL_DestroyMutex(game->mutex);
 	SDL_RemoveTimer(game->expiry_timer);

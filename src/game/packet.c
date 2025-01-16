@@ -108,11 +108,7 @@ error:
 }
 
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source) {
-	player_t *player = NULL;
-	// find player by ID
-	SDL_WITH_MUTEX(game->mutex) {
-		DL_SEARCH_SCALAR(game->players, player, id, recv_pkt->id);
-	}
+	player_t *player = game_get_player_by_id(game, recv_pkt->id);
 
 	// check if player found
 	bool is_new_player = false;
@@ -134,6 +130,10 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		);
 		is_new_player = true;
 	}
+
+	if (game->is_server && source != player->endpoint)
+		// disallow modifying foreign players' data
+		return false;
 
 	// update player data
 	player->id	  = recv_pkt->id; // safe; either a new player or the ID is already the same
@@ -193,6 +193,9 @@ static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t 
 		if (recv_pkt->send_players) {
 			player_t *player;
 			DL_FOREACH(game->players, player) {
+				if (!game->is_server && !player->is_local)
+					// client: only send updates for local players
+					continue;
 				pkt_player_data_t pkt_player_data = {
 					.hdr.type = PKT_PLAYER_DATA,
 					.is_local = player->endpoint == endpoint,
