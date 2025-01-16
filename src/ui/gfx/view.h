@@ -68,6 +68,8 @@ typedef struct view_t {
 	bool is_focusable; //!< Whether the view can be focused
 	bool in_event;	   //!< Whether the view should capture all events, regardless of its focus state
 
+	void *tag; //!< Freeform data
+
 	// view-specific properties
 	union {
 		struct {
@@ -148,6 +150,7 @@ void gfx_view_set_text_style(view_text_t *text, unsigned int color, int font, in
 view_t *gfx_view_find_prev(view_t *view);
 view_t *gfx_view_find_next(view_t *view);
 view_t *gfx_view_find_by_id(view_t *views, const char *id);
+view_t *gfx_view_find_by_tag(view_t *views, const void *tag);
 char *gfx_view_make_id(view_t *view);
 void gfx_view_set_event_param(view_t *views, const char *id, void *param);
 void gfx_view_set_text(view_t *view, const char *text);

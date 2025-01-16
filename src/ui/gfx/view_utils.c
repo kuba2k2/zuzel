@@ -117,6 +117,13 @@ view_t *gfx_view_find_by_id(view_t *views, const char *id) {
 	return views;
 }
 
+view_t *gfx_view_find_by_tag(view_t *views, const void *tag) {
+	while (views != NULL && views->tag != tag) {
+		views = gfx_view_find_next(views);
+	}
+	return views;
+}
+
 char *gfx_view_make_id(view_t *view) {
 	const char *type_str = "view";
 	switch (view->type) {
