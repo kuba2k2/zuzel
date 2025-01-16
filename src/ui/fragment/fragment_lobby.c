@@ -83,7 +83,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		case UI_CONNECT_NEW_PRIVATE:
 			// the game was just created, set the player's customized data and send an update
 			game_set_default_player_options(GAME);
-			game_request_send_game_data(GAME);
+			game_request_send_data(GAME, true, false);
 			// show the game key
 			gfx_view_set_text(text_key, GAME->key);
 			break;
@@ -103,6 +103,15 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			// show the connection address
 			gfx_view_set_text(text_key, ui->connection.address);
 			break;
+	}
+
+	// the device just joined a game, create a player implicitly
+	SDL_WITH_MUTEX(GAME->mutex) {
+		pkt_player_new_t pkt = {
+			.hdr.type = PKT_PLAYER_NEW,
+		};
+		strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
+		net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
 	}
 
 	ui_update_game(ui);
@@ -138,27 +147,27 @@ static bool on_btn_game_rename(view_t *view, SDL_Event *e, ui_t *ui) {
 
 static bool on_btn_game_private(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = false;
-	game_request_send_game_data(GAME);
+	game_request_send_data(GAME, true, false);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_btn_game_public(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = true;
-	game_request_send_game_data(GAME);
+	game_request_send_data(GAME, true, false);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_speed_change(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->speed = view->data.slider.value;
-	game_request_send_game_data(GAME);
+	game_request_send_data(GAME, true, false);
 	ui_update_game(ui);
 	return false;
 }
 
 static bool on_btn_quit(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (GAME->player_count == 1) {
+	if (game_get_player_count(GAME) == 1) {
 		// don't ask if we're the only player
 		on_quit(ui);
 		return true;
@@ -221,7 +230,7 @@ static bool on_dialog_edit_input(view_t *view, SDL_Event *e, ui_t *ui) {
 static bool on_dialog_edit_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 	if (in_game_rename) {
 		strncpy2(GAME->name, dialog_edit_input->data.input.value, GAME_NAME_LEN);
-		game_request_send_game_data(GAME);
+		game_request_send_data(GAME, true, false);
 		ui_update_game(ui);
 		in_game_rename = false;
 	}

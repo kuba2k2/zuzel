@@ -8,22 +8,22 @@
 #include "game/player/player_t.h"
 
 typedef enum {
-	PKT_PING = 1,		 //!< Ping/time sync
-	PKT_SUCCESS,		 //!< Success response
-	PKT_ERROR,			 //!< Error response
-	PKT_GAME_LIST,		 //!< List games request/response
-	PKT_GAME_NEW,		 //!< New game request
-	PKT_GAME_JOIN,		 //!< Join game request
-	PKT_GAME_DATA,		 //!< Game data
-	PKT_GAME_STATE,		 //!< Game state change
-	PKT_PLAYER_LIST,	 //!< List players request/response
-	PKT_PLAYER_NEW,		 //!< New player request
-	PKT_PLAYER_DATA,	 //!< Player data
-	PKT_PLAYER_STATE,	 //!< Player state change
-	PKT_PLAYER_KEYPRESS, //!< Player keypress information
-	PKT_PLAYER_UPDATE,	 //!< Player generic update
-	PKT_PLAYER_LEAVE,	 //!< Player leave event
-	PKT_SEND_GAME_DATA,	 //!< Request to broadcast game data
+	PKT_PING = 1,		   //!< Ping/time sync
+	PKT_SUCCESS,		   //!< Success response
+	PKT_ERROR,			   //!< Error response
+	PKT_GAME_LIST,		   //!< List games request/response
+	PKT_GAME_NEW,		   //!< New game request
+	PKT_GAME_JOIN,		   //!< Join game request
+	PKT_GAME_DATA,		   //!< Game data
+	PKT_GAME_STATE,		   //!< Game state change
+	PKT_PLAYER_LIST,	   //!< List players request/response
+	PKT_PLAYER_NEW,		   //!< New player request
+	PKT_PLAYER_DATA,	   //!< Player data
+	PKT_PLAYER_STATE,	   //!< Player state change
+	PKT_PLAYER_KEYPRESS,   //!< Player keypress information
+	PKT_PLAYER_UPDATE,	   //!< Player generic update
+	PKT_PLAYER_LEAVE,	   //!< Player leave event
+	PKT_REQUEST_SEND_DATA, //!< Request to broadcast game data
 	PKT_MAX,
 } pkt_type_t;
 
@@ -126,7 +126,9 @@ typedef struct __attribute__((packed)) pkt_player_leave_t {
 
 typedef struct __attribute__((packed)) pkt_send_game_data_t {
 	pkt_hdr_t hdr;
-} pkt_send_game_data_t;
+	bool send_game;
+	bool send_players;
+} pkt_request_send_data_t;
 
 typedef union __attribute__((packed)) pkt_t {
 	pkt_hdr_t hdr;
@@ -143,5 +145,5 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_player_keypress_t player_keypress;
 	// pkt_player_update_t player_update;
 	pkt_player_leave_t player_leave;
-	pkt_send_game_data_t send_game_data;
+	pkt_request_send_data_t send_game_data;
 } pkt_t;

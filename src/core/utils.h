@@ -5,10 +5,23 @@
 #define STRUCT_PADDING(field, len) char _padding_##field[4 - (len) % 4]
 #define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
 
+#define CONCAT_(prefix, suffix) prefix##suffix
+#define CONCAT(prefix, suffix)	CONCAT_(prefix, suffix)
+#define UNIQ(name)				CONCAT(name, __LINE__)
+
 #define SDL_WITH_MUTEX(m)                                                                                              \
-	for (volatile int loop = SDL_LockMutex((m) = (m) ? (m) : SDL_CreateMutex()) * 0; loop < 1;                         \
-		 SDL_UnlockMutex(m), loop++)
+	for (volatile int UNIQ(loop) = SDL_LockMutex((m) = (m) ? (m) : SDL_CreateMutex()) * 0; UNIQ(loop) < 1;             \
+		 SDL_UnlockMutex(m), UNIQ(loop)++)
 #define SDL_WITH_MUTEX_OPTIONAL(m) for (volatile int i = SDL_LockMutex(m) * 0; i < 1; SDL_UnlockMutex(m), i++)
+
+#define SDL_LOCK_MUTEX(m)                                                                                              \
+	do {                                                                                                               \
+		SDL_LockMutex((m) = (m) ? (m) : SDL_CreateMutex());                                                            \
+	} while (0)
+#define SDL_UNLOCK_MUTEX(m)                                                                                            \
+	do {                                                                                                               \
+		SDL_UnlockMutex(m);                                                                                            \
+	} while (0)
 
 #define FREE_NULL(var)                                                                                                 \
 	do {                                                                                                               \

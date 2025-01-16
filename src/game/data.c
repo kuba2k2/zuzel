@@ -15,25 +15,30 @@ void game_set_default_player_options(game_t *game) {
 	}
 }
 
-void game_request_send_game_data(game_t *game) {
-	pkt_send_game_data_t pkt = {
-		.hdr.type = PKT_SEND_GAME_DATA,
+int game_get_player_count(game_t *game) {
+	int players = 0;
+	SDL_WITH_MUTEX(game->mutex) {
+		player_t *item;
+		DL_COUNT(game->players, item, players);
+	}
+	return players;
+}
+
+void game_request_send_data(game_t *game, bool send_game, bool send_players) {
+	pkt_request_send_data_t pkt = {
+		.hdr.type	  = PKT_REQUEST_SEND_DATA,
+		.send_game	  = send_game,
+		.send_players = send_players,
 	};
 	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }
 
 void game_fill_data_pkt(game_t *game, pkt_game_data_t *pkt) {
-	int endpoints = 0;
-	SDL_WITH_MUTEX(game->mutex) {
-		net_endpoint_t *item;
-		DL_COUNT(game->endpoints, item, endpoints);
-	}
-
 	pkt->is_public = game->is_public;
 	pkt->is_local  = game->is_local;
 	pkt->speed	   = game->speed;
 	pkt->state	   = game->state;
-	pkt->players   = endpoints - 1; // all except the pipe
+	pkt->players   = game_get_player_count(game);
 	memcpy(pkt->key, game->key, min(sizeof(pkt->key), sizeof(game->key)));
 	memcpy(pkt->name, game->name, min(sizeof(pkt->name), sizeof(game->name)));
 }

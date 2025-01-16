@@ -11,6 +11,7 @@ typedef enum game_err_t {
 	GAME_ERR_OK			   = 0,	 //!< No error
 	GAME_ERR_INVALID_STATE = 1,	 //!< Operation invalid in the current game state
 	GAME_ERR_NOT_FOUND	   = 2,	 //!< Game not found by the specified key
+	GAME_ERR_NO_PLAYER	   = 3,	 //!< Player not found by the specified ID
 	GAME_ERR_SERVER_ERROR  = 99, //!< Internal server error
 } game_err_t;
 
@@ -31,8 +32,6 @@ typedef struct game_t {
 
 	net_endpoint_t *endpoints; //!< Communication pipe and other connected devices
 	player_t *players;		   //!< Players in the room
-	// TODO rely on counting players list instead
-	int player_count; //!< Number of players in the room (used for UI)
 
 	// game options
 	char name[GAME_NAME_LEN + 1]; //!< Room name

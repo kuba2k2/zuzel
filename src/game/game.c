@@ -123,7 +123,7 @@ uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
 		game->stop = true;
 	}
 	// wake up the game thread
-	game_request_send_game_data(game);
+	game_request_send_data(game, false, false);
 	return 0;
 }
 

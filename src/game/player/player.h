@@ -10,7 +10,7 @@ typedef struct pkt_player_new_t pkt_player_new_t;
 typedef struct pkt_player_data_t pkt_player_data_t;
 
 // player.c
-player_t *player_init(game_t *game, net_endpoint_t *endpoint, char *name);
+player_t *player_init(game_t *game, char *name);
 void player_free(player_t *player);
 
 // utils.c
