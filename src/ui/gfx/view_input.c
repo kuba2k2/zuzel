@@ -45,10 +45,13 @@ static void gfx_view_inflate_input(view_t *input, cJSON *json, const view_inflat
 }
 
 static void gfx_view_clone_input(view_t *src, view_t *dst) {
-	dst->data.input.text.text		 = strdup(dst->data.input.text.text);
-	dst->data.input.placeholder.text = strdup(dst->data.input.placeholder.text);
-	MALLOC(dst->data.input.value, dst->data.input.max_length + 1, return);
-	strncpy2(dst->data.input.value, dst->data.input.text.text, dst->data.input.max_length);
+	if (src->data.input.text.text != NULL)
+		dst->data.input.text.text = strdup(src->data.input.text.text);
+	if (src->data.input.placeholder.text != NULL)
+		dst->data.input.placeholder.text = strdup(src->data.input.placeholder.text);
+	MALLOC(dst->data.input.value, src->data.input.max_length + 1, return);
+	if (src->data.input.text.text != NULL)
+		strncpy2(dst->data.input.value, src->data.input.text.text, src->data.input.max_length);
 }
 
 static void gfx_view_free_input(view_t *input) {

@@ -47,7 +47,8 @@ static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_infl
 }
 
 static void gfx_view_clone_button(view_t *src, view_t *dst) {
-	dst->data.button.text.text = strdup(dst->data.button.text.text);
+	if (src->data.button.text.text != NULL)
+		dst->data.button.text.text = strdup(src->data.button.text.text);
 }
 
 static void gfx_view_free_button(view_t *button) {

@@ -11,6 +11,8 @@ static net_t *client = NULL;
 net_endpoint_t *net_client_start(const char *address, bool use_tls) {
 	if (client != NULL)
 		return &client->endpoint;
+	if (address == NULL)
+		return NULL;
 	MALLOC(client, sizeof(*client), return NULL);
 
 	// set the connection protocol

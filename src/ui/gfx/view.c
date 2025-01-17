@@ -85,7 +85,8 @@ view_t *gfx_view_clone(view_t *view, view_t *parent) {
 	memcpy(clone, view, sizeof(*clone));
 
 	// duplicate the ID
-	clone->id = strdup(view->id);
+	if (view->id != NULL)
+		clone->id = strdup(view->id);
 	// update view-owned memory
 	clone->children = NULL;
 	clone->parent	= parent;

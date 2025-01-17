@@ -23,7 +23,7 @@ static view_t *btn_player_ban	 = NULL;
 static view_t *btn_game_private	 = NULL;
 static view_t *btn_game_public	 = NULL;
 
-static int selected_player_id = 0;
+static unsigned int selected_player_id = 0;
 
 static void ui_update_game(ui_t *ui);
 static void ui_update_player(ui_t *ui, unsigned int player_id);
@@ -220,6 +220,9 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 			net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
 			break;
 		}
+
+		default:
+			break;
 	}
 	dialog_hide(ui);
 }

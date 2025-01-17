@@ -153,6 +153,8 @@ void lt_log_set_thread_name(const char *name) {
 		free(log_thread->name);
 		free(log_thread);
 	}
+	if (name == NULL)
+		return;
 	MALLOC(log_thread, sizeof(*log_thread), return);
 	log_thread->id	 = thread_id;
 	log_thread->name = strdup(name);

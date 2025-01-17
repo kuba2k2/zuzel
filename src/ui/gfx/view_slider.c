@@ -48,8 +48,9 @@ static void gfx_view_inflate_slider(view_t *slider, cJSON *json, const view_infl
 }
 
 static void gfx_view_clone_slider(view_t *src, view_t *dst) {
-	dst->data.slider.text.text = strdup(dst->data.slider.text.text);
-	dst->data.slider.button	   = gfx_view_clone(src->data.slider.button, NULL);
+	if (src->data.slider.text.text != NULL)
+		dst->data.slider.text.text = strdup(src->data.slider.text.text);
+	dst->data.slider.button = gfx_view_clone(src->data.slider.button, NULL);
 }
 
 static void gfx_view_free_slider(view_t *slider) {

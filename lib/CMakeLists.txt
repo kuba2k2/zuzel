@@ -34,3 +34,4 @@ FetchContent_Declare(
         URL https://github.com/libressl/portable/releases/download/v3.9.2/libressl-3.9.2.tar.gz
 )
 FetchContent_MakeAvailable(libressl)
+target_compile_options(crypto_obj PRIVATE -Wno-attributes)
