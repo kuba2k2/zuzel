@@ -31,31 +31,42 @@ bool game_send_error(net_endpoint_t *endpoint, game_err_t error) {
 	return false;
 }
 
-/*
- * GAME PRIVATE UTILS (packet.c)
- */
-
-bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source) {
-	if (!game->is_server)
-		// do not send from client
-		return false;
-	pkt_error_t pkt = {
-		.hdr.type = PKT_ERROR,
-		.error	  = GAME_ERR_INVALID_STATE,
-	};
-	net_pkt_send(source, (pkt_t *)&pkt);
-	return false;
+void game_stop_all() {
+	SDL_mutex *game_list_mutex;
+	game_t *game_list = game_get_list(&game_list_mutex);
+	if (game_list == NULL)
+		return;
+	SDL_WITH_MUTEX(game_list_mutex) {
+		game_t *game, *tmp;
+		DL_FOREACH_SAFE(game_list, game, tmp) {
+			game_stop(game);
+		}
+	}
 }
 
-player_t *fetch_player_by_id(game_t *game, unsigned int id, net_endpoint_t *source) {
-	player_t *player = game_get_player_by_id(game, id);
-	if (game->is_server) {
-		if (player == NULL)
-			// player not found
-			return NULL;
-		if (source != player->endpoint)
-			// disallow modifying other players' data
-			return NULL;
+game_t *game_get_by_key(char *key) {
+	SDL_mutex *game_list_mutex;
+	game_t *game_list = game_get_list(&game_list_mutex);
+	if (game_list == NULL)
+		return NULL;
+
+	// make it uppercase
+	char *ch = key;
+	while (*ch != '\0') {
+		*ch = (char)toupper(*ch);
+		ch++;
 	}
-	return player;
+
+	game_t *game = NULL;
+	int count	 = 0;
+	SDL_WITH_MUTEX(game_list_mutex) {
+		DL_FOREACH(game_list, game) {
+			count++;
+			if (strncmp(game->key, key, GAME_KEY_LEN) == 0)
+				break;
+		}
+	}
+	if (game == NULL && count == 1 && key[0] == '\0' && game_list->is_public)
+		return game_list;
+	return game;
 }

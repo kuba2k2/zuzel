@@ -72,6 +72,20 @@ cleanup:
 	return NULL;
 }
 
+game_t *game_get_list(SDL_mutex **mutex) {
+	if (mutex != NULL)
+		*mutex = game_list_mutex;
+	return game_list;
+}
+
+uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
+	LT_I("Game: expired '%s' (key: %s)", game->name, game->key);
+	SDL_WITH_MUTEX(game->mutex) {
+		game_stop(game);
+	}
+	return 0;
+}
+
 void game_stop(game_t *game) {
 	if (game == NULL)
 		return;
@@ -80,15 +94,6 @@ void game_stop(game_t *game) {
 		.hdr.type = PKT_PING,
 	};
 	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
-}
-
-void game_stop_all() {
-	SDL_WITH_MUTEX(game_list_mutex) {
-		game_t *game, *tmp;
-		DL_FOREACH_SAFE(game_list, game, tmp) {
-			game_stop(game);
-		}
-	}
 }
 
 void game_free(game_t *game) {
@@ -123,47 +128,6 @@ void game_free(game_t *game) {
 	SDL_RemoveTimer(game->expiry_timer);
 	free(game->local_ips);
 	free(game);
-}
-
-uint32_t game_expiry_cb(uint32_t interval, game_t *game) {
-	LT_I("Game: expired '%s' (key: %s)", game->name, game->key);
-	SDL_WITH_MUTEX(game->mutex) {
-		game->stop = true;
-	}
-	// wake up the game thread
-	pkt_ping_t ping = {
-		.hdr.type = PKT_PING,
-	};
-	net_pkt_send_pipe(game->endpoints, (pkt_t *)&ping);
-	return 0;
-}
-
-game_t *game_get_by_key(char *key) {
-	// make it uppercase
-	char *ch = key;
-	while (*ch != '\0') {
-		*ch = (char)toupper(*ch);
-		ch++;
-	}
-
-	game_t *game = NULL;
-	int count	 = 0;
-	SDL_WITH_MUTEX(game_list_mutex) {
-		DL_FOREACH(game_list, game) {
-			count++;
-			if (strncmp(game->key, key, GAME_KEY_LEN) == 0)
-				break;
-		}
-	}
-	if (game == NULL && count == 1 && key[0] == '\0' && game_list->is_public)
-		return game_list;
-	return game;
-}
-
-game_t *game_get_list(SDL_mutex **mutex) {
-	if (mutex != NULL)
-		*mutex = game_list_mutex;
-	return game_list;
 }
 
 static int game_thread(game_t *game) {

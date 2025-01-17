@@ -3,8 +3,7 @@
 #include "game.h"
 
 typedef bool (*game_process_t)(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
-bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
-player_t *fetch_player_by_id(game_t *game, unsigned int id, net_endpoint_t *source);
+static bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
@@ -51,6 +50,18 @@ bool game_process_packet(game_t *game, pkt_t *pkt, net_endpoint_t *source) {
 	return func(game, pkt, source);
 }
 
+static bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source) {
+	if (!game->is_server)
+		// do not send from client
+		return false;
+	pkt_error_t pkt = {
+		.hdr.type = PKT_ERROR,
+		.error	  = GAME_ERR_INVALID_STATE,
+	};
+	net_pkt_send(source, (pkt_t *)&pkt);
+	return false;
+}
+
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source) {
 	pkt_ping_t pkt = {
 		.hdr.type	 = PKT_PING,
@@ -80,6 +91,19 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 	return true;
 }
 
+static player_t *get_player_with_endpoint(game_t *game, unsigned int id, net_endpoint_t *source) {
+	player_t *player = game_get_player_by_id(game, id);
+	if (game->is_server) {
+		if (player == NULL)
+			// player not found
+			return NULL;
+		if (source != player->endpoint)
+			// disallow modifying other players' data
+			return NULL;
+	}
+	return player;
+}
+
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source) {
 	if (!game->is_server)
 		// client: send packet to other endpoint
@@ -103,7 +127,7 @@ error:
 }
 
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source) {
-	player_t *player = fetch_player_by_id(game, recv_pkt->id, source);
+	player_t *player = get_player_with_endpoint(game, recv_pkt->id, source);
 	if (game->is_server && player == NULL)
 		return false;
 
