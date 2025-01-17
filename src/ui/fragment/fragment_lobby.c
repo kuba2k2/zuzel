@@ -27,6 +27,7 @@ static unsigned int selected_player_id = 0;
 
 static void ui_update_game(ui_t *ui);
 static void ui_update_player(ui_t *ui, unsigned int player_id);
+static void ui_remove_player(ui_t *ui, unsigned int player_id);
 static void on_quit(ui_t *ui);
 static void on_error(ui_t *ui);
 
@@ -138,7 +139,7 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 		// nothing to do!
 		return;
 
-	view_t *row = gfx_view_find_by_tag(players_list, (void *)(uintptr_t)player_id);
+	view_t *row = gfx_view_find_by_tag(players_list->children, (void *)(uintptr_t)player_id);
 	if (row == NULL) {
 		// create a new row if not already shown
 		row		 = gfx_view_clone(players_row, players_list);
@@ -180,6 +181,17 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	}
 	gfx_view_set_text(row_status, status);
 
+	ui->force_layout = true;
+}
+
+static void ui_remove_player(ui_t *ui, unsigned int player_id) {
+	view_t *row = gfx_view_find_by_tag(players_list->children, (void *)(uintptr_t)player_id);
+	if (row == NULL)
+		return;
+	DL_DELETE(players_list->children, row);
+	row->next = NULL;
+	row->prev = row;
+	gfx_view_free(row);
 	ui->force_layout = true;
 }
 
@@ -344,6 +356,9 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					break;
 				case PKT_PLAYER_DATA:
 					ui_update_player(ui, pkt->player_data.id);
+					break;
+				case PKT_PLAYER_LEAVE:
+					ui_remove_player(ui, pkt->player_leave.id);
 					break;
 				default:
 					return false;
