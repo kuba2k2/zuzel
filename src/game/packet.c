@@ -4,6 +4,7 @@
 
 typedef bool (*game_process_t)(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
 bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
+player_t *fetch_player_by_id(game_t *game, unsigned int id, net_endpoint_t *source);
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
@@ -24,7 +25,6 @@ const game_process_t process_list[] = {
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LIST
 	(game_process_t)process_pkt_player_new,		   // PKT_PLAYER_NEW
 	(game_process_t)process_pkt_player_data,	   // PKT_PLAYER_DATA
-	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_STATE
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_KEYPRESS
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_UPDATE
 	(game_process_t)process_pkt_player_leave,	   // PKT_PLAYER_LEAVE
@@ -103,15 +103,9 @@ error:
 }
 
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source) {
-	player_t *player = game_get_player_by_id(game, recv_pkt->id);
-	if (game->is_server) {
-		if (player == NULL)
-			// player not found
-			return false;
-		if (source != player->endpoint)
-			// disallow modifying other players' data
-			return false;
-	}
+	player_t *player = fetch_player_by_id(game, recv_pkt->id, source);
+	if (game->is_server && player == NULL)
+		return false;
 
 	// client: create a player if not found
 	bool is_new_player = false;

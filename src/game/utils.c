@@ -31,6 +31,10 @@ bool game_send_error(net_endpoint_t *endpoint, game_err_t error) {
 	return false;
 }
 
+/*
+ * GAME PRIVATE UTILS (packet.c)
+ */
+
 bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source) {
 	if (!game->is_server)
 		// do not send from client
@@ -41,4 +45,17 @@ bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *sourc
 	};
 	net_pkt_send(source, (pkt_t *)&pkt);
 	return false;
+}
+
+player_t *fetch_player_by_id(game_t *game, unsigned int id, net_endpoint_t *source) {
+	player_t *player = game_get_player_by_id(game, id);
+	if (game->is_server) {
+		if (player == NULL)
+			// player not found
+			return NULL;
+		if (source != player->endpoint)
+			// disallow modifying other players' data
+			return NULL;
+	}
+	return player;
 }

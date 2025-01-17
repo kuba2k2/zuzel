@@ -19,7 +19,6 @@ typedef enum {
 	PKT_PLAYER_LIST,	   //!< List players request/response
 	PKT_PLAYER_NEW,		   //!< New player request
 	PKT_PLAYER_DATA,	   //!< Player data
-	PKT_PLAYER_STATE,	   //!< Player state change
 	PKT_PLAYER_KEYPRESS,   //!< Player keypress information
 	PKT_PLAYER_UPDATE,	   //!< Player generic update
 	PKT_PLAYER_LEAVE,	   //!< Player leave event
@@ -106,12 +105,6 @@ typedef struct __attribute__((packed)) pkt_player_data_t {
 	player_state_t state : 32;
 } pkt_player_data_t;
 
-typedef struct __attribute__((packed)) pkt_player_state_t {
-	pkt_hdr_t hdr;
-	uint32_t id;
-	player_state_t state : 32;
-} pkt_player_state_t;
-
 typedef struct __attribute__((packed)) pkt_player_keypress_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
@@ -143,7 +136,6 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_game_data_t game_data;
 	pkt_game_state_t game_state;
 	pkt_player_data_t player_data;
-	pkt_player_state_t player_state;
 	pkt_player_keypress_t player_keypress;
 	// pkt_player_update_t player_update;
 	pkt_player_leave_t player_leave;

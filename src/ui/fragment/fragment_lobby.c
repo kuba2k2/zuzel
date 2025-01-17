@@ -28,6 +28,7 @@ static unsigned int selected_player_id = 0;
 static void ui_update_game(ui_t *ui);
 static void ui_update_player(ui_t *ui, unsigned int player_id);
 static void ui_remove_player(ui_t *ui, unsigned int player_id);
+static void ui_update_status(ui_t *ui);
 static void on_quit(ui_t *ui);
 static void on_error(ui_t *ui);
 
@@ -160,28 +161,34 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	row_you_icon->is_gone = row_you_text->is_gone = !player->is_local;
 
 	const char *status = NULL;
+	unsigned int color = 0xA0A0A0;
 	switch (player->state) {
 		case PLAYER_IDLE:
 			status = "Not Ready";
 			break;
 		case PLAYER_READY:
 			status = "Ready";
+			color  = GFX_COLOR_BRIGHT_GREEN;
 			break;
 		case PLAYER_PLAYING:
 			status = "In Game";
 			break;
 		case PLAYER_CRASHED:
 			status = "Crashed!";
+			color  = GFX_COLOR_BRIGHT_RED;
 			break;
 		case PLAYER_FINISHED:
 			status = "Finished!";
+			color  = GFX_COLOR_BRIGHT_GREEN;
 			break;
 		case PLAYER_DISCONNECTED:
 			status = "Disconnected";
 			break;
 	}
 	gfx_view_set_text(row_status, status);
+	row_status->data.text.color = color;
 
+	ui_update_status(ui);
 	ui->force_layout = true;
 }
 
@@ -193,7 +200,59 @@ static void ui_remove_player(ui_t *ui, unsigned int player_id) {
 	row->next = NULL;
 	row->prev = row;
 	gfx_view_free(row);
+	ui_update_status(ui);
 	ui->force_layout = true;
+}
+
+static void ui_update_status(ui_t *ui) {
+	int players_count = 0;
+	int ready_count	  = 0;
+	int local_count	  = 0;
+	int in_game_count = 0;
+	bool self_ready	  = false;
+
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			players_count++;
+			if (player->state == PLAYER_READY) {
+				ready_count++;
+				if (player->is_local)
+					self_ready = true;
+			} else if (player->state != PLAYER_IDLE) {
+				in_game_count++;
+			}
+			if (player->is_local)
+				local_count++;
+		}
+	}
+
+	if (self_ready) {
+		char buf[64];
+		if (players_count - ready_count)
+			snprintf(buf, sizeof(buf), "Waiting for\n%d player(s)...", players_count - ready_count);
+		else
+			strcpy(buf, "Starting\nthe game...");
+		gfx_view_set_text(text_status, buf);
+		btn_ready->is_disabled = true;
+		gfx_view_set_text(btn_ready, "READY");
+	} else if (players_count < 2) {
+		gfx_view_set_text(text_status, "There's nobody\nhere...");
+		btn_ready->is_disabled = false;
+		gfx_view_set_text(btn_ready, "Play Alone");
+	} else if (in_game_count != 0) {
+		gfx_view_set_text(text_status, "Game is currently\nplaying.");
+		btn_ready->is_disabled = true;
+		gfx_view_set_text(btn_ready, "READY");
+	} else if (ready_count < players_count - local_count) {
+		gfx_view_set_text(text_status, "Are you\nready?");
+		btn_ready->is_disabled = false;
+		gfx_view_set_text(btn_ready, "READY");
+	} else {
+		gfx_view_set_text(text_status, "Everyone is\nready!");
+		btn_ready->is_disabled = false;
+		gfx_view_set_text(btn_ready, "START");
+	}
 }
 
 static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
@@ -241,6 +300,16 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 }
 
 static bool on_btn_ready(view_t *view, SDL_Event *e, ui_t *ui) {
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			if (!player->is_local || player->state != PLAYER_IDLE)
+				continue;
+			player->state = PLAYER_READY;
+			game_request_send_update(GAME, false, player->id);
+			ui_update_player(ui, player->id);
+		}
+	}
 	return false;
 }
 
