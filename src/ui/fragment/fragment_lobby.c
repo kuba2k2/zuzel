@@ -20,6 +20,7 @@ static view_t *players_list		 = NULL;
 static view_t *players_row		 = NULL;
 static view_t *btn_player_rename = NULL;
 static view_t *btn_player_ban	 = NULL;
+static view_t *btn_game_rename	 = NULL;
 static view_t *btn_game_private	 = NULL;
 static view_t *btn_game_public	 = NULL;
 
@@ -46,6 +47,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	GFX_VIEW_BIND(fragment->views, players_list, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_player_rename, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_player_ban, goto error);
+	GFX_VIEW_BIND(fragment->views, btn_game_rename, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_game_private, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_game_public, goto error);
 	if (!dialog_init(ui, fragment->views))
@@ -125,8 +127,12 @@ static void ui_update_game(ui_t *ui) {
 	snprintf(buf, sizeof(buf), "Speed: %d", GAME->speed);
 	gfx_view_set_text(slider_speed, buf);
 	slider_speed->data.slider.value = (int)GAME->speed;
-	btn_game_private->is_disabled	= !GAME->is_public;
-	btn_game_public->is_disabled	= GAME->is_public;
+
+	slider_speed->is_disabled	  = GAME->state != GAME_IDLE;
+	btn_game_rename->is_disabled  = GAME->state != GAME_IDLE;
+	btn_game_private->is_disabled = !GAME->is_public || GAME->state != GAME_IDLE;
+	btn_game_public->is_disabled  = GAME->is_public || GAME->state != GAME_IDLE;
+	btn_player_ban->is_disabled	  = GAME->state != GAME_IDLE;
 
 	ui->force_layout = true;
 }
@@ -164,7 +170,7 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	unsigned int color = 0xA0A0A0;
 	switch (player->state) {
 		case PLAYER_IDLE:
-			status = "Not Ready";
+			status = GAME->state == GAME_IDLE ? "Not Ready" : "Spectating";
 			break;
 		case PLAYER_READY:
 			status = "Ready";
@@ -227,7 +233,11 @@ static void ui_update_status(ui_t *ui) {
 		}
 	}
 
-	if (self_ready) {
+	if (in_game_count != 0 || GAME->state != GAME_IDLE) {
+		gfx_view_set_text(text_status, "Players are currently\nin game...");
+		btn_ready->is_disabled = true;
+		gfx_view_set_text(btn_ready, "READY");
+	} else if (self_ready) {
 		char buf[64];
 		if (players_count - ready_count)
 			snprintf(buf, sizeof(buf), "Waiting for\n%d player(s)...", players_count - ready_count);
@@ -240,10 +250,6 @@ static void ui_update_status(ui_t *ui) {
 		gfx_view_set_text(text_status, "There's nobody\nhere...");
 		btn_ready->is_disabled = false;
 		gfx_view_set_text(btn_ready, "Play Alone");
-	} else if (in_game_count != 0) {
-		gfx_view_set_text(text_status, "Game is currently\nplaying.");
-		btn_ready->is_disabled = true;
-		gfx_view_set_text(btn_ready, "READY");
 	} else if (ready_count < players_count - local_count) {
 		gfx_view_set_text(text_status, "Are you\nready?");
 		btn_ready->is_disabled = false;
@@ -327,7 +333,7 @@ static bool on_btn_row(view_t *view, SDL_Event *e, ui_t *ui) {
 		return false;
 	}
 	btn_player_rename->is_disabled = !player->is_local;
-	btn_player_ban->is_disabled	   = player->is_local;
+	btn_player_ban->is_disabled	   = player->is_local || GAME->state != GAME_IDLE;
 	return true;
 }
 
@@ -429,6 +435,10 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					break;
 				case PKT_PLAYER_LEAVE:
 					ui_remove_player(ui, pkt->player_leave.id);
+					break;
+				case PKT_GAME_START:
+					ui_update_game(ui);
+					dialog_show_prompt(ui, -1, NULL, "Game Starting", "Game is starting...");
 					break;
 				default:
 					return false;

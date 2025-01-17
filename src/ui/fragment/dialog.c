@@ -35,7 +35,6 @@ bool dialog_init(ui_t *ui, view_t *views) {
 static void set_is_gone(view_t *views, bool is_gone) {
 	for (view_t *view = views; view != NULL; view = gfx_view_find_next(view)) {
 		view->is_gone = is_gone;
-		LT_I("Gone %s %s", view->id, is_gone ? "TRUE" : "FALSE");
 	}
 }
 

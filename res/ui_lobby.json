@@ -204,6 +204,7 @@
 				"type": "box",
 				"children": [
 					{
+						"id": "btn_game_rename",
 						"type": "button",
 						"w": 110,
 						"h": 25,
