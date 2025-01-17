@@ -1,0 +1,11 @@
+*.h
+*.c
+*.py
+
+*.bfn
+*.chr
+
+!bios.bfn
+!simp.chr
+!tscr.chr
+!sans.chr
