@@ -75,25 +75,39 @@ void game_add_player(game_t *game, player_t *player) {
 
 /**
  * Remove (and free) a player from the game.
- * If server, send player leave to every endpoint (incl. the one leaving).
+ * If player is in game, mark as disconnected.
+ * If server, send player updates to every endpoint (incl. the one leaving).
  */
 void game_del_player(game_t *game, player_t *player) {
-	LT_I("Game: deleting player #%d '%s'", player->id, player->name);
-	DL_DELETE(game->players, player);
-	if (game->is_server) {
-		// only servers send player list updates
-		pkt_request_send_data_t pkt = {
-			.hdr.type	  = PKT_REQUEST_SEND_DATA,
-			.leave_player = player->id,
-		};
-		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
-	}
 	net_endpoint_t *player_endpoint = player->endpoint;
-	player_free(player);
+	if (player->state <= PLAYER_READY) {
+		// player can be deleted safely
+		LT_I("Game: deleting player #%d '%s'", player->id, player->name);
+		DL_DELETE(game->players, player);
+		if (game->is_server) {
+			// only servers send player list updates
+			pkt_request_send_data_t pkt = {
+				.hdr.type	  = PKT_REQUEST_SEND_DATA,
+				.leave_player = player->id,
+			};
+			net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+		}
+		player_free(player);
+	} else {
+		// player is in game; mark as disconnected
+		// keep the player in game_t*
+		LT_I("Game: player disconnected #%d '%s'", player->id, player->name);
+		player->state = PLAYER_DISCONNECTED;
+		if (game->is_server) {
+			// only servers send player list updates
+			game_request_send_update(game, false, player->id);
+		}
+	}
+
+	// search any other players on the same endpoint
 	if (player_endpoint == NULL)
 		// endpoint cleared in game_del_endpoint() - nothing to do
 		return;
-	// search any other players on the same endpoint
 	DL_SEARCH_SCALAR(game->players, player, endpoint, player_endpoint);
 	// close the endpoint if no more players are connected
 	if (player == NULL)
