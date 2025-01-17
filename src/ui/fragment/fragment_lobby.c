@@ -4,42 +4,31 @@
 
 #define GAME (ui->game)
 
-static view_t *text_name			 = NULL;
-static view_t *text_key				 = NULL;
-static view_t *slider_speed			 = NULL;
-static view_t *text_status			 = NULL;
-static view_t *btn_ready			 = NULL;
-static view_t *players_list			 = NULL;
-static view_t *players_row			 = NULL;
-static view_t *btn_player_rename	 = NULL;
-static view_t *btn_player_ban		 = NULL;
-static view_t *btn_game_private		 = NULL;
-static view_t *btn_game_public		 = NULL;
-static view_t *dialog_bg			 = NULL;
-static view_t *dialog_edit			 = NULL;
-static view_t *dialog_edit_title	 = NULL;
-static view_t *dialog_edit_input	 = NULL;
-static view_t *dialog_edit_ok		 = NULL;
-static view_t *dialog_prompt		 = NULL;
-static view_t *dialog_prompt_title	 = NULL;
-static view_t *dialog_prompt_message = NULL;
-static view_t *dialog_prompt_yes	 = NULL;
-static view_t *dialog_prompt_no		 = NULL;
+typedef enum {
+	DIALOG_GAME_RENAME,
+	DIALOG_GAME_QUIT,
+	DIALOG_PLAYER_RENAME,
+	DIALOG_PLAYER_BAN,
+} dialog_id_t;
 
-static bool in_game_rename	 = false;
-static bool in_player_rename = false;
-static bool in_quit_confirm	 = false;
-static bool in_ban_confirm	 = false;
+static view_t *text_name		 = NULL;
+static view_t *text_key			 = NULL;
+static view_t *slider_speed		 = NULL;
+static view_t *text_status		 = NULL;
+static view_t *btn_ready		 = NULL;
+static view_t *players_list		 = NULL;
+static view_t *players_row		 = NULL;
+static view_t *btn_player_rename = NULL;
+static view_t *btn_player_ban	 = NULL;
+static view_t *btn_game_private	 = NULL;
+static view_t *btn_game_public	 = NULL;
 
-static player_t *selected_player = NULL;
+static int selected_player_id = 0;
 
 static void ui_update_game(ui_t *ui);
 static void ui_update_player(ui_t *ui, unsigned int player_id);
 static void on_quit(ui_t *ui);
 static void on_error(ui_t *ui);
-static void ui_hide_dialog(ui_t *ui);
-static void ui_show_dialog_edit(ui_t *ui, const char *title, const char *value, int max_length);
-static void ui_show_dialog_prompt(ui_t *ui, const char *title, const char *message);
 
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	if (GAME == NULL) {
@@ -57,28 +46,18 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	GFX_VIEW_BIND(fragment->views, btn_player_ban, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_game_private, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_game_public, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_bg, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_edit, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_edit_title, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_edit_input, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_edit_ok, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_prompt, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_prompt_title, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_prompt_message, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_prompt_yes, goto error);
-	GFX_VIEW_BIND(fragment->views, dialog_prompt_no, goto error);
+	if (!dialog_init(ui, fragment->views))
+		goto error;
 
 	// clone the player list row
 	players_row = gfx_view_clone(players_list->children, players_list);
 	gfx_view_free(players_list->children);
 	players_list->children		   = NULL;
-	selected_player				   = NULL;
 	btn_player_rename->is_disabled = true;
 	btn_player_ban->is_disabled	   = true;
-
-	btn_game_private->is_gone = GAME->is_local;
-	btn_game_public->is_gone  = GAME->is_local;
-	ui_hide_dialog(ui);
+	btn_game_private->is_gone	   = GAME->is_local;
+	btn_game_public->is_gone	   = GAME->is_local;
+	selected_player_id			   = 0;
 
 	switch (ui->connection.type) {
 		case UI_CONNECT_NEW_PUBLIC:
@@ -174,7 +153,7 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	GFX_VIEW_BIND(row, row_name, return);
 	GFX_VIEW_BIND(row, row_status, return);
 
-	row_bg->is_invisible	  = player != selected_player;
+	row_bg->is_invisible	  = player->id != selected_player_id;
 	row_color->data.rect.fill = player->color;
 	gfx_view_set_text(row_name, player->name);
 
@@ -204,6 +183,40 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	ui->force_layout = true;
 }
 
+static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
+	player_t *player = NULL;
+
+	switch (dialog_id) {
+		case DIALOG_GAME_RENAME:
+			strncpy2(GAME->name, value, GAME_NAME_LEN);
+			game_request_send_update(GAME, true, 0);
+			ui_update_game(ui);
+			break;
+
+		case DIALOG_GAME_QUIT:
+			on_quit(ui);
+			break;
+
+		case DIALOG_PLAYER_RENAME:
+			player = game_get_player_by_id(GAME, selected_player_id);
+			if (player == NULL)
+				break;
+			strncpy2(player->name, value, PLAYER_NAME_LEN);
+			game_request_send_update(GAME, false, selected_player_id);
+			// unselect the modified player
+			selected_player_id			   = 0;
+			btn_player_rename->is_disabled = true;
+			btn_player_ban->is_disabled	   = true;
+			// update the UI
+			ui_update_player(ui, player->id);
+			break;
+
+		case DIALOG_PLAYER_BAN:
+			break;
+	}
+	dialog_hide(ui);
+}
+
 static bool on_btn_ready(view_t *view, SDL_Event *e, ui_t *ui) {
 	return false;
 }
@@ -214,39 +227,35 @@ static bool on_btn_row(view_t *view, SDL_Event *e, ui_t *ui) {
 		view_t *row_bg		 = row->children;
 		row_bg->is_invisible = view->parent != row;
 	}
-	unsigned int player_id = (uintptr_t)view->parent->tag;
-	selected_player		   = game_get_player_by_id(GAME, player_id);
-	if (selected_player == NULL)
+	selected_player_id = (uintptr_t)view->parent->tag;
+	player_t *player   = game_get_player_by_id(GAME, selected_player_id);
+	if (player == NULL)
 		return false;
-	btn_player_rename->is_disabled = !selected_player->is_local;
-	btn_player_ban->is_disabled	   = selected_player->is_local;
+	btn_player_rename->is_disabled = !player->is_local;
+	btn_player_ban->is_disabled	   = player->is_local;
 	return true;
 }
 
 static bool on_btn_player_rename(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (selected_player == NULL)
+	player_t *player = game_get_player_by_id(GAME, selected_player_id);
+	if (player == NULL)
 		return false;
-	in_game_rename	 = false;
-	in_player_rename = true;
-	ui_show_dialog_edit(ui, "Rename Player", selected_player->name, PLAYER_NAME_LEN);
+	dialog_show_edit(ui, DIALOG_PLAYER_RENAME, ui_dialog_cb, "Rename Player", player->name, PLAYER_NAME_LEN);
 	return true;
 }
 
 static bool on_btn_player_ban(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (selected_player == NULL)
+	player_t *player = game_get_player_by_id(GAME, selected_player_id);
+	if (player == NULL)
 		return false;
-	in_quit_confirm = false;
-	in_ban_confirm	= true;
 	char buf[64];
-	snprintf(buf, sizeof(buf), "Ban %s?", selected_player->name);
-	ui_show_dialog_prompt(ui, buf, "They will be able to join again using the game key.");
+	snprintf(buf, sizeof(buf), "Ban %s?", player->name);
+	dialog_show_prompt(ui, DIALOG_PLAYER_BAN, ui_dialog_cb, buf, "They will be able to join again using the game key.");
 	return true;
 }
 
 static bool on_btn_game_rename(view_t *view, SDL_Event *e, ui_t *ui) {
-	in_game_rename	 = true;
-	in_player_rename = false;
-	ui_show_dialog_edit(ui, "Rename Game", GAME->name, GAME_NAME_LEN);
+	dialog_show_edit(ui, DIALOG_GAME_RENAME, ui_dialog_cb, "Rename Game", GAME->name, GAME_NAME_LEN);
 	return false;
 }
 
@@ -277,88 +286,11 @@ static bool on_btn_quit(view_t *view, SDL_Event *e, ui_t *ui) {
 		on_quit(ui);
 		return true;
 	}
-	in_quit_confirm		= true;
-	in_ban_confirm		= false;
 	const char *message = "Other players will continue playing.";
 	if (ui->connection.type == UI_CONNECT_NEW_LOCAL) {
 		message = "This is a local game:\nother players will be disconnected!";
 	}
-	ui_show_dialog_prompt(ui, "Really Quit?", message);
-	return true;
-}
-
-static void ui_hide_dialog(ui_t *ui) {
-	dialog_bg->is_gone	   = true;
-	dialog_edit->is_gone   = true;
-	dialog_prompt->is_gone = true;
-	in_game_rename		   = false;
-	in_player_rename	   = false;
-	in_quit_confirm		   = false;
-	in_ban_confirm		   = false;
-	// need to manually reset bounding boxes of all child views
-	view_t *view = dialog_bg;
-	while (view != NULL) {
-		memset(&view->rect, 0, sizeof(view->rect));
-		view = gfx_view_find_next(view);
-	}
-	ui->force_layout = true;
-}
-
-static void ui_show_dialog_edit(ui_t *ui, const char *title, const char *value, int max_length) {
-	dialog_bg->is_gone	   = false;
-	dialog_edit->is_gone   = false;
-	dialog_prompt->is_gone = true;
-	gfx_view_set_text(dialog_edit_title, title);
-	// set input value
-	free(dialog_edit_input->data.input.value);
-	MALLOC(dialog_edit_input->data.input.value, max_length + 1, return);
-	strncpy2(dialog_edit_input->data.input.value, value, max_length);
-	dialog_edit_input->data.input.max_length = max_length;
-	dialog_edit_input->data.input.pos		 = strlen(dialog_edit_input->data.input.value);
-	ui->force_layout						 = true;
-}
-
-static void ui_show_dialog_prompt(ui_t *ui, const char *title, const char *message) {
-	dialog_bg->is_gone	   = false;
-	dialog_edit->is_gone   = true;
-	dialog_prompt->is_gone = false;
-	gfx_view_set_text(dialog_prompt_title, title);
-	gfx_view_set_text(dialog_prompt_message, message);
-	ui->force_layout = true;
-}
-
-static bool on_dialog_edit_input(view_t *view, SDL_Event *e, ui_t *ui) {
-	dialog_edit_ok->is_disabled = strlen(view->data.input.value) == 0;
-	return true;
-}
-
-static bool on_dialog_edit_ok(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (in_game_rename) {
-		strncpy2(GAME->name, dialog_edit_input->data.input.value, GAME_NAME_LEN);
-		game_request_send_update(GAME, true, 0);
-		ui_update_game(ui);
-		in_game_rename = false;
-	}
-	if (in_player_rename && selected_player != NULL) {
-		strncpy2(selected_player->name, dialog_edit_input->data.input.value, PLAYER_NAME_LEN);
-		game_request_send_update(GAME, false, selected_player->id);
-		ui_update_player(ui, selected_player->id);
-		in_player_rename = false;
-	}
-	ui_hide_dialog(ui);
-	return true;
-}
-
-static bool on_dialog_prompt_yes(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (in_quit_confirm) {
-		on_quit(ui);
-	}
-	ui_hide_dialog(ui);
-	return true;
-}
-
-static bool on_dialog_prompt_no(view_t *view, SDL_Event *e, ui_t *ui) {
-	ui_hide_dialog(ui);
+	dialog_show_prompt(ui, DIALOG_GAME_QUIT, ui_dialog_cb, "Really Quit?", message);
 	return true;
 }
 
