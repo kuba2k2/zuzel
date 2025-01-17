@@ -158,11 +158,15 @@ static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt,
 	player_t *player = game_get_player_by_id(game, recv_pkt->id);
 	if (player == NULL)
 		// player not found
-		return false;
+		// client: send to UI anyway
+		return !game->is_server;
 
 	// allow leaving as self, as well as kicking others out
-	// remove the player (also, server: send leave event)
-	game_del_player(game, player);
+	if (game->is_server || source->type != NET_ENDPOINT_PIPE) {
+		// server: delete player, send leave event
+		// client: wait for leave event from server
+		game_del_player(game, player);
+	}
 	// client: send to other endpoint
 	return !game->is_server;
 }

@@ -211,8 +211,15 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 			ui_update_player(ui, player->id);
 			break;
 
-		case DIALOG_PLAYER_BAN:
+		case DIALOG_PLAYER_BAN: {
+			// send a ban request to the server
+			pkt_player_leave_t pkt = {
+				.hdr.type = PKT_PLAYER_LEAVE,
+				.id		  = selected_player_id,
+			};
+			net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
 			break;
+		}
 	}
 	dialog_hide(ui);
 }
@@ -229,8 +236,11 @@ static bool on_btn_row(view_t *view, SDL_Event *e, ui_t *ui) {
 	}
 	selected_player_id = (uintptr_t)view->parent->tag;
 	player_t *player   = game_get_player_by_id(GAME, selected_player_id);
-	if (player == NULL)
+	if (player == NULL) {
+		btn_player_rename->is_disabled = true;
+		btn_player_ban->is_disabled	   = true;
 		return false;
+	}
 	btn_player_rename->is_disabled = !player->is_local;
 	btn_player_ban->is_disabled	   = player->is_local;
 	return true;
