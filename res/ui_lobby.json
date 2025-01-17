@@ -1,0 +1,382 @@
+[
+	{
+		"type": "button",
+		"w": 40,
+		"m": 6,
+		"text": {
+			"text": "\u001B"
+		},
+		"on_press": "on_btn_quit"
+	},
+	{
+		"type": "box",
+		"gravity": "center_horizontal",
+		"children": [
+			{
+				"id": "text_name",
+				"type": "text",
+				"mt": 25,
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Player's Game",
+					"size": 7
+				}
+			},
+			{
+				"id": "text_key",
+				"type": "text",
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "KEY123",
+					"size": 7,
+					"color": "#A0A0A0",
+					"align": "center_horizontal"
+				}
+			}
+		]
+	},
+	{
+		"type": "box",
+		"mt": 64,
+		"ml": 8,
+		"children": [
+			{
+				"type": "text",
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Players",
+					"size": 7,
+					"color": "#A0A0A0"
+				}
+			},
+			{
+				"id": "players_list",
+				"type": "box",
+				"children": [
+					{
+						"id": "row",
+						"type": "frame",
+						"w": 222,
+						"h": 26,
+						"children": [
+							{
+								"id": "row_bg",
+								"type": "rect",
+								"w": "match_parent",
+								"h": "match_parent",
+								"is_invisible": true,
+								"fill": "#20FFFFFF",
+								"stroke": "#A0A0A0",
+								"width": 1
+							},
+							{
+								"type": "button",
+								"w": "match_parent",
+								"h": "match_parent",
+								"is_flat": true,
+								"on_press": "on_btn_row"
+							},
+							{
+								"type": "box",
+								"m": 4,
+								"children": [
+									{
+										"type": "box",
+										"is_horizontal": true,
+										"children": [
+											{
+												"id": "row_color",
+												"type": "rect",
+												"w": 16,
+												"h": 3,
+												"mr": 6,
+												"gravity": "center_vertical",
+												"fill": "#FF5555"
+											},
+											{
+												"id": "row_name",
+												"type": "text",
+												"text": {
+													"text": "Player"
+												}
+											}
+										]
+									},
+									{
+										"id": "row_status",
+										"type": "text",
+										"mt": 2,
+										"ml": 22,
+										"text": {
+											"text": "Not Ready",
+											"color": "#A0A0A0"
+										}
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				"type": "box",
+				"mt": 4,
+				"gravity": "center_horizontal",
+				"is_horizontal": true,
+				"children": [
+					{
+						"id": "btn_player_rename",
+						"type": "button",
+						"w": 64,
+						"h": 25,
+						"ml": 16,
+						"mr": 2,
+						"text": {
+							"text": "Rename",
+							"size": 4
+						},
+						"on_press": "on_btn_player_rename"
+					},
+					{
+						"id": "btn_player_ban",
+						"type": "button",
+						"w": 64,
+						"h": 25,
+						"mr": 16,
+						"ml": 2,
+						"text": {
+							"text": "Ban",
+							"size": 4
+						},
+						"on_press": "on_btn_player_ban"
+					}
+				]
+			}
+		]
+	},
+	{
+		"type": "box",
+		"mt": 64,
+		"mr": 8,
+		"gravity": "right",
+		"children": [
+			{
+				"type": "text",
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Options",
+					"size": 7,
+					"color": "#A0A0A0"
+				}
+			},
+			{
+				"type": "box",
+				"children": [
+					{
+						"type": "button",
+						"w": 110,
+						"h": 25,
+						"mb": 2,
+						"gravity": "right",
+						"text": {
+							"text": "Rename Game",
+							"size": 4
+						},
+						"on_press": "on_btn_game_rename"
+					},
+					{
+						"type": "box",
+						"mt": 2,
+						"gravity": "right",
+						"is_horizontal": true,
+						"children": [
+							{
+								"id": "btn_game_private",
+								"type": "button",
+								"w": 110,
+								"h": 25,
+								"mr": 2,
+								"text": {
+									"text": "Make Private",
+									"size": 4
+								},
+								"on_press": "on_btn_game_private"
+							},
+							{
+								"id": "btn_game_public",
+								"type": "button",
+								"w": 110,
+								"h": 25,
+								"ml": 2,
+								"is_disabled": true,
+								"text": {
+									"text": "Make Public",
+									"size": 4
+								},
+								"on_press": "on_btn_game_public"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	{
+		"type": "box",
+		"gravity": "bottom|center_horizontal",
+		"mb": 32,
+		"children": [
+			{
+				"id": "slider_speed",
+				"type": "slider",
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Speed: 1"
+				},
+				"value": 1,
+				"min": 1,
+				"max": 9,
+				"on_change": "on_speed_change"
+			},
+			{
+				"id": "text_status",
+				"type": "text",
+				"mt": 25,
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Waiting for\nothers...",
+					"size": 7,
+					"color": "#A0A0A0",
+					"align": "center_horizontal"
+				}
+			},
+			{
+				"id": "btn_ready",
+				"type": "button",
+				"w": 200,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "START"
+				},
+				"on_press": "on_btn_ready"
+			}
+		]
+	},
+	{
+		"id": "dialog_bg",
+		"type": "frame",
+		"w": "match_parent",
+		"h": "match_parent",
+		"is_gone": true,
+		"children": [
+			{
+				"type": "rect",
+				"w": "match_parent",
+				"h": "match_parent",
+				"fill": "#aa000000",
+				"is_focusable": true
+			},
+			{
+				"id": "dialog_edit",
+				"type": "box",
+				"w": "wrap_content",
+				"h": "wrap_content",
+				"gravity": "center",
+				"is_gone": true,
+				"children": [
+					{
+						"id": "dialog_edit_title",
+						"type": "text",
+						"mv": 16,
+						"gravity": "center_horizontal",
+						"text": {
+							"text": "Edit text",
+							"size": 7
+						}
+					},
+					{
+						"id": "dialog_edit_input",
+						"type": "input",
+						"m": 8,
+						"gravity": "center_horizontal",
+						"on_change": "on_dialog_edit_input"
+					},
+					{
+						"id": "dialog_edit_ok",
+						"type": "button",
+						"m": 4,
+						"mt": 20,
+						"gravity": "center_horizontal",
+						"text": {
+							"text": "OK"
+						},
+						"on_press": "on_dialog_edit_ok"
+					}
+				]
+			},
+			{
+				"id": "dialog_prompt",
+				"type": "box",
+				"w": "wrap_content",
+				"h": "wrap_content",
+				"gravity": "center",
+				"is_gone": true,
+				"children": [
+					{
+						"id": "dialog_prompt_title",
+						"type": "text",
+						"mv": 16,
+						"gravity": "center_horizontal",
+						"text": {
+							"text": "Are you sure?",
+							"size": 7
+						}
+					},
+					{
+						"id": "dialog_prompt_message",
+						"type": "text",
+						"m": 8,
+						"gravity": "center_horizontal",
+						"text": {
+							"text": "Quitting the game will also\ndisconnect other players.",
+							"align": "center_horizontal",
+							"color": "#A0A0A0"
+						}
+					},
+					{
+						"type": "box",
+						"is_horizontal": true,
+						"gravity": "center_horizontal",
+						"children": [
+							{
+								"id": "dialog_prompt_yes",
+								"type": "button",
+								"m": 4,
+								"mt": 20,
+								"text": {
+									"text": "Yes"
+								},
+								"on_press": "on_dialog_prompt_yes"
+							},
+							{
+								"id": "dialog_prompt_no",
+								"type": "button",
+								"m": 4,
+								"mt": 20,
+								"text": {
+									"text": "No"
+								},
+								"on_press": "on_dialog_prompt_no"
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+]

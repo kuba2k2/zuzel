@@ -1,0 +1,203 @@
+[
+	{
+		"type": "box",
+		"w": "wrap_content",
+		"h": "match_parent",
+		"gravity": "center_horizontal",
+		"children": [
+			{
+				"type": "text",
+				"mt": 25,
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Choose a Game",
+					"size": 7
+				}
+			},
+			{
+				"type": "frame",
+				"w": 540,
+				"h": 287,
+				"m": 4,
+				"children": [
+					{
+						"type": "rect",
+						"w": "match_parent",
+						"h": "match_parent",
+						"m": 2,
+						"stroke": "#A0A0A0",
+						"width": 2
+					},
+					{
+						"id": "list",
+						"type": "box",
+						"w": "match_parent",
+						"h": "match_parent",
+						"m": 5,
+						"mt": 7,
+						"children": [
+							{
+								"id": "row",
+								"type": "frame",
+								"w": "match_parent",
+								"h": 55,
+								"children": [
+									{
+										"id": "row_bg",
+										"type": "rect",
+										"w": "match_parent",
+										"h": "match_parent",
+										"mt": -2,
+										"fill": "#20FFFFFF",
+										"stroke": "#A0A0A0",
+										"width": 2
+									},
+									{
+										"type": "button",
+										"w": "match_parent",
+										"h": "match_parent",
+										"mt": -2,
+										"is_flat": true,
+										"on_press": "on_btn_row"
+									},
+									{
+										"type": "box",
+										"w": "match_parent",
+										"h": "match_parent",
+										"children": [
+											{
+												"type": "box",
+												"w": "match_parent",
+												"mh": 8,
+												"mt": 8,
+												"is_horizontal": true,
+												"children": [
+													{
+														"id": "row_name",
+														"type": "text",
+														"w": "match_parent",
+														"text": {
+															"text": "Game Name",
+															"size": 7
+														}
+													},
+													{
+														"id": "row_key",
+														"type": "text",
+														"text": {
+															"text": "KEY123",
+															"size": 7,
+															"color": "#A0A0A0"
+														}
+													}
+												]
+											},
+											{
+												"id": "row_line1",
+												"type": "text",
+												"mh": 8,
+												"mt": 4,
+												"text": {
+													"text": "In Game \u0007 Players: 1",
+													"color": "#A0A0A0"
+												}
+											},
+											{
+												"id": "row_line2",
+												"type": "text",
+												"mh": 8,
+												"mt": 2,
+												"text": {
+													"text": "Game Speed: 1",
+													"color": "#A0A0A0"
+												}
+											},
+											{
+												"id": "row_divider",
+												"type": "rect",
+												"w": "match_parent",
+												"h": 2,
+												"m": 7,
+												"stroke": "#A0A0A0",
+												"width": 2
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				"type": "box",
+				"w": "wrap_content",
+				"mh": 4,
+				"gravity": "center_horizontal",
+				"is_horizontal": true,
+				"children": [
+					{
+						"id": "btn_prev",
+						"type": "button",
+						"w": 40,
+						"text": {
+							"text": "<"
+						},
+						"on_press": "on_btn_prev"
+					},
+					{
+						"id": "text_summary",
+						"type": "text",
+						"w": 150,
+						"gravity": "center_vertical",
+						"text": {
+							"text": "Page 1 of 19\n326 Games Found",
+							"align": "center_horizontal",
+							"color": "#A0A0A0"
+						}
+					},
+					{
+						"id": "btn_next",
+						"type": "button",
+						"w": 40,
+						"text": {
+							"text": ">"
+						},
+						"on_press": "on_btn_next"
+					}
+				]
+			},
+			{
+				"type": "box",
+				"w": 400,
+				"mb": 32,
+				"m": 4,
+				"gravity": "bottom|center_horizontal",
+				"is_horizontal": true,
+				"children": [
+					{
+						"id": "btn_join",
+						"type": "button",
+						"w": "match_parent",
+						"mr": 4,
+						"is_disabled": true,
+						"text": {
+							"text": "Join"
+						},
+						"on_press": "on_btn_join"
+					},
+					{
+						"type": "button",
+						"w": "match_parent",
+						"ml": 4,
+						"text": {
+							"text": "Back"
+						},
+						"on_press": "on_btn_back"
+					}
+				]
+			}
+		]
+	}
+]

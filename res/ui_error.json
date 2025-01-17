@@ -1,0 +1,40 @@
+[
+	{
+		"type": "box",
+		"w": "wrap_content",
+		"h": "wrap_content",
+		"gravity": "center",
+		"children": [
+			{
+				"type": "text",
+				"mv": 16,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Error!",
+					"size": 7
+				}
+			},
+			{
+				"id": "message",
+				"type": "text",
+				"m": 8,
+				"gravity": "center_horizontal",
+				"text": {
+					"color": "#FF5555",
+					"align": "center"
+				}
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"mt": 64,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Back"
+				},
+				"on_press": "on_btn_back"
+			}
+		]
+	}
+]

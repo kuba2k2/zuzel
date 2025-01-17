@@ -1,0 +1,87 @@
+[
+	{
+		"type": "box",
+		"w": "wrap_content",
+		"h": "match_parent",
+		"gravity": "center_horizontal",
+		"children": [
+			{
+				"type": "text",
+				"mv": 50,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Create a New Game",
+					"size": 7
+				}
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"text": {
+					"text": "Public"
+				},
+				"on_press": "on_btn_public"
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 0,
+				"mb": 16,
+				"text": {
+					"text": "Anyone can find and join this game.",
+					"color": "#A0A0A0"
+				}
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"text": {
+					"text": "Private"
+				},
+				"on_press": "on_btn_private"
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 0,
+				"mb": 16,
+				"text": {
+					"text": "Anyone who knows the game key can join.",
+					"color": "#A0A0A0"
+				}
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"text": {
+					"text": "Local-only"
+				},
+				"on_press": "on_btn_local"
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 0,
+				"mb": 16,
+				"text": {
+					"text": "Only players in your local network can join.",
+					"color": "#A0A0A0"
+				}
+			},
+			{
+				"type": "button",
+				"w": 200,
+				"m": 4,
+				"mb": 32,
+				"gravity": "bottom|center_horizontal",
+				"text": {
+					"text": "Back"
+				},
+				"on_press": "on_btn_back"
+			}
+		]
+	}
+]

@@ -1,0 +1,163 @@
+[
+	{
+		"type": "box",
+		"w": "wrap_content",
+		"h": "match_parent",
+		"mt": 50,
+		"gravity": "center_horizontal",
+		"children": [
+			{
+				"type": "frame",
+				"mt": 10,
+				"mb": 50,
+				"gravity": "center_horizontal",
+				"children": [
+					{
+						"type": "text",
+						"text": {
+							"text": "Zuzel",
+							"color": "#00AA00",
+							"font": 2,
+							"size": 7
+						}
+					},
+					{
+						"type": "text",
+						"ml": 107,
+						"mt": -33,
+						"text": {
+							"text": ".",
+							"color": "#00AA00",
+							"font": 2,
+							"size": 7
+						}
+					},
+					{
+						"type": "text",
+						"ml": 24,
+						"mt": -48,
+						"text": {
+							"text": ".",
+							"color": "#00AA00",
+							"font": 2,
+							"size": 7
+						}
+					},
+					{
+						"type": "text",
+						"ml": 5,
+						"mt": 5,
+						"text": {
+							"text": "Zuzel",
+							"color": "#FF5555",
+							"font": 2,
+							"size": 7
+						}
+					},
+					{
+						"type": "text",
+						"ml": 112,
+						"mt": -28,
+						"text": {
+							"text": ".",
+							"color": "#FF5555",
+							"font": 2,
+							"size": 7
+						}
+					},
+					{
+						"type": "text",
+						"ml": 29,
+						"mt": -43,
+						"text": {
+							"text": ".",
+							"color": "#FF5555",
+							"font": 2,
+							"size": 7
+						}
+					}
+				]
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"is_disabled": true,
+				"text": {
+					"text": "Quick Play"
+				},
+				"on_press": "on_btn_quick_play"
+			},
+			{
+				"type": "box",
+				"w": 408,
+				"is_horizontal": true,
+				"children": [
+					{
+						"type": "button",
+						"w": "match_parent",
+						"m": 4,
+						"text": {
+							"text": "New Game"
+						},
+						"on_press": "on_btn_new_game"
+					},
+					{
+						"type": "button",
+						"w": "match_parent",
+						"m": 4,
+						"text": {
+							"text": "Join Game"
+						},
+						"on_press": "on_btn_join_game"
+					}
+				]
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"is_invisible": true,
+				"is_disabled": true,
+				"text": {
+					"text": "?",
+					"size": 7
+				}
+			},
+			{
+				"type": "box",
+				"w": 408,
+				"mt": 24,
+				"is_horizontal": true,
+				"children": [
+					{
+						"type": "button",
+						"w": "match_parent",
+						"m": 4,
+						"is_disabled": true,
+						"text": {
+							"text": "Settings"
+						}
+					},
+					{
+						"type": "button",
+						"w": "match_parent",
+						"m": 4,
+						"text": {
+							"text": "Exit"
+						},
+						"on_press": "on_btn_exit"
+					}
+				]
+			}
+		]
+	},
+	{
+		"type": "text",
+		"m": 5,
+		"gravity": "left|bottom",
+		"text": {
+			"text": "v0.1.0"
+		}
+	}
+]

@@ -1,0 +1,119 @@
+[
+	{
+		"type": "box",
+		"w": "wrap_content",
+		"h": "match_parent",
+		"gravity": "center_horizontal",
+		"children": [
+			{
+				"type": "text",
+				"mv": 50,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Join a Game",
+					"size": 7
+				}
+			},
+			{
+				"type": "button",
+				"w": 400,
+				"m": 4,
+				"text": {
+					"text": "Browse Public Games"
+				},
+				"on_press": "on_btn_browse"
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 32,
+				"text": {
+					"text": "Got a Game Key?",
+					"color": "#A0A0A0",
+					"size": 7
+				}
+			},
+			{
+				"type": "box",
+				"w": 408,
+				"is_horizontal": true,
+				"children": [
+					{
+						"id": "input_key",
+						"type": "input",
+						"w": 300,
+						"m": 4,
+						"placeholder": {
+							"text": "ABCD..."
+						},
+						"max_length": 6,
+						"on_change": "on_input_key_change"
+					},
+					{
+						"id": "btn_key_ok",
+						"type": "button",
+						"w": "match_parent",
+						"m": 4,
+						"ml": 0,
+						"is_disabled": true,
+						"text": {
+							"text": "OK"
+						},
+						"on_press": "on_btn_key_ok"
+					}
+				]
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 32,
+				"text": {
+					"text": "Got a Server Address?",
+					"color": "#A0A0A0",
+					"size": 7
+				}
+			},
+			{
+				"type": "box",
+				"w": 408,
+				"is_horizontal": true,
+				"children": [
+					{
+						"id": "input_address",
+						"type": "input",
+						"w": 300,
+						"m": 4,
+						"placeholder": {
+							"text": "192.168.0..."
+						},
+						"max_length": 15,
+						"on_change": "on_input_address_change"
+					},
+					{
+						"id": "btn_address_ok",
+						"type": "button",
+						"w": "match_parent",
+						"m": 4,
+						"ml": 0,
+						"is_disabled": true,
+						"text": {
+							"text": "OK"
+						},
+						"on_press": "on_btn_address_ok"
+					}
+				]
+			},
+			{
+				"type": "button",
+				"w": 200,
+				"m": 4,
+				"mb": 32,
+				"gravity": "bottom|center_horizontal",
+				"text": {
+					"text": "Back"
+				},
+				"on_press": "on_btn_back"
+			}
+		]
+	}
+]
