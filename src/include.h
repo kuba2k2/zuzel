@@ -39,6 +39,7 @@
 #include "core/utils.h"
 
 #include "game/game.h"
+#include "game/match/match.h"
 #include "game/player/player.h"
 #include "net/net.h"
 

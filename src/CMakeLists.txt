@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # Common library
-file(GLOB SOURCES "core/*.c" "game/*.c" "game/player/*.c" "net/*.c")
+file(GLOB SOURCES "core/*.c" "game/*.c" "game/player/*.c" "game/match/*.c" "net/*.c")
 add_library(${PROJECT_NAME}-common STATIC ${SOURCES})
 
 target_compile_options(${PROJECT_NAME}-common PUBLIC -Wall)

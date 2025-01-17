@@ -6,6 +6,7 @@ typedef bool (*game_process_t)(game_t *game, pkt_t *recv_pkt, net_endpoint_t *so
 static bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source);
@@ -20,7 +21,7 @@ const game_process_t process_list[] = {
 	(game_process_t)send_err_invalid_state,		   // PKT_GAME_NEW (server-only)
 	(game_process_t)send_err_invalid_state,		   // PKT_GAME_JOIN (server-only)
 	(game_process_t)process_pkt_game_data,		   // PKT_GAME_DATA
-	(game_process_t)send_err_invalid_state,		   // PKT_GAME_STATE
+	(game_process_t)process_pkt_game_start,		   // PKT_GAME_START
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LIST
 	(game_process_t)process_pkt_player_new,		   // PKT_PLAYER_NEW
 	(game_process_t)process_pkt_player_data,	   // PKT_PLAYER_DATA
@@ -73,6 +74,9 @@ static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t 
 }
 
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source) {
+	if (game->is_server && game->state != GAME_IDLE)
+		// can't modify a running game
+		return false;
 	if (game->key[0] == '\0') {
 		// first-time initialization
 		if (recv_pkt->key[0] != '\0')
@@ -88,6 +92,19 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 	if (recv_pkt->name[0] != '\0')
 		memcpy(game->name, recv_pkt->name, sizeof(game->name));
 
+	return true;
+}
+
+static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net_endpoint_t *source) {
+	if (game->is_server)
+		// server: ignore, this is only sent by server
+		return false;
+	if (game->state != GAME_IDLE)
+		// game is already started
+		return false;
+
+	// client: start the match thread, send event to UI
+	match_init(game);
 	return true;
 }
 
@@ -147,6 +164,15 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		is_new_player = true;
 	}
 
+	if (game->is_server) {
+		if (game->state != GAME_IDLE && recv_pkt->state == PLAYER_READY)
+			// clients can't set READY state if game is running
+			recv_pkt->state = PLAYER_IDLE;
+		if (recv_pkt->state > PLAYER_READY)
+			// clients can only set IDLE and READY states
+			recv_pkt->state = PLAYER_IDLE;
+	}
+
 	// update player data
 	player->id	  = recv_pkt->id; // safe; either a new player or the ID is already the same
 	player->color = recv_pkt->color;
@@ -169,6 +195,13 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		// before broadcasting from server, clear 'is_local'
 		player->is_local = false;
 
+	// server: check if all players are ready now
+	if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
+		// start the match
+		if (!match_init(game))
+			game_send_error(source, GAME_ERR_SERVER_ERROR);
+	}
+
 	return true;
 }
 
@@ -182,9 +215,17 @@ static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt,
 	// allow leaving as self, as well as kicking others out
 	if (game->is_server || source->type != NET_ENDPOINT_PIPE) {
 		// server: delete player, send leave event
-		// client: wait for leave event from server
+		// client: wait for leave event from server (if not PIPE)
 		game_del_player(game, player);
 	}
+
+	// server: check if all players are ready now
+	if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
+		// start the match
+		if (!match_init(game))
+			game_send_error(source, GAME_ERR_SERVER_ERROR);
+	}
+
 	// client: send to other endpoint
 	return !game->is_server;
 }
