@@ -50,10 +50,6 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	if (!dialog_init(ui, fragment->views))
 		goto error;
 
-	// clone the player list row
-	players_row = gfx_view_clone(players_list->children, players_list);
-	gfx_view_free(players_list->children);
-	players_list->children		   = NULL;
 	btn_player_rename->is_disabled = true;
 	btn_player_ban->is_disabled	   = true;
 	btn_game_private->is_gone	   = GAME->is_local;
@@ -87,18 +83,24 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			break;
 	}
 
+	player_t *local_player;
 	SDL_WITH_MUTEX(GAME->mutex) {
 		// find a locally-controlled player
-		player_t *local_player;
 		DL_SEARCH_SCALAR(GAME->players, local_player, is_local, true);
-		if (local_player == NULL) {
-			// create a player if not yet added
-			pkt_player_new_t pkt = {
-				.hdr.type = PKT_PLAYER_NEW,
-			};
-			strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
-			net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
-		}
+	}
+	if (local_player == NULL) {
+		// clone the player list row
+		if (players_row == NULL)
+			players_row = gfx_view_clone(players_list->children, players_list);
+		gfx_view_free(players_list->children);
+		players_list->children = NULL;
+
+		// create a player if not yet added
+		pkt_player_new_t pkt = {
+			.hdr.type = PKT_PLAYER_NEW,
+		};
+		strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
+		net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
 	}
 
 	ui_update_game(ui);
@@ -112,11 +114,6 @@ error:
 static bool on_hide(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	if (players_list == NULL || players_row == NULL)
 		return false;
-	// free the current list box contents
-	gfx_view_free(players_list->children);
-	players_list->children = NULL;
-	// put the cloned row back into the list
-	DL_APPEND(players_list->children, players_row);
 	return true;
 }
 
@@ -148,15 +145,19 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	}
 
 	// find all views
-	view_t *row_bg, *row_color, *row_name, *row_status;
+	view_t *row_bg, *row_color, *row_name, *row_status, *row_you_icon, *row_you_text;
 	GFX_VIEW_BIND(row, row_bg, return);
 	GFX_VIEW_BIND(row, row_color, return);
 	GFX_VIEW_BIND(row, row_name, return);
 	GFX_VIEW_BIND(row, row_status, return);
+	GFX_VIEW_BIND(row, row_you_icon, return);
+	GFX_VIEW_BIND(row, row_you_text, return);
 
 	row_bg->is_invisible	  = player->id != selected_player_id;
 	row_color->data.rect.fill = player->color;
 	gfx_view_set_text(row_name, player->name);
+
+	row_you_icon->is_gone = row_you_text->is_gone = !player->is_local;
 
 	const char *status = NULL;
 	switch (player->state) {

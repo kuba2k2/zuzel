@@ -81,38 +81,65 @@
 							},
 							{
 								"type": "box",
-								"m": 4,
+								"is_horizontal": true,
 								"children": [
 									{
 										"type": "box",
-										"is_horizontal": true,
+										"m": 4,
 										"children": [
 											{
-												"id": "row_color",
-												"type": "rect",
-												"w": 16,
-												"h": 3,
-												"mr": 6,
-												"gravity": "center_vertical",
-												"fill": "#FF5555"
+												"type": "box",
+												"is_horizontal": true,
+												"children": [
+													{
+														"id": "row_color",
+														"type": "rect",
+														"w": 16,
+														"h": 3,
+														"mr": 6,
+														"gravity": "center_vertical",
+														"fill": "#FF5555"
+													},
+													{
+														"id": "row_name",
+														"type": "text",
+														"text": {
+															"text": "Player"
+														}
+													}
+												]
 											},
 											{
-												"id": "row_name",
+												"id": "row_status",
 												"type": "text",
+												"mt": 2,
+												"ml": 22,
 												"text": {
-													"text": "Player"
+													"text": "Not Ready",
+													"color": "#A0A0A0"
 												}
 											}
 										]
 									},
 									{
-										"id": "row_status",
+										"id": "row_you_icon",
 										"type": "text",
-										"mt": 2,
-										"ml": 22,
+										"ml": 16,
+										"gravity": "center_vertical",
 										"text": {
-											"text": "Not Ready",
-											"color": "#A0A0A0"
+											"text": "\u001b",
+											"color": "#ffff55",
+											"size": 7
+										}
+									},
+									{
+										"id": "row_you_text",
+										"type": "text",
+										"ml": 4,
+										"gravity": "center_vertical",
+										"text": {
+											"text": "You",
+											"color": "#ffff55"
 										}
 									}
 								]
