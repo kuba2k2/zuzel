@@ -43,6 +43,7 @@ static void gfx_view_inflate_button(view_t *button, cJSON *json, const view_infl
 	json_read_gfx_color(json, "fg_shadow", &button->data.button.fg_shadow);
 	json_read_gfx_color(json, "fg_focus", &button->data.button.fg_focused);
 	json_read_gfx_color(json, "fg_disabled", &button->data.button.fg_disabled);
+	json_read_bool(json, "is_flat", &button->data.button.is_flat);
 }
 
 static void gfx_view_clone_button(view_t *src, view_t *dst) {
@@ -82,52 +83,64 @@ static void gfx_view_draw_button(SDL_Renderer *renderer, view_t *button) {
 		);
 	}
 
-	int x = button->rect.x;
-	int y = button->rect.y;
-	int w = button->rect.w;
-	int h = button->rect.h;
+	int x		 = button->rect.x;
+	int y		 = button->rect.y;
+	int w		 = button->rect.w;
+	int h		 = button->rect.h;
+	bool is_flat = button->data.button.is_flat;
 
 	// draw the button outline
-	gfx_set_color(renderer, 0x000000);
-	gfx_draw_rect(renderer, x, y, w, h, true);
+	if (!is_flat) {
+		gfx_set_color(renderer, 0x000000);
+		gfx_draw_rect(renderer, x, y, w, h, true);
+	}
 	x += 2;
 	y += 2;
 	w -= 4;
 	h -= 4;
 
-	// draw the button body (main background color)
-	gfx_set_color(
-		renderer,
-		button->is_disabled	 ? button->data.button.bg_disabled
-		: button->is_focused ? button->data.button.bg_focused
-							 : button->data.button.bg_color
-	);
-	gfx_draw_rect(renderer, x, y, w, h, true);
-
-	// draw the face texture
 	int whalf = w / 2;
 	int hhalf = h / 2;
-	for (int tex_x = 0; tex_x < whalf; tex_x += texture_button_face_width) {
-		for (int tex_y = 0; tex_y < hhalf; tex_y += texture_button_face_height) {
-			SDL_Rect src = {
-				.x = 0,
-				.y = 0,
-				.w = min(whalf, texture_button_face_width),
-				.h = min(hhalf, texture_button_face_height),
-			};
-			SDL_Rect dst = {
-				.x = x + tex_x * 2,
-				.y = y + tex_y * 2,
-				.w = min(whalf - tex_x, texture_button_face_width) * 2,
-				.h = min(hhalf - tex_y, texture_button_face_height) * 2,
-			};
-			SDL_RenderCopy(renderer, texture_button_face, &src, &dst);
+
+	if (!is_flat) {
+		// draw the button body (main background color)
+		gfx_set_color(
+			renderer,
+			button->is_disabled	 ? button->data.button.bg_disabled
+			: button->is_focused ? button->data.button.bg_focused
+								 : button->data.button.bg_color
+		);
+		gfx_draw_rect(renderer, x, y, w, h, true);
+
+		// draw the face texture
+		for (int tex_x = 0; tex_x < whalf; tex_x += texture_button_face_width) {
+			for (int tex_y = 0; tex_y < hhalf; tex_y += texture_button_face_height) {
+				SDL_Rect src = {
+					.x = 0,
+					.y = 0,
+					.w = min(whalf, texture_button_face_width),
+					.h = min(hhalf, texture_button_face_height),
+				};
+				SDL_Rect dst = {
+					.x = x + tex_x * 2,
+					.y = y + tex_y * 2,
+					.w = min(whalf - tex_x, texture_button_face_width) * 2,
+					.h = min(hhalf - tex_y, texture_button_face_height) * 2,
+				};
+				SDL_RenderCopy(renderer, texture_button_face, &src, &dst);
+			}
 		}
+	} else if (button->is_focused) {
+		unsigned int bg_focused = button->data.button.bg_focused;
+		bg_focused &= 0xFFFFFF;
+		bg_focused |= 0x40000000;
+		gfx_set_color(renderer, bg_focused);
+		gfx_draw_rect(renderer, x, y, w, h, true);
 	}
 
 	gfx_set_text_style(button->data.button.text.font, button->data.button.text.size, GFX_ALIGN_CENTER);
 
-	if (!button->is_disabled) {
+	if (!button->is_disabled && !is_flat) {
 		// add bezels if not disabled
 		gfx_set_color(renderer, 0x55FFFFFF);
 		gfx_draw_rect(renderer, x, y, w, 2, false);

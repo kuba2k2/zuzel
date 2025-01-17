@@ -86,6 +86,7 @@ typedef struct view_t {
 			unsigned int fg_shadow;
 			unsigned int fg_disabled;
 			unsigned int fg_focused;
+			bool is_flat;
 		} button;
 
 		struct {
