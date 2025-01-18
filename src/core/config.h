@@ -31,3 +31,4 @@
 #define GAME_NAME_LEN	24
 #define GAME_KEY_LEN	6
 #define PLAYER_NAME_LEN 24
+#define PLAYER_POS_NUM	100
