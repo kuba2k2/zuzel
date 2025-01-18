@@ -20,26 +20,6 @@ bool match_check_ready(game_t *game) {
 }
 
 bool match_init(game_t *game) {
-	if (game->is_server) {
-		// signal clients that the game starts now
-		pkt_game_start_t pkt = {
-			.hdr.type = PKT_GAME_START,
-		};
-		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, NULL);
-	}
-
-	LT_I("Match: starting match in game '%s' (%s)", game->name, game->key);
-	game->state = GAME_STARTING;
-
-	// initialize match state and clear player data
-	game->delay = speed_to_delay[game->speed];
-	game->time	= 0;
-	game->round = 1;
-	player_t *player;
-	DL_FOREACH(game->players, player) {
-		player->match_points = 0;
-	}
-
 	// start the match thread
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)match_thread, "match", game);
 	SDL_DetachThread(thread);
@@ -54,12 +34,29 @@ static int match_thread(game_t *game) {
 	snprintf(thread_name, sizeof(thread_name), "match-%s-%s", game->is_server ? "server" : "client", game->key);
 	lt_log_set_thread_name(thread_name);
 
-	LT_I("Match: thread started in game '%s' (%s)", game->name, game->key);
+	LT_I("Match: starting match in game '%s' (%s)", game->name, game->key);
+
+	// server: send game start signal
+	if (game->is_server) {
+		pkt_game_start_t pkt = {
+			.hdr.type = PKT_GAME_START,
+		};
+		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+	}
 
 	SDL_WITH_MUTEX(game->mutex) {
+		// initialize match state and clear player data
+		game->delay = speed_to_delay[game->speed];
+		game->time	= 0;
+		game->round = 1;
+		player_t *player;
+		DL_FOREACH(game->players, player) {
+			player->match_points = 0;
+		}
 		player_reset_round(game);
 	}
 
+	// server: ping all clients
 	if (game->is_server) {
 		net_endpoint_t *endpoint, *tmp;
 		// create endpoint ping semaphores, reset them to 0
@@ -93,6 +90,15 @@ static int match_thread(game_t *game) {
 			return 1;
 		}
 		LT_I("Match: ping completed");
+	}
+
+	// server: send game stop signal
+	LT_I("Match: thread stopping");
+	if (game->is_server) {
+		pkt_game_stop_t pkt = {
+			.hdr.type = PKT_GAME_STOP,
+		};
+		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 	}
 
 	return 0;

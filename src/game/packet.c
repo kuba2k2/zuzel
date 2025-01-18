@@ -7,6 +7,7 @@ static bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source);
@@ -23,6 +24,7 @@ const game_process_t process_list[] = {
 	(game_process_t)send_err_invalid_state,		   // PKT_GAME_JOIN (server-only)
 	(game_process_t)process_pkt_game_data,		   // PKT_GAME_DATA
 	(game_process_t)process_pkt_game_start,		   // PKT_GAME_START
+	(game_process_t)process_pkt_game_stop,		   // PKT_GAME_STOP
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LIST
 	(game_process_t)process_pkt_player_new,		   // PKT_PLAYER_NEW
 	(game_process_t)process_pkt_player_data,	   // PKT_PLAYER_DATA
@@ -109,15 +111,29 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 }
 
 static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net_endpoint_t *source) {
-	if (game->is_server)
-		// server: ignore, this is only sent by server
-		return false;
 	if (game->state != GAME_IDLE)
 		// game is already started
 		return false;
+	game->state = GAME_STARTING;
+	if (game->is_server)
+		// server: send to all clients if received on pipe - otherwise ignore
+		return source->type == NET_ENDPOINT_PIPE;
 
 	// client: start the match thread, send event to UI
 	match_init(game);
+	return true;
+}
+
+static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_endpoint_t *source) {
+	if (game->state == GAME_IDLE)
+		// game is already stopped
+		return false;
+	game->state = GAME_IDLE;
+	if (game->is_server)
+		// server: send to all clients if received on pipe - otherwise ignore
+		return source->type == NET_ENDPOINT_PIPE;
+
+	// client: send event to UI
 	return true;
 }
 

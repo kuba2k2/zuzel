@@ -16,6 +16,7 @@ typedef enum {
 	PKT_GAME_JOIN,		   //!< Join game request
 	PKT_GAME_DATA,		   //!< Game data
 	PKT_GAME_START,		   //!< Game start signal
+	PKT_GAME_STOP,		   //!< Game stop signal
 	PKT_PLAYER_LIST,	   //!< List players request/response
 	PKT_PLAYER_NEW,		   //!< New player request
 	PKT_PLAYER_DATA,	   //!< Player data
@@ -85,6 +86,10 @@ typedef struct __attribute__((packed)) pkt_game_start_t {
 	pkt_hdr_t hdr;
 } pkt_game_start_t;
 
+typedef struct __attribute__((packed)) pkt_game_stop_t {
+	pkt_hdr_t hdr;
+} pkt_game_stop_t;
+
 typedef struct __attribute__((packed)) pkt_player_list_t {
 	pkt_hdr_t hdr;
 	uint32_t total_count;
@@ -139,6 +144,7 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_game_join_t game_join;
 	pkt_game_data_t game_data;
 	pkt_game_start_t game_start;
+	pkt_game_stop_t game_stop;
 	pkt_player_data_t player_data;
 	pkt_player_keypress_t player_keypress;
 	// pkt_player_update_t player_update;
