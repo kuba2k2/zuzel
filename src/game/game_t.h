@@ -46,8 +46,8 @@ typedef struct game_t {
 	game_state_t state;	   //!< Current game state
 	unsigned int start_in; //!< Match start counter
 	unsigned int time;	   //!< Game time (ticks)
-	unsigned int match;	   //!< Match number, 1..15
-	unsigned int round;	   //!< Round number, 1..4
+	unsigned int round;	   //!< Round number, 1..15
+	unsigned int lap;	   //!< Lap number, 1..4
 
 	struct game_t *prev, *next;
 } game_t;

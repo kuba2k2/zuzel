@@ -76,7 +76,7 @@ static void match_update_state(ui_t *ui) {
 			break;
 		case GAME_PLAYING:
 			text_info->is_gone = false;
-			sprintf(buf, "Match %d. Round: %d", GAME->match, GAME->round);
+			sprintf(buf, "Round %d. Lap: %d", GAME->round, GAME->lap);
 			gfx_view_set_text(text_info, buf);
 			break;
 		case GAME_FINISHED:

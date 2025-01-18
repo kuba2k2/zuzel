@@ -49,7 +49,7 @@ static int match_thread(game_t *game) {
 		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 	}
 
-	for (game->match = 1; game->match <= 15; game->match++) {
+	for (game->round = 1; game->round <= 15; game->round++) {
 		match_loop(game);
 		match_wait_ready(game);
 	}
@@ -71,7 +71,7 @@ static int match_loop(game_t *game) {
 		// initialize match state and clear player data
 		game->delay = speed_to_delay[game->speed];
 		game->time	= 0;
-		game->round = 1;
+		game->lap	= 1;
 		player_t *player;
 		DL_FOREACH(game->players, player) {
 			player->match_points = 0;
