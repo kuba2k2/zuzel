@@ -11,6 +11,7 @@ static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_request_time_sync(game_t *game, pkt_request_time_sync_t *recv_pkt, net_endpoint_t *source);
 
 const game_process_t process_list[] = {
 	NULL,
@@ -29,6 +30,7 @@ const game_process_t process_list[] = {
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_UPDATE
 	(game_process_t)process_pkt_player_leave,	   // PKT_PLAYER_LEAVE
 	(game_process_t)process_pkt_request_send_data, // PKT_REQUEST_SEND_DATA
+	(game_process_t)process_pkt_request_time_sync, // PKT_REQUEST_TIME_SYNC
 };
 
 /**
@@ -64,12 +66,21 @@ static bool send_err_invalid_state(game_t *game, pkt_t *recv_pkt, net_endpoint_t
 }
 
 static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t *source) {
-	pkt_ping_t pkt = {
-		.hdr.type	 = PKT_PING,
-		.seq		 = recv_pkt->seq,
-		.is_response = true,
-	};
-	net_pkt_send(source, (pkt_t *)&pkt);
+	unsigned long long local_time = millis();
+
+	if (recv_pkt->recv_time == 0) {
+		// ping: request
+		LT_I("Ping: request from %s", net_endpoint_str(source));
+		recv_pkt->recv_time = local_time;
+		net_pkt_send(source, (pkt_t *)recv_pkt);
+	} else if (recv_pkt->send_time == source->ping_time) {
+		// ping: response
+		LT_I("Ping: response from %s", net_endpoint_str(source));
+		source->ping_rtt   = local_time - recv_pkt->send_time;
+		source->time_delta = (long long)recv_pkt->send_time - (long long)recv_pkt->recv_time + source->ping_rtt / 2;
+		LT_D("Ping: RTT = %u ms, delta = %lld ms", source->ping_rtt, source->time_delta);
+	}
+
 	return false;
 }
 
@@ -290,6 +301,28 @@ static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t 
 			.id		  = leave_player,
 		};
 		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);
+	}
+
+	return false;
+}
+
+static bool process_pkt_request_time_sync(game_t *game, pkt_request_time_sync_t *recv_pkt, net_endpoint_t *source) {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	uint64_t send_time = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+
+	pkt_ping_t pkt = {
+		.hdr.type  = PKT_PING,
+		.send_time = send_time,
+		.recv_time = 0,
+	};
+
+	net_endpoint_t *endpoint;
+	DL_FOREACH(game->endpoints, endpoint) {
+		if (endpoint == source)
+			continue;
+		endpoint->ping_time = pkt.send_time;
+		net_pkt_send(endpoint, (pkt_t *)&pkt);
 	}
 
 	return false;

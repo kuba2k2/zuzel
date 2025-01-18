@@ -47,6 +47,10 @@ typedef struct net_endpoint_t {
 	SDL_mutex *mutex;		  //!< Mutex locking this endpoint
 	net_endpoint_type_t type; //!< Endpoint type
 
+	unsigned long long ping_time; //!< Ping send timestamp
+	unsigned int ping_rtt;		  //!< Ping round-trip time
+	long long time_delta;		  //!< Time delta (server_time-client_time)
+
 	struct sockaddr_in addr; //!< Endpoint address
 	int fd;					 //!< Socket descriptor
 

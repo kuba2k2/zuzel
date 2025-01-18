@@ -42,6 +42,13 @@ void game_request_send_update(game_t *game, bool updated_game, unsigned int upda
 	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 }
 
+void game_request_time_sync(game_t *game) {
+	pkt_request_send_data_t pkt = {
+		.hdr.type = PKT_REQUEST_TIME_SYNC,
+	};
+	net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+}
+
 void game_fill_data_pkt(game_t *game, pkt_game_data_t *pkt) {
 	pkt->is_public = game->is_public;
 	pkt->is_local  = game->is_local;

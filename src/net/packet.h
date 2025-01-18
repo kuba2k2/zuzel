@@ -23,6 +23,7 @@ typedef enum {
 	PKT_PLAYER_UPDATE,	   //!< Player generic update
 	PKT_PLAYER_LEAVE,	   //!< Player leave event
 	PKT_REQUEST_SEND_DATA, //!< Request to broadcast game data
+	PKT_REQUEST_TIME_SYNC, //!< Request to ping all endpoints
 	PKT_MAX,
 } pkt_type_t;
 
@@ -36,8 +37,8 @@ typedef struct __attribute__((packed)) pkt_hdr_t {
 
 typedef struct __attribute__((packed)) pkt_ping_t {
 	pkt_hdr_t hdr;
-	uint32_t seq;
-	uint32_t is_response;
+	uint64_t send_time;
+	uint64_t recv_time;
 } pkt_ping_t;
 
 typedef struct __attribute__((packed)) pkt_success_t {
@@ -116,13 +117,17 @@ typedef struct __attribute__((packed)) pkt_player_leave_t {
 	uint32_t id;
 } pkt_player_leave_t;
 
-typedef struct __attribute__((packed)) pkt_send_game_data_t {
+typedef struct __attribute__((packed)) pkt_request_send_data_t {
 	pkt_hdr_t hdr;
 	uintptr_t join_endpoint; //!< Pointer to the endpoint that just joined
 	uint32_t leave_player;	 //!< ID of the player that just left
 	uint32_t updated_game;	 //!< Whether the game data was updated (0/1)
 	uint32_t updated_player; //!< ID of the player that was updated
 } pkt_request_send_data_t;
+
+typedef struct __attribute__((packed)) pkt_request_time_sync_t {
+	pkt_hdr_t hdr;
+} pkt_request_time_sync_t;
 
 typedef union __attribute__((packed)) pkt_t {
 	pkt_hdr_t hdr;
@@ -138,5 +143,6 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_player_keypress_t player_keypress;
 	// pkt_player_update_t player_update;
 	pkt_player_leave_t player_leave;
-	pkt_request_send_data_t send_game_data;
+	pkt_request_send_data_t request_send_data;
+	pkt_request_time_sync_t request_time_sync;
 } pkt_t;

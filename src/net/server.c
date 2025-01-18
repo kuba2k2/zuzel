@@ -196,12 +196,9 @@ static net_err_t net_server_respond(net_endpoint_t *endpoint, pkt_t *recv_pkt) {
 		return NET_ERR_SERVER_CLOSED;
 	switch (recv_pkt->hdr.type) {
 		case PKT_PING: {
-			pkt_ping_t pkt = {
-				.hdr.type	 = PKT_PING,
-				.seq		 = recv_pkt->ping.seq,
-				.is_response = true,
-			};
-			return net_pkt_send(endpoint, (pkt_t *)&pkt);
+			unsigned long long local_time = millis();
+			recv_pkt->ping.recv_time	  = local_time;
+			return net_pkt_send(endpoint, (pkt_t *)recv_pkt);
 		}
 
 		case PKT_GAME_LIST: {

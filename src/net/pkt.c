@@ -19,6 +19,7 @@ static const int pkt_len_list[] = {
 	0,
 	sizeof(pkt_player_leave_t),
 	sizeof(pkt_request_send_data_t),
+	sizeof(pkt_request_time_sync_t),
 };
 
 static const char *pkt_name_list[] = {
@@ -38,6 +39,7 @@ static const char *pkt_name_list[] = {
 	"PKT_PLAYER_UPDATE",
 	"PKT_PLAYER_LEAVE",
 	"PKT_REQUEST_SEND_DATA",
+	"PKT_REQUEST_TIME_SYNC",
 };
 
 /**
