@@ -148,6 +148,9 @@ char *gfx_view_make_id(view_t *view) {
 		case VIEW_TYPE_RECT:
 			type_str = "rect";
 			break;
+		case VIEW_TYPE_CANVAS:
+			type_str = "canvas";
+			break;
 	}
 
 	static int counter = 0;

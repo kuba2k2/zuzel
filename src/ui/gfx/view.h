@@ -26,6 +26,7 @@ typedef enum {
 	VIEW_TYPE_SLIDER = 4,
 	VIEW_TYPE_INPUT	 = 5,
 	VIEW_TYPE_RECT	 = 6,
+	VIEW_TYPE_CANVAS = 7,
 } view_type_t;
 
 typedef struct view_text_t {
@@ -110,6 +111,11 @@ typedef struct view_t {
 			unsigned int stroke;
 			int width;
 		} rect;
+
+		struct {
+			SDL_Renderer *renderer;
+			SDL_Texture *texture;
+		} canvas;
 	} data;
 
 	// event handlers
@@ -164,6 +170,7 @@ view_t *gfx_view_make_button(view_t *parent);
 view_t *gfx_view_make_slider(view_t *parent);
 view_t *gfx_view_make_input(view_t *parent);
 view_t *gfx_view_make_rect(view_t *parent);
+view_t *gfx_view_make_canvas(view_t *parent);
 
 #define GFX_VIEW_FIND(start, item, direction, same, check)                                                             \
 	do {                                                                                                               \

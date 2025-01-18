@@ -38,6 +38,8 @@ view_t *gfx_view_inflate(cJSON *json, view_t *parent, const view_inflate_on_even
 		view = gfx_view_make_input(parent);
 	else if (strcmp(type->valuestring, "rect") == 0)
 		view = gfx_view_make_rect(parent);
+	else if (strcmp(type->valuestring, "canvas") == 0)
+		view = gfx_view_make_canvas(parent);
 	else
 		LT_ERR(E, return NULL, "Unknown view type '%s'", type->valuestring);
 
