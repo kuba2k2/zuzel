@@ -49,6 +49,11 @@ static int match_thread(game_t *game) {
 		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 	}
 
+	player_t *player;
+	DL_FOREACH(game->players, player) {
+		player->match_points = 0;
+	}
+
 	for (game->round = 1; game->round <= 15; game->round++) {
 		match_loop(game);
 		match_wait_ready(game);
@@ -72,15 +77,13 @@ static int match_loop(game_t *game) {
 		game->delay = speed_to_delay[game->speed];
 		game->time	= 0;
 		game->lap	= 1;
-		player_t *player;
-		DL_FOREACH(game->players, player) {
-			player->match_points = 0;
-		}
 		player_reset_round(game);
 	}
 
-	// server: ping all clients
+	unsigned long long start_at = 0;
+
 	if (game->is_server) {
+		// server: ping all clients
 		net_endpoint_t *endpoint, *tmp;
 		// create endpoint ping semaphores, reset them to 0
 		DL_FOREACH_SAFE(game->endpoints, endpoint, tmp) {
@@ -88,9 +91,7 @@ static int match_loop(game_t *game) {
 				continue;
 			if (endpoint->ping_sem == NULL)
 				endpoint->ping_sem = SDL_CreateSemaphore(0);
-			while (SDL_SemTryWait(endpoint->ping_sem) == 0) {
-				/* reset the semaphore */
-			}
+			SDL_SemReset(endpoint->ping_sem);
 		}
 		// request ping-based time sync for every endpoint
 		game_request_time_sync(game);
@@ -100,6 +101,7 @@ static int match_loop(game_t *game) {
 			if (endpoint->type == NET_ENDPOINT_PIPE)
 				continue;
 			if (SDL_SemWaitTimeout(endpoint->ping_sem, ping_timeout) == 0) {
+				start_at = max(start_at, endpoint->ping_rtt);
 				endpoints_ok++;
 			} else {
 				// endpoint didn't respond, disconnect it
@@ -112,10 +114,34 @@ static int match_loop(game_t *game) {
 			LT_W("Match: no endpoints responded! Stopping the thread");
 			return 1;
 		}
-		LT_I("Match: ping completed");
+
+		LT_I("Match: all clients' ping check finished");
+
+		// 'start_at' is the max RTT of the endpoints
+		// calculate the local timestamp based on that
+		start_at += millis();
+		// add 100 ms (overhead)
+		start_at += 100;
+		// send to clients
+		pkt_game_start_round_t pkt = {
+			.hdr.type = PKT_GAME_START_ROUND,
+			.start_at = start_at,
+		};
+		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+	} else {
+		// client: wait for 'start_at' packet from server
+		SDL_SemReset(game->start_at_sem);
+		SDL_SemWait(game->start_at_sem);
+		start_at = game->start_at;
 	}
 
-	SDL_Delay(5000);
+	LT_I("Match: starting at %llu", start_at);
+	unsigned long long local_time = millis();
+	if (start_at > local_time) {
+		SDL_Delay(start_at - local_time);
+	} else {
+		LT_W("Match: clock is behind match time!");
+	}
 
 	SDL_WITH_MUTEX(game->mutex) {
 		player_t *player;

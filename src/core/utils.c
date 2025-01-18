@@ -37,6 +37,12 @@ unsigned long long millis() {
 	return (unsigned long long)tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
+void SDL_SemReset(SDL_sem *sem) {
+	while (SDL_SemTryWait(sem) == 0) {
+		/* reset the semaphore */
+	}
+}
+
 char *strncpy2(char *dest, const char *src, size_t count) {
 	strncpy(dest, src, count);
 	dest[count] = '\0';

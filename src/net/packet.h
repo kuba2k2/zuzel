@@ -17,6 +17,7 @@ typedef enum {
 	PKT_GAME_DATA,		   //!< Game data
 	PKT_GAME_START,		   //!< Server match thread started
 	PKT_GAME_STOP,		   //!< Server match thread stopped
+	PKT_GAME_START_ROUND,  //!< Round start timestamp
 	PKT_PLAYER_LIST,	   //!< List players request/response
 	PKT_PLAYER_NEW,		   //!< New player request
 	PKT_PLAYER_DATA,	   //!< Player data
@@ -90,6 +91,11 @@ typedef struct __attribute__((packed)) pkt_game_stop_t {
 	pkt_hdr_t hdr;
 } pkt_game_stop_t;
 
+typedef struct __attribute__((packed)) pkt_game_start_round_t {
+	pkt_hdr_t hdr;
+	uint64_t start_at;
+} pkt_game_start_round_t;
+
 typedef struct __attribute__((packed)) pkt_player_list_t {
 	pkt_hdr_t hdr;
 	uint32_t total_count;
@@ -144,6 +150,7 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_game_data_t game_data;
 	pkt_game_start_t game_start;
 	pkt_game_stop_t game_stop;
+	pkt_game_start_round_t game_start_round;
 	pkt_player_data_t player_data;
 	pkt_player_keypress_t player_keypress;
 	// pkt_player_update_t player_update;

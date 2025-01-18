@@ -26,6 +26,7 @@ typedef enum game_state_t {
 typedef struct game_t {
 	SDL_mutex *mutex;		  //!< Mutex locking the game (players list and other options)
 	SDL_sem *ready_sem;		  //!< Semaphore for checking ready state by match thread
+	SDL_sem *start_at_sem;	  //!< Semaphore for signalling 'start_at' availability
 	SDL_TimerID expiry_timer; //!< Expiry timer for the game
 	bool stop;				  //!< Whether to stop the game thread
 	bool is_server;			  //!< Whether this game is servers other players (clients)
@@ -43,11 +44,12 @@ typedef struct game_t {
 	unsigned int delay;			  //!< Loop delay based on speed (ms)
 
 	// game and match state
-	game_state_t state;	   //!< Current game state
-	unsigned int start_in; //!< Match start counter
-	unsigned int time;	   //!< Game time (ticks)
-	unsigned int round;	   //!< Round number, 1..15
-	unsigned int lap;	   //!< Lap number, 1..4
+	game_state_t state;			 //!< Current game state
+	unsigned long long start_at; //!< Round start timestamp
+	unsigned int start_in;		 //!< Round start counter
+	unsigned int time;			 //!< Game time (ticks)
+	unsigned int round;			 //!< Round number, 1..15
+	unsigned int lap;			 //!< Lap number, 1..4
 
 	struct game_t *prev, *next;
 } game_t;

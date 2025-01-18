@@ -8,6 +8,7 @@ static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t 
 static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_game_start_round(game_t *game, pkt_game_start_round_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source);
@@ -25,6 +26,7 @@ const game_process_t process_list[] = {
 	(game_process_t)process_pkt_game_data,		   // PKT_GAME_DATA
 	(game_process_t)process_pkt_game_start,		   // PKT_GAME_START
 	(game_process_t)process_pkt_game_stop,		   // PKT_GAME_STOP
+	(game_process_t)process_pkt_game_start_round,  // PKT_GAME_START_ROUND
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LIST
 	(game_process_t)process_pkt_player_new,		   // PKT_PLAYER_NEW
 	(game_process_t)process_pkt_player_data,	   // PKT_PLAYER_DATA
@@ -141,6 +143,20 @@ static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_e
 
 	// client: send event to UI
 	return true;
+}
+
+static bool process_pkt_game_start_round(game_t *game, pkt_game_start_round_t *recv_pkt, net_endpoint_t *source) {
+	if (game->state == GAME_IDLE)
+		// game is not running
+		return false;
+	if (game->is_server)
+		// server: send to all clients if received on pipe - otherwise ignore
+		return source->type == NET_ENDPOINT_PIPE;
+
+	// client: post start_at to match thread
+	game->start_at = recv_pkt->start_at;
+	SDL_SemPost(game->start_at_sem);
+	return false;
 }
 
 static player_t *get_player_with_endpoint(game_t *game, unsigned int id, net_endpoint_t *source) {
