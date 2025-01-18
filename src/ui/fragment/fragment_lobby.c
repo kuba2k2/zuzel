@@ -461,14 +461,7 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					ui_update_status(ui);
 					break;
 				case PKT_GAME_START:
-					ui_update_game(ui);
-					ui_update_status(ui);
-					dialog_show_prompt(ui, -1, NULL, "Game Starting", "Game is starting...");
-					break;
-				case PKT_GAME_STOP:
-					ui_update_game(ui);
-					ui_update_status(ui);
-					dialog_hide(ui);
+					ui_state_set(ui, UI_STATE_MATCH);
 					break;
 				default:
 					return false;

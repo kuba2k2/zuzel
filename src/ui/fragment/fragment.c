@@ -31,6 +31,7 @@ bool fragment_init_all(fragment_t **fragments, void *param) {
 	DEFINE_FRAGMENT(browse, BROWSE);
 	DEFINE_FRAGMENT(lobby, LOBBY);
 	DEFINE_FRAGMENT(error, ERROR);
+	DEFINE_FRAGMENT(match, MATCH);
 
 	return true;
 }

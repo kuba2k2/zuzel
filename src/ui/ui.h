@@ -17,7 +17,7 @@ typedef enum {
 	UI_STATE_BROWSE,
 	UI_STATE_LOBBY,
 	UI_STATE_ERROR,
-	UI_STATE_GAME,
+	UI_STATE_MATCH,
 	UI_STATE_MAX,
 } ui_state_t;
 

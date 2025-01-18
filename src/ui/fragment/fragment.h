@@ -28,6 +28,7 @@ extern fragment_t fragment_connecting;
 extern fragment_t fragment_browse;
 extern fragment_t fragment_lobby;
 extern fragment_t fragment_error;
+extern fragment_t fragment_match;
 
 // fragment.c
 bool fragment_init_all(fragment_t **fragments, void *param);
