@@ -174,7 +174,7 @@ error:
 	free(player);
 	if (game->is_server)
 		// do not send from client
-		game_send_error(source, GAME_ERR_SERVER_ERROR);
+		game_send_error(game, source, GAME_ERR_SERVER_ERROR);
 	return false;
 }
 
@@ -230,13 +230,6 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		// before broadcasting from server, clear 'is_local'
 		player->is_local = false;
 
-	// server: check if all players are ready now
-	if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
-		// start the match
-		if (!match_init(game))
-			game_send_error(source, GAME_ERR_SERVER_ERROR);
-	}
-
 	return true;
 }
 
@@ -252,13 +245,6 @@ static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt,
 		// server: delete player, send leave event
 		// client: wait for leave event from server (if not PIPE)
 		game_del_player(game, player);
-	}
-
-	// server: check if all players are ready now
-	if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
-		// start the match
-		if (!match_init(game))
-			game_send_error(source, GAME_ERR_SERVER_ERROR);
 	}
 
 	// client: send to other endpoint

@@ -152,6 +152,14 @@ static int game_thread(game_t *game) {
 			goto cleanup;
 		if (SETTINGS->net_slowdown)
 			SDL_Delay(100);
+
+		// server: check if all players are ready now
+		if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
+			// start the match
+			if (!match_init(game))
+				// if failed, send an error to everyone
+				game_send_error(game, NULL, GAME_ERR_SERVER_ERROR);
+		}
 	}
 
 cleanup:

@@ -22,12 +22,15 @@ void game_print_error(game_err_t error) {
 	}
 }
 
-bool game_send_error(net_endpoint_t *endpoint, game_err_t error) {
+bool game_send_error(game_t *game, net_endpoint_t *endpoint, game_err_t error) {
 	pkt_error_t pkt = {
 		.hdr.type = PKT_ERROR,
 		.error	  = error,
 	};
-	net_pkt_send(endpoint, (pkt_t *)&pkt);
+	if (endpoint == NULL)
+		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, NULL);
+	else
+		net_pkt_send(endpoint, (pkt_t *)&pkt);
 	return false;
 }
 

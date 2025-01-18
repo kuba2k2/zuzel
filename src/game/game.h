@@ -32,7 +32,7 @@ void game_del_player(game_t *game, player_t *player);
 
 // utils.c
 void game_print_error(game_err_t error);
-bool game_send_error(net_endpoint_t *endpoint, game_err_t error);
+bool game_send_error(game_t *game, net_endpoint_t *endpoint, game_err_t error);
 void game_stop_all();
 game_t *game_get_by_key(char *key);
 
