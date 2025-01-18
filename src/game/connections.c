@@ -44,7 +44,7 @@ void game_del_endpoint(game_t *game, net_endpoint_t *endpoint) {
 	free(endpoint);
 	// check if game is empty
 	game_check_empty(game, true);
-	if (type == NET_ENDPOINT_PIPE)
+	if (type == NET_ENDPOINT_PIPE || game->stop)
 		return;
 	// delete all players using this endpoint
 	player_t *player, *tmp;

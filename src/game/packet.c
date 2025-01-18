@@ -79,6 +79,8 @@ static bool process_pkt_ping(game_t *game, pkt_ping_t *recv_pkt, net_endpoint_t 
 		source->ping_rtt   = local_time - recv_pkt->send_time;
 		source->time_delta = (long long)recv_pkt->send_time - (long long)recv_pkt->recv_time + source->ping_rtt / 2;
 		LT_D("Ping: RTT = %u ms, delta = %lld ms", source->ping_rtt, source->time_delta);
+		if (source->ping_sem)
+			SDL_SemPost(source->ping_sem);
 	}
 
 	return false;
@@ -307,13 +309,11 @@ static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t 
 }
 
 static bool process_pkt_request_time_sync(game_t *game, pkt_request_time_sync_t *recv_pkt, net_endpoint_t *source) {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	uint64_t send_time = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	unsigned long long local_time = millis();
 
 	pkt_ping_t pkt = {
 		.hdr.type  = PKT_PING,
-		.send_time = send_time,
+		.send_time = local_time,
 		.recv_time = 0,
 	};
 
@@ -321,7 +321,7 @@ static bool process_pkt_request_time_sync(game_t *game, pkt_request_time_sync_t 
 	DL_FOREACH(game->endpoints, endpoint) {
 		if (endpoint == source)
 			continue;
-		endpoint->ping_time = pkt.send_time;
+		endpoint->ping_time = local_time;
 		net_pkt_send(endpoint, (pkt_t *)&pkt);
 	}
 

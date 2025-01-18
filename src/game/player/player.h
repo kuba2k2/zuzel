@@ -13,5 +13,6 @@ typedef struct pkt_player_data_t pkt_player_data_t;
 player_t *player_init(game_t *game, char *name);
 void player_free(player_t *player);
 
-// utils.c
+// data.c
 void player_fill_data_pkt(game_t *game, player_t *player, pkt_player_data_t *pkt);
+void player_reset_round(game_t *game);

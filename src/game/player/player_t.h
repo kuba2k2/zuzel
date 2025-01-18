@@ -46,7 +46,7 @@ typedef struct player_t {
 	char name[PLAYER_NAME_LEN + 1]; //!< Player's nickname
 	unsigned int color;				//!< Player's line color
 
-	// round state
+	// round state, controlled by the match thread
 	unsigned int time;	   //!< Total playing time (ticks)
 	player_pos_t pos[100]; //!< Position history
 	unsigned int angle;	   //!< Turning angle, 0..359, CCW (0: left)
@@ -55,7 +55,7 @@ typedef struct player_t {
 	bool lap_can_advance;  //!< Whether the player moved through half a lap
 	int finished_at;	   //!< Winning/losing position
 
-	// scores
+	// scores, controlled by the match thread
 	int round_points; //!< Points in the current round
 	int match_points; //!< Points in the current match
 	int game_points;  //!< Points in the current game

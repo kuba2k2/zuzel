@@ -50,6 +50,7 @@ typedef struct net_endpoint_t {
 	unsigned long long ping_time; //!< Ping send timestamp
 	unsigned int ping_rtt;		  //!< Ping round-trip time
 	long long time_delta;		  //!< Time delta (server_time-client_time)
+	SDL_sem *ping_sem;			  //!< Ping response semaphore
 
 	struct sockaddr_in addr; //!< Endpoint address
 	int fd;					 //!< Socket descriptor
