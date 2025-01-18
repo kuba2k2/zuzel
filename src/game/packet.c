@@ -133,6 +133,12 @@ static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_e
 		// server: send to all clients if received on pipe - otherwise ignore
 		return source->type == NET_ENDPOINT_PIPE;
 
+	// client: force player states to IDLE
+	player_t *player;
+	DL_FOREACH(game->players, player) {
+		player->state = PLAYER_IDLE;
+	}
+
 	// client: send event to UI
 	return true;
 }

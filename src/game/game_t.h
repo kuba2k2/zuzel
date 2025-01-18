@@ -18,7 +18,9 @@ typedef enum game_err_t {
 typedef enum game_state_t {
 	GAME_IDLE	  = 0, //!< Players are in the lobby
 	GAME_STARTING = 1, //!< Game is starting, players can't join anymore
-	GAME_PLAYING  = 2, //!< A match is being played by one or more players
+	GAME_COUNTING = 2, //!< Countdown to start
+	GAME_PLAYING  = 3, //!< Round playing
+	GAME_FINISHED = 4, //!< Round finished
 } game_state_t;
 
 typedef struct game_t {

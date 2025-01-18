@@ -93,6 +93,15 @@ static int match_thread(game_t *game) {
 		LT_I("Match: ping completed");
 	}
 
+	SDL_Delay(5000);
+
+	SDL_WITH_MUTEX(game->mutex) {
+		player_t *player;
+		DL_FOREACH(game->players, player) {
+			player->state = PLAYER_IDLE;
+		}
+	}
+
 	// server: send game stop signal
 	LT_I("Match: thread stopping");
 	if (game->is_server) {

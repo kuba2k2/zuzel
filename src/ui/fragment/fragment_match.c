@@ -15,7 +15,7 @@ static view_t *players_list	 = NULL;
 static bool first_draw = false;
 
 static void match_update_redraw_all(ui_t *ui);
-static void match_update_draw_info(ui_t *ui);
+static void match_update_state(ui_t *ui);
 static void match_update_step_players(ui_t *ui);
 static void on_draw(SDL_Renderer *renderer, view_t *canvas);
 static void on_error(ui_t *ui);
@@ -36,10 +36,6 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	first_draw	 = true;
 	canvas->draw = on_draw;
 
-	text_top->is_gone	   = true;
-	players_title->is_gone = true;
-	players_list->is_gone  = true;
-
 	return true;
 
 error:
@@ -50,7 +46,7 @@ error:
 static void match_update_redraw_all(ui_t *ui) {
 	SDL_SetRenderTarget(ui->renderer, canvas->data.canvas.texture);
 	match_board_draw(ui->renderer);
-	match_update_draw_info(ui);
+	match_update_state(ui);
 
 	player_t *player = NULL;
 	DL_FOREACH(GAME->players, player) {
@@ -60,14 +56,34 @@ static void match_update_redraw_all(ui_t *ui) {
 	SDL_SetRenderTarget(ui->renderer, NULL);
 }
 
-static void match_update_draw_info(ui_t *ui) {
-	match_board_draw_gates(ui->renderer, GAME->start_in != 0);
+static void match_update_state(ui_t *ui) {
+	// draw gates if game is starting
+	match_board_draw_gates(ui->renderer, GAME->state < GAME_PLAYING);
+	// update texts
+	text_top->is_gone	   = true;
+	text_info->is_gone	   = true;
+	players_title->is_gone = true;
+	players_list->is_gone  = true;
 	char buf[32];
-	if (GAME->start_in != 0)
-		sprintf(buf, "Starting in %d...", GAME->start_in);
-	else
-		sprintf(buf, "Match %d. Round: %d", GAME->match, GAME->round);
-	gfx_view_set_text(text_info, buf);
+	switch (GAME->state) {
+		case GAME_IDLE:
+		case GAME_STARTING:
+			break;
+		case GAME_COUNTING:
+			text_info->is_gone = false;
+			sprintf(buf, "Starting in %d...", GAME->start_in);
+			gfx_view_set_text(text_info, buf);
+			break;
+		case GAME_PLAYING:
+			text_info->is_gone = false;
+			sprintf(buf, "Match %d. Round: %d", GAME->match, GAME->round);
+			gfx_view_set_text(text_info, buf);
+			break;
+		case GAME_FINISHED:
+			players_title->is_gone = false;
+			players_list->is_gone  = false;
+			break;
+	}
 	ui->force_layout = true;
 }
 
@@ -128,6 +144,7 @@ static void on_error(ui_t *ui) {
 }
 
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
+	pkt_t *pkt = NULL;
 	switch (e->type) {
 		case SDL_USEREVENT_GAME:
 			if (e->user.data1 != NULL)
@@ -138,16 +155,26 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			on_error(ui);
 			return true;
 
+		case SDL_USEREVENT_PACKET:
+			pkt = e->user.data1;
+			if (pkt == NULL)
+				return false;
+			switch (pkt->hdr.type) {
+				case PKT_GAME_STOP:
+					ui_state_prev(ui);
+					break;
+				default:
+					return false;
+			}
+			return true;
+
 		case SDL_USEREVENT_MATCH:
 			switch (e->user.code) {
 				case MATCH_UPDATE_REDRAW_ALL:
 					match_update_redraw_all(ui);
 					return true;
-				case MATCH_UPDATE_DRAW_COUNTER:
-					match_update_draw_info(ui);
-					return true;
-				case MATCH_UPDATE_DRAW_ROUND:
-					match_update_draw_info(ui);
+				case MATCH_UPDATE_STATE:
+					match_update_state(ui);
 					return true;
 				case MATCH_UPDATE_STEP_PLAYERS:
 					match_update_step_players(ui);

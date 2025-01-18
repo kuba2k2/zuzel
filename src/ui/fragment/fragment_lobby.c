@@ -27,6 +27,7 @@ static view_t *btn_game_public	 = NULL;
 static unsigned int selected_player_id = 0;
 
 static void ui_update_game(ui_t *ui);
+static void ui_update_players(ui_t *ui);
 static void ui_update_player(ui_t *ui, player_t *player);
 static void ui_remove_player(ui_t *ui, unsigned int player_id);
 static void ui_update_status(ui_t *ui);
@@ -105,12 +106,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
 	} else {
 		// the lobby of this game was already shown; recreate the player list
-		SDL_WITH_MUTEX(GAME->mutex) {
-			player_t *player;
-			DL_FOREACH(GAME->players, player) {
-				ui_update_player(ui, player);
-			}
-		}
+		ui_update_players(ui);
 	}
 
 	ui_update_game(ui);
@@ -142,6 +138,15 @@ static void ui_update_game(ui_t *ui) {
 	slider_speed->data.slider.value = (int)GAME->speed;
 
 	ui->force_layout = true;
+}
+
+static void ui_update_players(ui_t *ui) {
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			ui_update_player(ui, player);
+		}
+	}
 }
 
 static void ui_update_player(ui_t *ui, player_t *player) {
@@ -462,6 +467,11 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					break;
 				case PKT_GAME_START:
 					ui_state_set(ui, UI_STATE_MATCH);
+					break;
+				case PKT_GAME_STOP:
+					// game stopped - we're most likely spectating
+					ui_update_players(ui);
+					ui_update_status(ui);
 					break;
 				default:
 					return false;
