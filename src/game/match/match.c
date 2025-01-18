@@ -48,6 +48,7 @@ static int match_thread(game_t *game) {
 		// initialize match state and clear player data
 		game->delay = speed_to_delay[game->speed];
 		game->time	= 0;
+		game->match = 1;
 		game->round = 1;
 		player_t *player;
 		DL_FOREACH(game->players, player) {

@@ -8,4 +8,12 @@ enum {
 	SDL_USEREVENT_CLIENT, //!< Client started/stopped
 	SDL_USEREVENT_PACKET, //!< Packet has been received
 	SDL_USEREVENT_GAME,	  //!< Instance of game_t* is available, or game just stopped
+	SDL_USEREVENT_MATCH,  //!< Match update
+};
+
+enum {
+	MATCH_UPDATE_REDRAW_ALL = 1, //!< Redraw the board and all players
+	MATCH_UPDATE_DRAW_COUNTER,	 //!< Redraw the start counter
+	MATCH_UPDATE_DRAW_ROUND,	 //!< Redraw the round number
+	MATCH_UPDATE_STEP_PLAYERS,	 //!< Draw the players' heads, erase tails
 };

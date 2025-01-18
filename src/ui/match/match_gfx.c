@@ -53,18 +53,6 @@ void match_board_draw_gates(SDL_Renderer *renderer, bool show) {
 void match_player_draw(SDL_Renderer *renderer, player_t *player) {
 	if (player->state == PLAYER_IDLE)
 		return;
-	// create texture if not created yet
-	if (player->texture == NULL) {
-		player->texture = SDL_CreateTexture(
-			renderer,
-			SDL_PIXELFORMAT_RGBA8888,
-			SDL_TEXTUREACCESS_TARGET,
-			SETTINGS->screen.width,
-			SETTINGS->screen.height
-		);
-		SDL_SetTextureBlendMode(player->texture, SDL_BLENDMODE_BLEND);
-	}
-	SDL_SetRenderTarget(renderer, player->texture);
 	// render the player's line
 	double prev_x = 0.0, prev_y = 0.0;
 	gfx_set_color(renderer, player->color);

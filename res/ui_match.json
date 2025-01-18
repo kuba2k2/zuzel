@@ -29,7 +29,7 @@
 		}
 	},
 	{
-		"id": "text_players_title",
+		"id": "players_title",
 		"type": "text",
 		"gravity": "center_horizontal",
 		"ml": 2,
@@ -39,7 +39,7 @@
 		}
 	},
 	{
-		"id": "text_players_list",
+		"id": "players_list",
 		"type": "box",
 		"mt": 219,
 		"gravity": "center_horizontal",
