@@ -25,6 +25,7 @@ typedef enum game_state_t {
 
 typedef struct game_t {
 	SDL_mutex *mutex;		  //!< Mutex locking the game (players list and other options)
+	SDL_sem *ready_sem;		  //!< Semaphore for checking ready state by match thread
 	SDL_TimerID expiry_timer; //!< Expiry timer for the game
 	bool stop;				  //!< Whether to stop the game thread
 	bool is_server;			  //!< Whether this game is servers other players (clients)

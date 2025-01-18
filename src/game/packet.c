@@ -231,6 +231,9 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		// before broadcasting from server, clear 'is_local'
 		player->is_local = false;
 
+	// post the ready state semaphore
+	SDL_SemPost(game->ready_sem);
+
 	return true;
 }
 

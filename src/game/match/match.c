@@ -3,6 +3,8 @@
 #include "match.h"
 
 static int match_thread(game_t *game);
+static int match_loop(game_t *game);
+static bool match_wait_ready(game_t *game);
 
 static const unsigned int ping_timeout		= 2000;
 static const unsigned int speed_to_delay[9] = {40, 32, 25, 17, 11, 7, 4, 2, 0};
@@ -33,7 +35,7 @@ bool match_init(game_t *game) {
 }
 
 static int match_thread(game_t *game) {
-	char thread_name[19];
+	char thread_name[20];
 	snprintf(thread_name, sizeof(thread_name), "match-%s-%s", game->is_server ? "server" : "client", game->key);
 	lt_log_set_thread_name(thread_name);
 
@@ -47,11 +49,28 @@ static int match_thread(game_t *game) {
 		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 	}
 
+	for (game->match = 1; game->match <= 15; game->match++) {
+		match_loop(game);
+		match_wait_ready(game);
+	}
+
+	// server: send game stop signal
+	LT_I("Match: thread stopping");
+	if (game->is_server) {
+		pkt_game_stop_t pkt = {
+			.hdr.type = PKT_GAME_STOP,
+		};
+		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+	}
+
+	return 0;
+}
+
+static int match_loop(game_t *game) {
 	SDL_WITH_MUTEX(game->mutex) {
 		// initialize match state and clear player data
 		game->delay = speed_to_delay[game->speed];
 		game->time	= 0;
-		game->match = 1;
 		game->round = 1;
 		player_t *player;
 		DL_FOREACH(game->players, player) {
@@ -105,14 +124,17 @@ static int match_thread(game_t *game) {
 		}
 	}
 
-	// server: send game stop signal
-	LT_I("Match: thread stopping");
-	if (game->is_server) {
-		pkt_game_stop_t pkt = {
-			.hdr.type = PKT_GAME_STOP,
-		};
-		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
-	}
+	LT_I("Match: finished");
 
 	return 0;
+}
+
+static bool match_wait_ready(game_t *game) {
+	if (match_check_ready(game))
+		return true;
+	LT_I("Match: players are not ready");
+	do {
+		SDL_SemWait(game->ready_sem);
+	} while (!match_check_ready(game));
+	return true;
 }

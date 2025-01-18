@@ -16,6 +16,8 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	SDL_WITH_MUTEX(game->mutex) {
 		// create an expiry timer (initially 5000 ms)
 		game->expiry_timer = SDL_AddTimer(5000, (SDL_TimerCallback)game_expiry_cb, game);
+		// create the ready state semaphore
+		game->ready_sem = SDL_CreateSemaphore(0);
 		// set some default settings
 		game->is_public = false;
 		game->speed		= SETTINGS->game_speed;
@@ -125,6 +127,7 @@ void game_free(game_t *game) {
 	}
 	// free remaining members
 	SDL_DestroyMutex(game->mutex);
+	SDL_DestroySemaphore(game->ready_sem);
 	SDL_RemoveTimer(game->expiry_timer);
 	free(game->local_ips);
 	free(game);

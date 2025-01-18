@@ -100,6 +100,9 @@ void game_del_player(game_t *game, player_t *player) {
 		}
 	}
 
+	// post the ready state semaphore
+	SDL_SemPost(game->ready_sem);
+
 	// search any other players on the same endpoint
 	if (player_endpoint == NULL)
 		// endpoint cleared in game_del_endpoint() - nothing to do
