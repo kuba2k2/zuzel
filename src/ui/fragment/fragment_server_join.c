@@ -2,6 +2,17 @@
 
 #include "fragment.h"
 
+static bool on_input_address_change(view_t *view, SDL_Event *e, ui_t *ui);
+
+static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
+	view_t *input_address;
+	GFX_VIEW_BIND(fragment->views, input_address, return false);
+	if (SETTINGS->last_join_address != NULL)
+		strncpy2(input_address->data.input.value, SETTINGS->last_join_address, input_address->data.input.max_length);
+	on_input_address_change(input_address, e, ui);
+	return true;
+}
+
 static bool on_btn_browse(view_t *view, SDL_Event *e, ui_t *ui) {
 	FREE_NULL(ui->connection.address);
 	FREE_NULL(ui->connection.key);
@@ -67,6 +78,10 @@ static bool on_btn_address_ok(view_t *view, SDL_Event *e, ui_t *ui) {
 	ui->connection.use_tls = false;
 	ui->connection.key	   = NULL;
 
+	FREE_NULL(SETTINGS->last_join_address);
+	SETTINGS->last_join_address = strdup(input->data.input.value);
+	settings_save();
+
 	ui_state_set_via(ui, UI_STATE_LOBBY, UI_STATE_CONNECTING);
 	return true;
 }
@@ -87,5 +102,6 @@ static const view_inflate_on_event_t inflate_on_event[] = {
 };
 
 fragment_t fragment_server_join = {
+	.on_show		  = on_show,
 	.inflate_on_event = inflate_on_event,
 };

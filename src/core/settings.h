@@ -17,6 +17,7 @@ typedef struct {
 	char *game_name;
 	int game_speed;
 	char *public_server_address;
+	char *last_join_address;
 	int server_port;
 
 	char *tls_cert_file;

@@ -12,6 +12,7 @@ void settings_load() {
 	SETTINGS->game_name				= NULL;
 	SETTINGS->game_speed			= 3;
 	SETTINGS->public_server_address = strdup("127.0.0.1:5678");
+	SETTINGS->last_join_address		= NULL;
 	SETTINGS->server_port			= 1234;
 	SETTINGS->tls_cert_file			= strdup("server.crt");
 	SETTINGS->tls_key_file			= strdup("server.key");
@@ -30,6 +31,7 @@ void settings_load() {
 	json_read_string(json, "game_name", &SETTINGS->game_name);
 	json_read_int(json, "game_speed", &SETTINGS->game_speed);
 	json_read_string(json, "public_server_address", &SETTINGS->public_server_address);
+	json_read_string(json, "last_join_address", &SETTINGS->last_join_address);
 	json_read_int(json, "server_port", &SETTINGS->server_port);
 	json_read_string(json, "tls_cert_file", &SETTINGS->tls_cert_file);
 	json_read_string(json, "tls_key_file", &SETTINGS->tls_key_file);
@@ -44,6 +46,7 @@ void settings_load() {
 	LT_I(" - game_name: \"%s\"", SETTINGS->game_name);
 	LT_I(" - game_speed: %d", SETTINGS->game_speed);
 	LT_I(" - public_server_address: \"%s\"", SETTINGS->public_server_address);
+	LT_I(" - last_join_address: \"%s\"", SETTINGS->last_join_address);
 	LT_I(" - server_port: %d", SETTINGS->server_port);
 	LT_I(" - tls_cert_file: \"%s\"", SETTINGS->tls_cert_file);
 	LT_I(" - tls_key_file: \"%s\"", SETTINGS->tls_key_file);
@@ -63,6 +66,7 @@ bool settings_save() {
 	cJSON_AddStringToObject(json, "game_name", SETTINGS->game_name);
 	cJSON_AddNumberToObject(json, "game_speed", SETTINGS->game_speed);
 	cJSON_AddStringToObject(json, "public_server_address", SETTINGS->public_server_address);
+	cJSON_AddStringToObject(json, "last_join_address", SETTINGS->last_join_address);
 	cJSON_AddNumberToObject(json, "server_port", SETTINGS->server_port);
 	cJSON_AddStringToObject(json, "tls_cert_file", SETTINGS->tls_cert_file);
 	cJSON_AddStringToObject(json, "tls_key_file", SETTINGS->tls_key_file);
