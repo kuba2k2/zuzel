@@ -3,12 +3,15 @@
 #include "match.h"
 
 static int match_thread(game_t *game);
-static int match_loop(game_t *game);
+static int match_run(game_t *game);
 
 static const unsigned int ping_timeout		= 2000;
 static const unsigned int speed_to_delay[9] = {40, 32, 25, 17, 11, 7, 4, 2, 0};
 
 bool match_init(game_t *game) {
+	// reset the 'start_at' semaphore
+	SDL_SemReset(game->start_at_sem);
+
 	// start the match thread
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)match_thread, "match", game);
 	SDL_DetachThread(thread);
@@ -39,7 +42,7 @@ static int match_thread(game_t *game) {
 	}
 
 	for (game->round = 1; game->round <= 15; game->round++) {
-		match_loop(game);
+		match_run(game);
 		match_wait_ready(game);
 	}
 
@@ -55,7 +58,7 @@ static int match_thread(game_t *game) {
 	return 0;
 }
 
-static int match_loop(game_t *game) {
+static int match_run(game_t *game) {
 	SDL_WITH_MUTEX(game->mutex) {
 		// initialize match state and clear player data
 		game->delay = speed_to_delay[game->speed];
@@ -118,18 +121,18 @@ static int match_loop(game_t *game) {
 		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 	} else {
 		// client: wait for 'start_at' packet from server
-		SDL_SemReset(game->start_at_sem);
 		SDL_SemWait(game->start_at_sem);
 		start_at = game->start_at;
 	}
 
-	LT_I("Match: starting at %llu", start_at);
+	LT_I("Match: starting at %llu...", start_at);
 	unsigned long long local_time = millis();
 	if (start_at > local_time) {
 		SDL_Delay(start_at - local_time);
 	} else {
 		LT_W("Match: clock is behind match time!");
 	}
+	LT_I("Match: starting now!");
 
 	game->state	   = GAME_COUNTING;
 	game->start_in = 3;
@@ -142,12 +145,55 @@ static int match_loop(game_t *game) {
 
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 
-	SDL_WITH_MUTEX(game->mutex) {
-		player_t *player;
-		DL_FOREACH(game->players, player) {
-			player->state = PLAYER_IDLE;
+	// calculate performance delays
+	uint64_t perf_freq		 = SDL_GetPerformanceFrequency();
+	uint64_t perf_cur		 = SDL_GetPerformanceCounter();
+	uint64_t perf_loop_delay = perf_freq * game->delay / 1000;
+	uint64_t perf_loop_next	 = perf_cur + perf_loop_delay;
+	uint64_t perf_ui_delay	 = perf_freq * 16 / 1000;
+	uint64_t perf_ui_next	 = perf_cur + perf_ui_delay;
+
+	// run the main game loop
+	bool playing = false;
+	do {
+		// process all players
+		SDL_WITH_MUTEX(game->mutex) {
+			player_t *player;
+			playing = false;
+			DL_FOREACH(game->players, player) {
+				if ((player->state & PLAYER_IN_MATCH_MASK) == 0)
+					continue;
+				SDL_WITH_MUTEX(player->mutex) {
+					player_loop(game, player);
+					if (player->state == PLAYER_PLAYING)
+						playing = true;
+				}
+			}
 		}
-	}
+
+		// client: update the UI
+		perf_cur = SDL_GetPerformanceCounter();
+		if (!game->is_server && perf_cur >= perf_ui_next) {
+			if (game->update_state)
+				match_send_sdl_event(game, MATCH_UPDATE_STATE);
+			if (game->update_redraw_players)
+				match_send_sdl_event(game, MATCH_UPDATE_REDRAW_ALL);
+			else
+				match_send_sdl_event(game, MATCH_UPDATE_STEP_PLAYERS);
+			perf_ui_next += perf_ui_delay;
+		}
+
+		// wait until the next loop timestamp
+		perf_cur = SDL_GetPerformanceCounter();
+		if (perf_cur < perf_loop_next) {
+			uint64_t perf_diff = perf_loop_next - perf_cur;
+			SDL_Delay(perf_diff * 1000 / perf_freq);
+		}
+		// increment the next loop timestamp
+		perf_loop_next += perf_loop_delay;
+	} while (playing);
+
+	game->state = GAME_FINISHED;
 
 	LT_I("Match: finished");
 

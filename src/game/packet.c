@@ -234,7 +234,7 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		if (recv_pkt->state != PLAYER_READY)
 			// clients can only set READY state
 			recv_pkt->state = player->state;
-		else if (player->state != PLAYER_IDLE && player->state != PLAYER_CRASHED && player->state != PLAYER_FINISHED)
+		else if ((player->state & PLAYER_NOT_READY_MASK) == 0)
 			// ...only if they are IDLE, CRASHED or FINISHED
 			recv_pkt->state = player->state;
 	}

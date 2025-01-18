@@ -98,7 +98,7 @@ static void match_update_step_players(ui_t *ui) {
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {
-			if (player->state != PLAYER_PLAYING && player->state != PLAYER_CRASHED && player->state != PLAYER_FINISHED)
+			if ((player->state & PLAYER_IN_MATCH_MASK) == 0)
 				continue;
 			SDL_WITH_MUTEX(player->mutex) {
 				SDL_SetRenderTarget(ui->renderer, player->texture);
@@ -128,7 +128,7 @@ static void on_draw(SDL_Renderer *renderer, view_t *view) {
 
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {
-			if (player->state == PLAYER_IDLE)
+			if ((player->state & PLAYER_IN_GAME_MASK) == 0)
 				continue;
 			SDL_DestroyTexture(player->texture);
 			player->texture = SDL_CreateTexture(

@@ -80,7 +80,7 @@ void game_add_player(game_t *game, player_t *player) {
  */
 void game_del_player(game_t *game, player_t *player) {
 	net_endpoint_t *player_endpoint = player->endpoint;
-	if (player->state <= PLAYER_READY) {
+	if ((player->state & PLAYER_IN_MATCH_MASK) == 0) {
 		// player can be deleted safely
 		LT_I("Game: deleting player #%d '%s'", player->id, player->name);
 		DL_DELETE(game->players, player);

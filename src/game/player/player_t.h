@@ -8,14 +8,18 @@ typedef struct game_t game_t;
 typedef struct net_endpoint_t net_endpoint_t;
 
 typedef enum player_state_t {
-	PLAYER_IDLE			= 0, //!< Waiting for the race/spectating
-	PLAYER_READY		= 1, //!< Ready for the race
-	PLAYER_PLAYING		= 2, //!< Currently playing in a race
-	PLAYER_CRASHED		= 3, //!< Crashed into a wall
-	PLAYER_FINISHED		= 4, //!< Finished the race
-	PLAYER_DISCONNECTED = 5, //!< Disconnected from the room
-	PLAYER_SPECTATING	= 6, //!< Spectating the game (waiting for a new match)
+	PLAYER_IDLE			= (1 << 0), //!< Waiting for the race/spectating
+	PLAYER_READY		= (1 << 1), //!< Ready for the race
+	PLAYER_PLAYING		= (1 << 2), //!< Currently playing in a race
+	PLAYER_CRASHED		= (1 << 3), //!< Crashed into a wall
+	PLAYER_FINISHED		= (1 << 4), //!< Finished the race
+	PLAYER_DISCONNECTED = (1 << 5), //!< Disconnected from the room
+	PLAYER_SPECTATING	= (1 << 6), //!< Spectating the game (waiting for a new match)
 } player_state_t;
+
+#define PLAYER_NOT_READY_MASK (PLAYER_IDLE | PLAYER_CRASHED | PLAYER_FINISHED)
+#define PLAYER_IN_GAME_MASK	  (PLAYER_READY | PLAYER_PLAYING | PLAYER_CRASHED | PLAYER_FINISHED)
+#define PLAYER_IN_MATCH_MASK  (PLAYER_PLAYING | PLAYER_CRASHED | PLAYER_FINISHED)
 
 typedef enum player_pos_state_t {
 	PLAYER_POS_UNCONFIRMED = 0, //!< Position is subject to recalculation
