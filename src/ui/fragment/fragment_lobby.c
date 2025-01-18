@@ -27,7 +27,7 @@ static view_t *btn_game_public	 = NULL;
 static unsigned int selected_player_id = 0;
 
 static void ui_update_game(ui_t *ui);
-static void ui_update_player(ui_t *ui, unsigned int player_id);
+static void ui_update_player(ui_t *ui, player_t *player);
 static void ui_remove_player(ui_t *ui, unsigned int player_id);
 static void ui_update_status(ui_t *ui);
 static void on_quit(ui_t *ui);
@@ -52,6 +52,11 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	GFX_VIEW_BIND(fragment->views, btn_game_public, goto error);
 	if (!dialog_init(ui, fragment->views))
 		goto error;
+
+	// clone the player list row
+	players_row = gfx_view_clone(players_list->children, players_list);
+	gfx_view_free(players_list->children);
+	players_list->children = NULL;
 
 	btn_player_rename->is_disabled = true;
 	btn_player_ban->is_disabled	   = true;
@@ -92,21 +97,24 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		DL_SEARCH_SCALAR(GAME->players, local_player, is_local, true);
 	}
 	if (local_player == NULL) {
-		// clone the player list row
-		if (players_row == NULL)
-			players_row = gfx_view_clone(players_list->children, players_list);
-		gfx_view_free(players_list->children);
-		players_list->children = NULL;
-
 		// create a player if not yet added
 		pkt_player_new_t pkt = {
 			.hdr.type = PKT_PLAYER_NEW,
 		};
 		strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
 		net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
+	} else {
+		// the lobby of this game was already shown; recreate the player list
+		SDL_WITH_MUTEX(GAME->mutex) {
+			player_t *player;
+			DL_FOREACH(GAME->players, player) {
+				ui_update_player(ui, player);
+			}
+		}
 	}
 
 	ui_update_game(ui);
+	ui_update_status(ui);
 	return true;
 
 error:
@@ -117,6 +125,11 @@ error:
 static bool on_hide(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	if (players_list == NULL || players_row == NULL)
 		return false;
+	// free the current list box contents
+	gfx_view_free(players_list->children);
+	players_list->children = NULL;
+	// put the cloned row back into the list
+	DL_APPEND(players_list->children, players_row);
 	return true;
 }
 
@@ -128,26 +141,19 @@ static void ui_update_game(ui_t *ui) {
 	gfx_view_set_text(slider_speed, buf);
 	slider_speed->data.slider.value = (int)GAME->speed;
 
-	slider_speed->is_disabled	  = GAME->state != GAME_IDLE;
-	btn_game_rename->is_disabled  = GAME->state != GAME_IDLE;
-	btn_game_private->is_disabled = !GAME->is_public || GAME->state != GAME_IDLE;
-	btn_game_public->is_disabled  = GAME->is_public || GAME->state != GAME_IDLE;
-	btn_player_ban->is_disabled	  = GAME->state != GAME_IDLE;
-
 	ui->force_layout = true;
 }
 
-static void ui_update_player(ui_t *ui, unsigned int player_id) {
-	player_t *player = game_get_player_by_id(GAME, player_id);
+static void ui_update_player(ui_t *ui, player_t *player) {
 	if (player == NULL)
 		// nothing to do!
 		return;
 
-	view_t *row = gfx_view_find_by_tag(players_list->children, (void *)(uintptr_t)player_id);
+	view_t *row = gfx_view_find_by_tag(players_list->children, (void *)(uintptr_t)player->id);
 	if (row == NULL) {
 		// create a new row if not already shown
 		row		 = gfx_view_clone(players_row, players_list);
-		row->tag = (void *)(uintptr_t)player_id;
+		row->tag = (void *)(uintptr_t)player->id;
 		DL_APPEND(players_list->children, row);
 	}
 
@@ -194,7 +200,6 @@ static void ui_update_player(ui_t *ui, unsigned int player_id) {
 	gfx_view_set_text(row_status, status);
 	row_status->data.text.color = color;
 
-	ui_update_status(ui);
 	ui->force_layout = true;
 }
 
@@ -206,7 +211,6 @@ static void ui_remove_player(ui_t *ui, unsigned int player_id) {
 	row->next = NULL;
 	row->prev = row;
 	gfx_view_free(row);
-	ui_update_status(ui);
 	ui->force_layout = true;
 }
 
@@ -233,10 +237,12 @@ static void ui_update_status(ui_t *ui) {
 		}
 	}
 
+	bool lock_controls = false;
 	if (in_game_count != 0 || GAME->state != GAME_IDLE) {
 		gfx_view_set_text(text_status, "Players are currently\nin game...");
 		btn_ready->is_disabled = true;
 		gfx_view_set_text(btn_ready, "READY");
+		lock_controls = true;
 	} else if (self_ready) {
 		char buf[64];
 		if (players_count - ready_count)
@@ -246,6 +252,7 @@ static void ui_update_status(ui_t *ui) {
 		gfx_view_set_text(text_status, buf);
 		btn_ready->is_disabled = true;
 		gfx_view_set_text(btn_ready, "READY");
+		lock_controls = players_count == ready_count;
 	} else if (players_count < 2) {
 		gfx_view_set_text(text_status, "There's nobody\nhere...");
 		btn_ready->is_disabled = false;
@@ -259,6 +266,14 @@ static void ui_update_status(ui_t *ui) {
 		btn_ready->is_disabled = false;
 		gfx_view_set_text(btn_ready, "START");
 	}
+
+	slider_speed->is_disabled	  = lock_controls;
+	btn_game_rename->is_disabled  = lock_controls;
+	btn_game_private->is_disabled = !GAME->is_public || lock_controls;
+	btn_game_public->is_disabled  = GAME->is_public || lock_controls;
+	btn_player_ban->is_disabled	  = btn_player_ban->is_disabled || lock_controls;
+
+	ui->force_layout = true;
 }
 
 static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
@@ -269,6 +284,7 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 			strncpy2(GAME->name, value, GAME_NAME_LEN);
 			game_request_send_update(GAME, true, 0);
 			ui_update_game(ui);
+			ui_update_status(ui);
 			break;
 
 		case DIALOG_GAME_QUIT:
@@ -286,7 +302,8 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 			btn_player_rename->is_disabled = true;
 			btn_player_ban->is_disabled	   = true;
 			// update the UI
-			ui_update_player(ui, player->id);
+			ui_update_player(ui, player);
+			ui_update_status(ui);
 			break;
 
 		case DIALOG_PLAYER_BAN: {
@@ -313,7 +330,8 @@ static bool on_btn_ready(view_t *view, SDL_Event *e, ui_t *ui) {
 				continue;
 			player->state = PLAYER_READY;
 			game_request_send_update(GAME, false, player->id);
-			ui_update_player(ui, player->id);
+			ui_update_player(ui, player);
+			ui_update_status(ui);
 		}
 	}
 	return false;
@@ -364,6 +382,7 @@ static bool on_btn_game_private(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = false;
 	game_request_send_update(GAME, true, 0);
 	ui_update_game(ui);
+	ui_update_status(ui);
 	return false;
 }
 
@@ -371,6 +390,7 @@ static bool on_btn_game_public(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->is_public = true;
 	game_request_send_update(GAME, true, 0);
 	ui_update_game(ui);
+	ui_update_status(ui);
 	return false;
 }
 
@@ -378,6 +398,7 @@ static bool on_speed_change(view_t *view, SDL_Event *e, ui_t *ui) {
 	GAME->speed = view->data.slider.value;
 	game_request_send_update(GAME, true, 0);
 	ui_update_game(ui);
+	ui_update_status(ui);
 	return false;
 }
 
@@ -429,16 +450,25 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			switch (pkt->hdr.type) {
 				case PKT_GAME_DATA:
 					ui_update_game(ui);
+					ui_update_status(ui);
 					break;
 				case PKT_PLAYER_DATA:
-					ui_update_player(ui, pkt->player_data.id);
+					ui_update_player(ui, game_get_player_by_id(GAME, pkt->player_data.id));
+					ui_update_status(ui);
 					break;
 				case PKT_PLAYER_LEAVE:
 					ui_remove_player(ui, pkt->player_leave.id);
+					ui_update_status(ui);
 					break;
 				case PKT_GAME_START:
 					ui_update_game(ui);
+					ui_update_status(ui);
 					dialog_show_prompt(ui, -1, NULL, "Game Starting", "Game is starting...");
+					break;
+				case PKT_GAME_STOP:
+					ui_update_game(ui);
+					ui_update_status(ui);
+					dialog_hide(ui);
 					break;
 				default:
 					return false;
