@@ -113,13 +113,13 @@ static bool process_pkt_game_data(game_t *game, pkt_game_data_t *recv_pkt, net_e
 }
 
 static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net_endpoint_t *source) {
+	if (game->is_server)
+		// server: send to all clients if received on pipe - otherwise ignore
+		return source->type == NET_ENDPOINT_PIPE;
 	if (game->state != GAME_IDLE)
 		// game is already started
 		return false;
 	game->state = GAME_STARTING;
-	if (game->is_server)
-		// server: send to all clients if received on pipe - otherwise ignore
-		return source->type == NET_ENDPOINT_PIPE;
 
 	// client: start the match thread, send event to UI
 	match_init(game);
@@ -149,9 +149,20 @@ static bool process_pkt_game_start_round(game_t *game, pkt_game_start_round_t *r
 	if (game->state == GAME_IDLE)
 		// game is not running
 		return false;
-	if (game->is_server)
-		// server: send to all clients if received on pipe - otherwise ignore
-		return source->type == NET_ENDPOINT_PIPE;
+	if (game->is_server) {
+		if (source->type != NET_ENDPOINT_PIPE)
+			// server: ignore if not received on pipe
+			return false;
+		// server: send to all clients, while adjusting their 'start_at' timestamp
+		unsigned long long start_at = recv_pkt->start_at;
+		net_endpoint_t *endpoint;
+		DL_FOREACH(game->endpoints, endpoint) {
+			if (endpoint == source)
+				continue;
+			recv_pkt->start_at = start_at - endpoint->time_delta - endpoint->ping_rtt / 2;
+			net_pkt_send(endpoint, (pkt_t *)recv_pkt);
+		}
+	}
 
 	// client: post start_at to match thread
 	game->start_at = recv_pkt->start_at;

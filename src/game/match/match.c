@@ -4,25 +4,9 @@
 
 static int match_thread(game_t *game);
 static int match_loop(game_t *game);
-static bool match_wait_ready(game_t *game);
 
 static const unsigned int ping_timeout		= 2000;
 static const unsigned int speed_to_delay[9] = {40, 32, 25, 17, 11, 7, 4, 2, 0};
-
-bool match_check_ready(game_t *game) {
-	int players_count = 0;
-	int ready_count	  = 0;
-	player_t *player;
-	DL_FOREACH(game->players, player) {
-		if (player->state == PLAYER_SPECTATING || player->state == PLAYER_DISCONNECTED)
-			// ignore spectating and disconnected players - they can't set READY
-			continue;
-		players_count++;
-		if (player->state == PLAYER_READY)
-			ready_count++;
-	}
-	return players_count != 0 && players_count == ready_count;
-}
 
 bool match_init(game_t *game) {
 	// start the match thread
@@ -77,8 +61,12 @@ static int match_loop(game_t *game) {
 		game->delay = speed_to_delay[game->speed];
 		game->time	= 0;
 		game->lap	= 1;
+		// reset player's data, set as PLAYING
 		player_reset_round(game);
 	}
+
+	// make the UI redraw everything
+	match_send_sdl_event(game, MATCH_UPDATE_REDRAW_ALL);
 
 	unsigned long long start_at = 0;
 
@@ -143,6 +131,17 @@ static int match_loop(game_t *game) {
 		LT_W("Match: clock is behind match time!");
 	}
 
+	game->state	   = GAME_COUNTING;
+	game->start_in = 3;
+	do {
+		// update UI state
+		match_send_sdl_event(game, MATCH_UPDATE_STATE);
+		SDL_Delay(1000);
+	} while (--game->start_in);
+	game->state = GAME_PLAYING;
+
+	match_send_sdl_event(game, MATCH_UPDATE_STATE);
+
 	SDL_WITH_MUTEX(game->mutex) {
 		player_t *player;
 		DL_FOREACH(game->players, player) {
@@ -153,14 +152,4 @@ static int match_loop(game_t *game) {
 	LT_I("Match: finished");
 
 	return 0;
-}
-
-static bool match_wait_ready(game_t *game) {
-	if (match_check_ready(game))
-		return true;
-	LT_I("Match: players are not ready");
-	do {
-		SDL_SemWait(game->ready_sem);
-	} while (!match_check_ready(game));
-	return true;
 }

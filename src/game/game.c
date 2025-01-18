@@ -161,9 +161,12 @@ static int game_thread(game_t *game) {
 		// server: check if all players are ready now
 		if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
 			// start the match
-			if (!match_init(game))
+			game->state = GAME_STARTING;
+			if (!match_init(game)) {
 				// if failed, send an error to everyone
 				game_send_error(game, NULL, GAME_ERR_SERVER_ERROR);
+				game->state = GAME_IDLE;
+			}
 		}
 	}
 
