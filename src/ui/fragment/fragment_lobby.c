@@ -181,7 +181,7 @@ static void ui_update_player(ui_t *ui, player_t *player) {
 	unsigned int color = 0xA0A0A0;
 	switch (player->state) {
 		case PLAYER_IDLE:
-			status = GAME->state == GAME_IDLE ? "Not Ready" : "Spectating";
+			status = "Not Ready";
 			break;
 		case PLAYER_READY:
 			status = "Ready";
@@ -200,6 +200,9 @@ static void ui_update_player(ui_t *ui, player_t *player) {
 			break;
 		case PLAYER_DISCONNECTED:
 			status = "Disconnected";
+			break;
+		case PLAYER_SPECTATING:
+			status = "Spectating";
 			break;
 	}
 	gfx_view_set_text(row_status, status);
@@ -234,7 +237,7 @@ static void ui_update_status(ui_t *ui) {
 				ready_count++;
 				if (player->is_local)
 					self_ready = true;
-			} else if (player->state != PLAYER_IDLE) {
+			} else if (player->state != PLAYER_IDLE && player->state != PLAYER_SPECTATING) {
 				in_game_count++;
 			}
 			if (player->is_local)

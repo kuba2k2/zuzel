@@ -14,6 +14,7 @@ typedef enum player_state_t {
 	PLAYER_CRASHED		= 3, //!< Crashed into a wall
 	PLAYER_FINISHED		= 4, //!< Finished the race
 	PLAYER_DISCONNECTED = 5, //!< Disconnected from the room
+	PLAYER_SPECTATING	= 6, //!< Spectating the game (waiting for a new match)
 } player_state_t;
 
 typedef enum player_pos_state_t {

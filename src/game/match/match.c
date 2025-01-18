@@ -12,6 +12,9 @@ bool match_check_ready(game_t *game) {
 	int ready_count	  = 0;
 	player_t *player;
 	DL_FOREACH(game->players, player) {
+		if (player->state == PLAYER_SPECTATING || player->state == PLAYER_DISCONNECTED)
+			// ignore spectating and disconnected players - they can't set READY
+			continue;
 		players_count++;
 		if (player->state == PLAYER_READY)
 			ready_count++;

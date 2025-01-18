@@ -165,6 +165,10 @@ static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net
 	if (player == NULL)
 		goto error;
 
+	if (game->state != GAME_IDLE)
+		// players joining ongoing games can only spectate
+		player->state = PLAYER_SPECTATING;
+
 	// add to players list
 	player->endpoint = source;
 	game_add_player(game, player);
@@ -200,11 +204,8 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 	}
 
 	if (game->is_server) {
-		if (game->state != GAME_IDLE && recv_pkt->state == PLAYER_READY)
-			// clients can't set READY state if game is running
-			recv_pkt->state = PLAYER_IDLE;
-		if (recv_pkt->state > PLAYER_READY)
-			// clients can only set IDLE and READY states
+		if (recv_pkt->state != PLAYER_READY || player->state != PLAYER_IDLE)
+			// clients can only set READY state and only if they are IDLE
 			recv_pkt->state = PLAYER_IDLE;
 	}
 
@@ -257,7 +258,6 @@ static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t 
 		return false;
 
 	net_endpoint_t *join_endpoint = (void *)recv_pkt->join_endpoint;
-	unsigned int leave_player	  = recv_pkt->leave_player;
 	bool updated_game			  = recv_pkt->updated_game;
 	player_t *updated_player	  = NULL;
 	if (recv_pkt->updated_player)
@@ -303,12 +303,10 @@ static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t 
 			pkt.is_local = updated_player->endpoint == endpoint;
 			net_pkt_send(endpoint, (pkt_t *)&pkt);
 		}
-	}
-
-	if (leave_player != 0) {
+	} else if (recv_pkt->updated_player != 0) {
 		pkt_player_leave_t pkt = {
 			.hdr.type = PKT_PLAYER_LEAVE,
-			.id		  = leave_player,
+			.id		  = recv_pkt->updated_player,
 		};
 		net_pkt_broadcast(game->endpoints, (pkt_t *)&pkt, source);
 	}

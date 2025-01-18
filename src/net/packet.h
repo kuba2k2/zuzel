@@ -15,8 +15,8 @@ typedef enum {
 	PKT_GAME_NEW,		   //!< New game request
 	PKT_GAME_JOIN,		   //!< Join game request
 	PKT_GAME_DATA,		   //!< Game data
-	PKT_GAME_START,		   //!< Game start signal
-	PKT_GAME_STOP,		   //!< Game stop signal
+	PKT_GAME_START,		   //!< Server match thread started
+	PKT_GAME_STOP,		   //!< Server match thread stopped
 	PKT_PLAYER_LIST,	   //!< List players request/response
 	PKT_PLAYER_NEW,		   //!< New player request
 	PKT_PLAYER_DATA,	   //!< Player data
@@ -125,9 +125,8 @@ typedef struct __attribute__((packed)) pkt_player_leave_t {
 typedef struct __attribute__((packed)) pkt_request_send_data_t {
 	pkt_hdr_t hdr;
 	uintptr_t join_endpoint; //!< Pointer to the endpoint that just joined
-	uint32_t leave_player;	 //!< ID of the player that just left
 	uint32_t updated_game;	 //!< Whether the game data was updated (0/1)
-	uint32_t updated_player; //!< ID of the player that was updated
+	uint32_t updated_player; //!< ID of the player that was updated (or just left)
 } pkt_request_send_data_t;
 
 typedef struct __attribute__((packed)) pkt_request_time_sync_t {

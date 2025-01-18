@@ -86,11 +86,7 @@ void game_del_player(game_t *game, player_t *player) {
 		DL_DELETE(game->players, player);
 		if (game->is_server) {
 			// only servers send player list updates
-			pkt_request_send_data_t pkt = {
-				.hdr.type	  = PKT_REQUEST_SEND_DATA,
-				.leave_player = player->id,
-			};
-			net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
+			game_request_send_update(game, false, player->id);
 		}
 		player_free(player);
 	} else {
