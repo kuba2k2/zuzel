@@ -231,9 +231,12 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 	}
 
 	if (game->is_server) {
-		if (recv_pkt->state != PLAYER_READY || player->state != PLAYER_IDLE)
-			// clients can only set READY state and only if they are IDLE
-			recv_pkt->state = PLAYER_IDLE;
+		if (recv_pkt->state != PLAYER_READY)
+			// clients can only set READY state
+			recv_pkt->state = player->state;
+		else if (player->state != PLAYER_IDLE && player->state != PLAYER_CRASHED && player->state != PLAYER_FINISHED)
+			// ...only if they are IDLE, CRASHED or FINISHED
+			recv_pkt->state = player->state;
 	}
 
 	// update player data

@@ -19,7 +19,7 @@ static const SDL_Point GAME_GATE_LINES[][2] = {
 	{{.x = 321, .y = 292}, {.x = 321, .y = 386}},
 };
 
-void match_board_draw(SDL_Renderer *renderer) {
+void match_gfx_board_draw(SDL_Renderer *renderer) {
 	// draw board background
 	gfx_set_color(renderer, GFX_COLOR_BLUE);
 	SDL_RenderClear(renderer);
@@ -43,16 +43,19 @@ void match_board_draw(SDL_Renderer *renderer) {
 	SDL_RenderFillRects(renderer, GAME_TRACK_RECTS, sizeof(GAME_TRACK_RECTS) / sizeof(*GAME_TRACK_RECTS));
 }
 
-void match_board_draw_gates(SDL_Renderer *renderer, bool show) {
+void match_gfx_gates_draw(SDL_Renderer *renderer, bool show) {
 	gfx_set_color(renderer, show ? GFX_COLOR_BRIGHT_MAGENTA : GFX_COLOR_BLACK);
 	for (int i = 0; i < sizeof(GAME_GATE_LINES) / sizeof(GAME_GATE_LINES[0]); i++) {
 		SDL_RenderDrawLines(renderer, GAME_GATE_LINES[i], sizeof(GAME_GATE_LINES[i]) / sizeof(*GAME_GATE_LINES[i]));
 	}
 }
 
-void match_player_draw(SDL_Renderer *renderer, player_t *player) {
+void match_gfx_player_draw(SDL_Renderer *renderer, player_t *player) {
 	if (player->state == PLAYER_IDLE)
 		return;
+	// clear the renderer
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+	SDL_RenderClear(renderer);
 	// render the player's line
 	double prev_x = 0.0, prev_y = 0.0;
 	gfx_set_color(renderer, player->color);
@@ -66,3 +69,5 @@ void match_player_draw(SDL_Renderer *renderer, player_t *player) {
 		prev_y = pos->y;
 	}
 }
+
+void match_gfx_player_draw_step(SDL_Renderer *renderer, player_t *player) {}

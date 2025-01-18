@@ -45,20 +45,27 @@ error:
 
 static void match_update_redraw_all(ui_t *ui) {
 	SDL_SetRenderTarget(ui->renderer, canvas->data.canvas.texture);
-	match_board_draw(ui->renderer);
+	match_gfx_board_draw(ui->renderer);
 	match_update_state(ui);
 
-	player_t *player = NULL;
-	DL_FOREACH(GAME->players, player) {
-		SDL_SetRenderTarget(ui->renderer, player->texture);
-		match_player_draw(ui->renderer, player);
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			if (player->state != PLAYER_PLAYING && player->state != PLAYER_CRASHED && player->state != PLAYER_FINISHED)
+				continue;
+			SDL_WITH_MUTEX(player->mutex) {
+				SDL_SetRenderTarget(ui->renderer, player->texture);
+				match_gfx_player_draw(ui->renderer, player);
+			}
+		}
 	}
 	SDL_SetRenderTarget(ui->renderer, NULL);
 }
 
 static void match_update_state(ui_t *ui) {
 	// draw gates if game is starting
-	match_board_draw_gates(ui->renderer, GAME->state < GAME_PLAYING);
+	SDL_SetRenderTarget(ui->renderer, canvas->data.canvas.texture);
+	match_gfx_gates_draw(ui->renderer, GAME->state < GAME_PLAYING);
 	// update texts
 	text_top->is_gone	   = true;
 	text_info->is_gone	   = true;
@@ -87,7 +94,20 @@ static void match_update_state(ui_t *ui) {
 	ui->force_layout = true;
 }
 
-static void match_update_step_players(ui_t *ui) {}
+static void match_update_step_players(ui_t *ui) {
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			if (player->state != PLAYER_PLAYING && player->state != PLAYER_CRASHED && player->state != PLAYER_FINISHED)
+				continue;
+			SDL_WITH_MUTEX(player->mutex) {
+				SDL_SetRenderTarget(ui->renderer, player->texture);
+				match_gfx_player_draw_step(ui->renderer, player);
+			}
+		}
+	}
+	SDL_SetRenderTarget(ui->renderer, NULL);
+}
 
 // on_draw() will be called right after on_show()
 static void on_draw(SDL_Renderer *renderer, view_t *view) {
