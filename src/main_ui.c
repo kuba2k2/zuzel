@@ -5,6 +5,8 @@
 #include <SDL_main.h>
 
 int main(int argc, char *argv[]) {
+	srand(time(NULL));
+
 	MALLOC(SETTINGS, sizeof(*SETTINGS), return 1);
 	settings_load();
 

@@ -25,6 +25,7 @@ static int match_thread(game_t *game) {
 	char thread_name[20];
 	snprintf(thread_name, sizeof(thread_name), "match-%s-%s", game->is_server ? "server" : "client", game->key);
 	lt_log_set_thread_name(thread_name);
+	srand(time(NULL));
 
 	LT_I("Match: starting match in game '%s' (%s)", game->name, game->key);
 

@@ -45,6 +45,7 @@ static int net_server_listen(void *param) {
 		return -1;
 	(void)param;
 	lt_log_set_thread_name("server");
+	srand(time(NULL));
 
 	SDL_Event event = {
 		.user.type = SDL_USEREVENT_SERVER,
@@ -148,6 +149,7 @@ static int net_server_accept(net_t *net) {
 	if (net == NULL)
 		return -1;
 	lt_log_set_thread_name("server-accept");
+	srand(time(NULL));
 
 	while (1) {
 		net_err_t ret = net_pkt_recv(&net->endpoint);
