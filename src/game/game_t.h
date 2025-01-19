@@ -46,12 +46,9 @@ typedef struct game_t {
 	// game and match state
 	game_state_t state;			 //!< Current game state
 	unsigned long long start_at; //!< Round start timestamp
-	unsigned int start_in;		 //!< Round start counter
-	unsigned int time;			 //!< Game time (ticks)
+	unsigned int start_in;		 //!< Round start countdown (seconds)
 	unsigned int round;			 //!< Round number, 1..15
 	unsigned int lap;			 //!< Lap number, 1..4
-	bool update_state;			 //!< Whether to update game state (lap, etc.)
-	bool update_redraw_players;	 //!< Whether to redraw all players
 
 	struct game_t *prev, *next;
 } game_t;

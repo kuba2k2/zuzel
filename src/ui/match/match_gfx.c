@@ -71,5 +71,35 @@ void match_gfx_player_draw(SDL_Renderer *renderer, player_t *player) {
 }
 
 void match_gfx_player_draw_step(SDL_Renderer *renderer, player_t *player) {
-	match_gfx_player_draw(renderer, player);
+	if (player->state == PLAYER_PLAYING) {
+		// draw the head
+		gfx_set_color(renderer, player->color);
+		gfx_draw_line(
+			renderer,
+			(int)round(player->pos[1].x),
+			(int)round(player->pos[1].y),
+			(int)round(player->pos[0].x),
+			(int)round(player->pos[0].y),
+			3
+		);
+	}
+	if (player->state == PLAYER_IDLE)
+		return;
+	if (player->pos[0].x == player->pos[PLAYER_POS_NUM - 2].x && player->pos[0].y == player->pos[PLAYER_POS_NUM - 2].y)
+		return;
+	if (player->pos[PLAYER_POS_NUM - 1].x == player->pos[PLAYER_POS_NUM - 2].x &&
+		player->pos[PLAYER_POS_NUM - 1].y == player->pos[PLAYER_POS_NUM - 2].y)
+		return;
+	// erase the tail
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+	gfx_draw_line(
+		renderer,
+		(int)round(player->pos[PLAYER_POS_NUM - 1].x),
+		(int)round(player->pos[PLAYER_POS_NUM - 1].y),
+		(int)round(player->pos[PLAYER_POS_NUM - 2].x),
+		(int)round(player->pos[PLAYER_POS_NUM - 2].y),
+		3
+	);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 }

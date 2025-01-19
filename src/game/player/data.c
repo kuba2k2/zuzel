@@ -65,6 +65,7 @@ void player_fill_data_pkt(game_t *game, player_t *player, pkt_player_data_t *pkt
 }
 
 void player_reset_round(game_t *game) {
+	BUILD_BUG_ON(PLAYER_POS_NUM < 20);
 	player_t *player, *player_0 = NULL, *player_1 = NULL;
 	int player_count = 0;
 	DL_FOREACH(game->players, player) {
@@ -119,7 +120,7 @@ void player_reset_round(game_t *game) {
 			player->pos[i]	 = player->pos[0];
 			player->pos[i].x = 320 - (i + 1);
 		}
-		for (int i = 20; i < 100; i++) {
+		for (int i = 20; i < PLAYER_POS_NUM; i++) {
 			player->pos[i]	 = player->pos[0];
 			player->pos[i].x = 300;
 		}

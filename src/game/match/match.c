@@ -62,7 +62,6 @@ static int match_run(game_t *game) {
 	SDL_WITH_MUTEX(game->mutex) {
 		// initialize match state and clear player data
 		game->delay = speed_to_delay[game->speed];
-		game->time	= 0;
 		game->lap	= 1;
 		// reset player's data, set as PLAYING
 		player_reset_round(game);
@@ -156,7 +155,8 @@ static int match_run(game_t *game) {
 	uint64_t perf_ui_next	 = perf_cur + perf_ui_delay;
 
 	// run the main game loop
-	bool playing = false;
+	bool playing			= false;
+	bool match_update_state = false;
 	do {
 		// process all players
 		SDL_WITH_MUTEX(game->mutex) {
@@ -166,8 +166,12 @@ static int match_run(game_t *game) {
 				if ((player->state & PLAYER_IN_MATCH_MASK) == 0)
 					continue;
 				SDL_WITH_MUTEX(player->mutex) {
-					if (player_loop(player))
-						game->update_redraw_players = true;
+					if (player_loop(player)) {
+						// player state changed (lap advanced, crashed, finished, etc.)
+						match_update_state = true;
+						// save the leading player's lap number
+						game->lap = max(game->lap, player->lap);
+					}
 					if (player->state == PLAYER_PLAYING)
 						playing = true;
 				}
@@ -177,12 +181,12 @@ static int match_run(game_t *game) {
 		// client: update the UI
 		perf_cur = SDL_GetPerformanceCounter();
 		if (!game->is_server && perf_cur >= perf_ui_next) {
-			if (game->update_state)
+			if (match_update_state) {
 				match_send_sdl_event(game, MATCH_UPDATE_STATE);
-			if (game->update_redraw_players)
-				match_send_sdl_event(game, MATCH_UPDATE_REDRAW_ALL);
-			else
+				match_update_state = false;
+			} else {
 				match_send_sdl_event(game, MATCH_UPDATE_STEP_PLAYERS);
+			}
 			perf_ui_next += perf_ui_delay;
 		}
 

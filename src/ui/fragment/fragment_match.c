@@ -218,6 +218,7 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					return true;
 				case MATCH_UPDATE_STATE:
 					match_update_state(ui);
+					match_update_step_players(ui);
 					return true;
 				case MATCH_UPDATE_STEP_PLAYERS:
 					match_update_step_players(ui);
