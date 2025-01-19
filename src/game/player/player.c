@@ -46,8 +46,11 @@ void player_free(player_t *player) {
  * @return whether positions were shifted
  */
 bool player_position_shift(player_t *player) {
-	if (player->pos[PLAYER_POS_NUM - 1].x == player->pos[0].x && player->pos[PLAYER_POS_NUM - 1].y == player->pos[0].y)
+	if (player->pos[PLAYER_POS_NUM - 1].x == player->pos[0].x &&
+		player->pos[PLAYER_POS_NUM - 1].y == player->pos[0].y) {
+		player->is_in_round = false;
 		return false;
+	}
 	memmove(&player->pos[1], &player->pos[0], sizeof(*player->pos) * (PLAYER_POS_NUM - 1));
 	return true;
 }
@@ -57,8 +60,10 @@ bool player_position_shift(player_t *player) {
  * The starting position is not modified, but used to calculate
  * all following positions (higher time/lower index).
  * 'start' must point to player->pos[1] through player->pos[PLAYER_POS_NUM-1].
+ * The player's state will be updated based on lap advancement and collision.
  */
-void player_position_calculate(player_t *player, player_pos_t *start) {
+bool player_position_calculate(player_t *player, player_pos_t *start) {
+	bool changed = false;
 	for (player_pos_t *next = start - 1; next >= player->pos; next--) {
 		player_pos_t *prev = next + 1;
 
@@ -79,9 +84,16 @@ void player_position_calculate(player_t *player, player_pos_t *start) {
 		double angle_rad = next->angle * M_PI / 180.0;
 		next->x			 = prev->x + cos(angle_rad) * next->speed;
 		next->y			 = prev->y - sin(angle_rad) * next->speed;
+		next->lap		 = prev->lap;
 		next->direction	 = prev->direction;
 		next->confirmed	 = player->is_local;
+
+		if (player_position_check_lap(player, prev, next))
+			changed = true;
+		else if (player_position_check_collision(player, next))
+			changed = true;
 	}
+	return changed;
 }
 
 /**
@@ -98,7 +110,7 @@ bool player_position_check_lap(player_t *player, player_pos_t *prev, player_pos_
 
 	// check if the player finishes a lap
 	if (prev->x <= 319.0 && next->x > 319.0) {
-		if (player->lap == 4) {
+		if (prev->lap == 4) {
 			player->state = PLAYER_FINISHED;
 			LT_I("Player: #%u finished the race @ %u", player->id, next->time);
 			return true;
@@ -108,8 +120,8 @@ bool player_position_check_lap(player_t *player, player_pos_t *prev, player_pos_
 			LT_I("Player: #%u tried to pass the finish line @ %u", player->id, next->time);
 			return true;
 		}
-		player->lap++;
-		LT_I("Player: #%u advanced to lap %d @ %u", player->id, player->lap, next->time);
+		next->lap = prev->lap + 1;
+		LT_I("Player: #%u advanced to lap %d @ %u", player->id, next->lap, next->time);
 		return true;
 	}
 	return false;
@@ -148,31 +160,49 @@ crash:
  * Apply the new direction to the player's position.
  * If 'time' points to any of the previous positions, recalculate.
  * Mark all positions older than 'time' as confirmed.
+ *
+ * @return whether the player positions have been recalculated
  */
-void player_position_remote_keypress(player_t *player, unsigned int time, player_pos_dir_t direction) {
+bool player_position_remote_keypress(player_t *player, unsigned int time, player_pos_dir_t direction) {
 	if (player->is_local)
 		// ignore key events for local players
-		return;
-	player_pos_t *modified_pos = NULL;
+		return false;
+	player_pos_t *player_pos = NULL;
+	bool redraw_player		 = false;
 
 	if (player->pos[0].time == time) {
 		// keypress time is in the latest player position, no need for recalculation
-		modified_pos			= &player->pos[0];
-		modified_pos->direction = direction;
+		player_pos			  = &player->pos[0];
+		player_pos->direction = direction;
 	} else {
 		// keypress time points to an older position, find it and recalculate all following positions
-		LT_I("Older position at %d", time);
+		for (int i = 1; i < PLAYER_POS_NUM; i++) {
+			if (player->pos[i].time != time)
+				continue;
+			player_pos = &player->pos[i];
+			break;
+		}
+		if (player_pos == NULL || player_pos->confirmed)
+			// position not found or already confirmed, nothing to do
+			return false;
+		// set the player's direction starting in the position at 'time'
+		player_pos->direction = direction;
+		// consider the player still alive
+		player->state = PLAYER_PLAYING;
+		// recalculate all positions following this one
+		// will also reassign player state
+		player_position_calculate(player, player_pos);
+		redraw_player = true;
 	}
 
-	if (modified_pos == NULL)
-		return;
-	modified_pos->confirmed = true;
+	player_pos->confirmed = true;
 	// mark all older positions as confirmed
-	while (++modified_pos < player->pos + PLAYER_POS_NUM) {
-		if (modified_pos->confirmed)
+	while (++player_pos < player->pos + PLAYER_POS_NUM) {
+		if (player_pos->confirmed)
 			break;
-		modified_pos->confirmed = true;
+		player_pos->confirmed = true;
 	}
+	return redraw_player;
 }
 
 bool player_loop(player_t *player) {
@@ -181,16 +211,9 @@ bool player_loop(player_t *player) {
 		return false;
 	bool changed = false;
 
-	player_pos_t *next = &player->pos[0];
-	player_pos_t *prev = &player->pos[1];
-
 	if (player->state == PLAYER_PLAYING) {
-		player_position_calculate(player, prev);
-		if (player_position_check_lap(player, prev, next))
-			changed = true;
-		else if (player_position_check_collision(player, next))
-			changed = true;
-		player->time = next->time;
+		changed		 = player_position_calculate(player, &player->pos[1]);
+		player->time = player->pos[0].time;
 	}
 
 	return changed;

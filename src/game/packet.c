@@ -287,7 +287,9 @@ static bool process_pkt_player_keypress(game_t *game, pkt_player_keypress_t *rec
 		return false;
 
 	SDL_WITH_MUTEX(player->mutex) {
-		player_position_remote_keypress(player, recv_pkt->time, recv_pkt->direction);
+		if (player_position_remote_keypress(player, recv_pkt->time, recv_pkt->direction))
+			// redraw the UI if needed
+			match_send_sdl_event(game, MATCH_UPDATE_REDRAW_PLAYERS);
 	}
 
 	// server: broadcast to other clients

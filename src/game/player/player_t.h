@@ -32,6 +32,7 @@ typedef struct player_pos_t {
 	double speed;		//!< Moving speed, 1.0..7.0
 	double x;			//!< Position X
 	double y;			//!< Position Y
+	unsigned int lap;	//!< Lap number, 1..4
 	int direction;		//!< Movement direction for the next position
 	bool confirmed;		//!< Whether the remote player's movement direction is confirmed
 } player_pos_t;
@@ -56,8 +57,8 @@ typedef struct player_t {
 	// round state, controlled by the match thread
 	unsigned int time;				  //!< Total playing time (ticks)
 	player_pos_t pos[PLAYER_POS_NUM]; //!< Position history
-	unsigned int lap;				  //!< Lap number, 1..4
 	bool lap_can_advance;			  //!< Whether the player moved through half a lap
+	bool is_in_round;				  //!< Whether the player is playing in this round (not crashed, not finished)
 
 	// scores, controlled by the match thread
 	int round_points; //!< Points in the current round

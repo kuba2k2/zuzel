@@ -106,14 +106,15 @@ void player_reset_round(game_t *game) {
 			continue;
 		// reset player data
 		player->state			= PLAYER_PLAYING;
-		player->lap				= 1;
 		player->lap_can_advance = false;
+		player->is_in_round		= true;
 		player->round_points	= 0;
 		// reset all player positions
 		player->pos[0].time		 = 0;
 		player->pos[0].angle	 = 0;
 		player->pos[0].speed	 = 1.0;
 		player->pos[0].x		 = 320.0;
+		player->pos[0].lap		 = 1;
 		player->pos[0].direction = PLAYER_POS_FORWARD;
 		player->pos[0].confirmed = true;
 		for (int i = 1; i < 20; i++) {

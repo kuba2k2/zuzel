@@ -16,7 +16,7 @@ static bool first_draw = false;
 
 static void match_update_redraw_all(ui_t *ui);
 static void match_update_state(ui_t *ui);
-static void match_update_step_players(ui_t *ui);
+static void match_update_players(ui_t *ui, bool redraw);
 static void on_draw(SDL_Renderer *renderer, view_t *canvas);
 static void on_error(ui_t *ui);
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e);
@@ -94,7 +94,7 @@ static void match_update_state(ui_t *ui) {
 	ui->force_layout = true;
 }
 
-static void match_update_step_players(ui_t *ui) {
+static void match_update_players(ui_t *ui, bool redraw) {
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {
@@ -102,7 +102,10 @@ static void match_update_step_players(ui_t *ui) {
 				continue;
 			SDL_WITH_MUTEX(player->mutex) {
 				SDL_SetRenderTarget(ui->renderer, player->texture);
-				match_gfx_player_draw_step(ui->renderer, player);
+				if (redraw)
+					match_gfx_player_draw(ui->renderer, player);
+				else
+					match_gfx_player_draw_step(ui->renderer, player);
 			}
 		}
 	}
@@ -241,10 +244,13 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					return true;
 				case MATCH_UPDATE_STATE:
 					match_update_state(ui);
-					match_update_step_players(ui);
+					match_update_players(ui, false);
 					return true;
 				case MATCH_UPDATE_STEP_PLAYERS:
-					match_update_step_players(ui);
+					match_update_players(ui, false);
+					return true;
+				case MATCH_UPDATE_REDRAW_PLAYERS:
+					match_update_players(ui, true);
 					return true;
 			}
 			return false;

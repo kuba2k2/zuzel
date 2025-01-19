@@ -155,25 +155,25 @@ static int match_run(game_t *game) {
 	uint64_t perf_ui_next	 = perf_cur + perf_ui_delay;
 
 	// run the main game loop
-	bool playing			= false;
+	bool any_in_round		= false;
 	bool match_update_state = false;
 	do {
 		// process all players
 		SDL_WITH_MUTEX(game->mutex) {
 			player_t *player;
-			playing = false;
+			any_in_round = false;
 			DL_FOREACH(game->players, player) {
-				if ((player->state & PLAYER_IN_MATCH_MASK) == 0)
+				if (!player->is_in_round)
 					continue;
 				SDL_WITH_MUTEX(player->mutex) {
 					if (player_loop(player)) {
 						// player state changed (lap advanced, crashed, finished, etc.)
 						match_update_state = true;
 						// save the leading player's lap number
-						game->lap = max(game->lap, player->lap);
+						game->lap = max(game->lap, player->pos[0].lap);
 					}
-					if (player->state == PLAYER_PLAYING)
-						playing = true;
+					if (player->is_in_round)
+						any_in_round = true;
 				}
 			}
 		}
@@ -198,7 +198,7 @@ static int match_run(game_t *game) {
 		}
 		// increment the next loop timestamp
 		perf_loop_next += perf_loop_delay;
-	} while (playing);
+	} while (any_in_round);
 
 	game->state = GAME_FINISHED;
 

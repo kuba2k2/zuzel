@@ -15,4 +15,5 @@ enum {
 	MATCH_UPDATE_REDRAW_ALL = 1, //!< Redraw the board and all players
 	MATCH_UPDATE_STATE,			 //!< Present the game state
 	MATCH_UPDATE_STEP_PLAYERS,	 //!< Draw the players' heads, erase tails
+	MATCH_UPDATE_REDRAW_PLAYERS, //!< Redraw all players
 };
