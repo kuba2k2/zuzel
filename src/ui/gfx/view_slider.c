@@ -136,7 +136,7 @@ static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e, void *param) 
 			// capture all events if mouse grabs the button
 			slider->in_event = true;
 			// save the X position
-			x = e->button.x - slider->rect.x;
+			x = e->button.x / SETTINGS->screen.scale;
 			break;
 
 		case SDL_MOUSEBUTTONUP:
@@ -148,7 +148,7 @@ static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e, void *param) 
 			if (!slider->in_event)
 				return false;
 			// save the X position
-			x = e->motion.x - slider->rect.x;
+			x = e->motion.x / SETTINGS->screen.scale;
 			break;
 
 		default:
@@ -156,6 +156,7 @@ static bool gfx_view_on_event_slider(view_t *slider, SDL_Event *e, void *param) 
 	}
 
 	if (x != 0) {
+		x -= slider->rect.x;
 		int range = max - min;
 		value	  = round((double)(x * range) / (slider->rect.w - 8));
 		value += min;

@@ -207,8 +207,8 @@ static bool gfx_view_on_key_down(view_t *views, view_t *focused, SDL_Event *e) {
 }
 
 static bool gfx_view_on_mouse_motion(view_t *views, view_t *focused, SDL_Event *e) {
-	int x = e->motion.x;
-	int y = e->motion.y;
+	int x = e->motion.x / SETTINGS->screen.scale;
+	int y = e->motion.y / SETTINGS->screen.scale;
 
 	view_t *focusable = NULL;
 	view_t *view	  = views;

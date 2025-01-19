@@ -136,7 +136,9 @@ static void gfx_view_draw_input(SDL_Renderer *renderer, view_t *input) {
 
 static bool gfx_view_on_event_input(view_t *input, SDL_Event *e, void *param) {
 	if (e->type == SDL_MOUSEBUTTONDOWN) {
-		if (GFX_VIEW_IN_BOX(input, e->button.x, e->button.y)) {
+		int x = e->motion.x / SETTINGS->screen.scale;
+		int y = e->motion.y / SETTINGS->screen.scale;
+		if (GFX_VIEW_IN_BOX(input, x, y)) {
 			// start capturing events on click inside the input
 			input->in_event		  = true;
 			input->data.input.pos = strlen(input->data.input.value);
