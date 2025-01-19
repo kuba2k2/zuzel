@@ -4,6 +4,11 @@
 
 #include "font_res.h"
 
+static bool fps_show			   = false;
+static unsigned long long fps_last = 0;
+static int fps_delays[50]		   = {0};
+static int fps_index			   = 0;
+
 ui_t *ui_init(SDL_Renderer *renderer) {
 	ui_t *ui;
 	MALLOC(ui, sizeof(*ui), return NULL);
@@ -62,6 +67,33 @@ int ui_run(ui_t *ui) {
 			ui->force_layout = false;
 			gfx_view_draw(ui->renderer, fragment->views);
 		}
+
+		if (fps_show) {
+			unsigned long long now = millis();
+			if (fps_last != 0) {
+				fps_delays[fps_index++] = now - fps_last;
+				if (fps_index >= sizeof(fps_delays) / sizeof(*fps_delays))
+					fps_index = 0;
+			}
+			fps_last	= now;
+			int fps_sum = 0;
+			int fps_cnt = 0;
+			for (int i = 0; i < sizeof(fps_delays) / sizeof(*fps_delays); i++) {
+				if (fps_delays[i] == 0)
+					continue;
+				fps_sum += fps_delays[i];
+				fps_cnt += 1;
+			}
+			if (fps_cnt != 0) {
+				int fps = 1000 * fps_cnt / fps_sum;
+				char buf[12];
+				snprintf(buf, sizeof(buf), "%u fps", fps);
+				gfx_set_color(ui->renderer, GFX_COLOR_BRIGHT_WHITE);
+				gfx_set_text_style(0, 4, GFX_ALIGN_DEFAULT);
+				gfx_draw_text(ui->renderer, 2, 2, buf);
+			}
+		}
+
 		SDL_RenderPresent(ui->renderer);
 
 		SDL_Event e;
@@ -73,6 +105,8 @@ int ui_run(ui_t *ui) {
 			case SDL_KEYUP:
 				if (e.key.keysym.sym == SDLK_F1)
 					gfx_view_bounding_box = !gfx_view_bounding_box;
+				else if (e.key.keysym.sym == SDLK_F3)
+					fps_show = !fps_show;
 				else if (e.key.keysym.sym == SDLK_F5)
 					prev_fragment = NULL, fragment_reload(fragment, ui);
 				else if (e.key.keysym.sym == SDLK_F10)
