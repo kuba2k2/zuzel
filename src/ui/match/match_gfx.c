@@ -71,6 +71,8 @@ void match_gfx_player_draw(SDL_Renderer *renderer, player_t *player) {
 }
 
 void match_gfx_player_draw_step(SDL_Renderer *renderer, player_t *player) {
+	match_gfx_player_draw(renderer, player);
+	return;
 	if (player->state == PLAYER_PLAYING) {
 		// draw the head
 		gfx_set_color(renderer, player->color);
