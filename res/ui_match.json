@@ -18,7 +18,7 @@
 		}
 	},
 	{
-		"id": "text_info",
+		"id": "match_info",
 		"type": "text",
 		"mt": 3,
 		"gravity": "center",
@@ -55,5 +55,44 @@
 				}
 			}
 		]
+	},
+	{
+		"id": "player_state",
+		"type": "text",
+		"gravity": "center_horizontal",
+		"mt": 10,
+		"text": {
+			"text": "You crashed!",
+			"color": "#FF5555",
+			"size": 4,
+			"font": 1
+		}
+	},
+	{
+		"id": "ready_info",
+		"type": "text",
+		"gravity": "bottom|center_horizontal",
+		"mb": 10,
+		"text": {
+			"text": "Ready for the next round?\nPress <ENTER>",
+			"color": "#55FF55",
+			"size": 4,
+			"font": 1,
+			"align": "center"
+		}
+	},
+	{
+		"id": "btn_player",
+		"type": "button",
+		"w": "match_parent",
+		"h": "match_parent",
+		"is_invisible": true,
+		"text": {
+			"text": "Player",
+			"size": 6,
+			"font": 1
+		},
+		"is_flat": true,
+		"on_press": "on_btn_player"
 	}
 ]

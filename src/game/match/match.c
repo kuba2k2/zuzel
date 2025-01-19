@@ -69,6 +69,7 @@ static int match_run(game_t *game) {
 	}
 
 	// make the UI redraw everything
+	game->state = GAME_STARTING;
 	match_send_sdl_event(game, MATCH_UPDATE_REDRAW_ALL);
 
 	unsigned long long start_at = 0;

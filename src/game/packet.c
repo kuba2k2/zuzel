@@ -365,6 +365,8 @@ static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t 
 			pkt.is_local = updated_player->endpoint == endpoint;
 			net_pkt_send(endpoint, (pkt_t *)&pkt);
 		}
+		// post the ready state semaphore
+		SDL_SemPost(game->ready_sem);
 	} else if (recv_pkt->updated_player != 0) {
 		pkt_player_leave_t pkt = {
 			.hdr.type = PKT_PLAYER_LEAVE,

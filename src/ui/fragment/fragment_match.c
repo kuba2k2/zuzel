@@ -8,14 +8,18 @@
 
 static view_t *canvas		 = NULL;
 static view_t *text_top		 = NULL;
-static view_t *text_info	 = NULL;
+static view_t *match_info	 = NULL;
 static view_t *players_title = NULL;
 static view_t *players_list	 = NULL;
+static view_t *player_state	 = NULL;
+static view_t *ready_info	 = NULL;
+static view_t *btn_player	 = NULL;
 
 static bool first_draw = false;
 
 static void match_update_redraw_all(ui_t *ui);
 static void match_update_state(ui_t *ui);
+static void match_update_player_state(ui_t *ui);
 static void match_update_players(ui_t *ui, bool redraw);
 static void on_draw(SDL_Renderer *renderer, view_t *canvas);
 static void on_error(ui_t *ui);
@@ -29,9 +33,12 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 
 	GFX_VIEW_BIND(fragment->views, canvas, goto error);
 	GFX_VIEW_BIND(fragment->views, text_top, goto error);
-	GFX_VIEW_BIND(fragment->views, text_info, goto error);
+	GFX_VIEW_BIND(fragment->views, match_info, goto error);
 	GFX_VIEW_BIND(fragment->views, players_title, goto error);
 	GFX_VIEW_BIND(fragment->views, players_list, goto error);
+	GFX_VIEW_BIND(fragment->views, player_state, goto error);
+	GFX_VIEW_BIND(fragment->views, ready_info, goto error);
+	GFX_VIEW_BIND(fragment->views, btn_player, goto error);
 
 	first_draw	 = true;
 	canvas->draw = on_draw;
@@ -47,6 +54,7 @@ static void match_update_redraw_all(ui_t *ui) {
 	SDL_SetRenderTarget(ui->renderer, canvas->data.canvas.texture);
 	match_gfx_board_draw(ui->renderer);
 	match_update_state(ui);
+	match_update_player_state(ui);
 
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
@@ -67,30 +75,97 @@ static void match_update_state(ui_t *ui) {
 	SDL_SetRenderTarget(ui->renderer, canvas->data.canvas.texture);
 	match_gfx_gates_draw(ui->renderer, GAME->state < GAME_PLAYING);
 	// update texts
-	text_top->is_gone	   = true;
-	text_info->is_gone	   = true;
-	players_title->is_gone = true;
-	players_list->is_gone  = true;
+	text_top->is_gone			= true;
+	match_info->is_gone			= true;
+	players_title->is_gone		= true;
+	players_list->is_gone		= true;
+	match_info->data.text.color = GFX_COLOR_BRIGHT_YELLOW;
 	char buf[32];
 	switch (GAME->state) {
 		case GAME_IDLE:
 		case GAME_STARTING:
+			match_info->is_gone			= false;
+			match_info->data.text.color = GFX_COLOR_BRIGHT_BLACK;
+			gfx_view_set_text(match_info, "Starting...");
 			break;
 		case GAME_COUNTING:
-			text_info->is_gone = false;
+			match_info->is_gone = false;
 			sprintf(buf, "Starting in %d...", GAME->start_in);
-			gfx_view_set_text(text_info, buf);
+			gfx_view_set_text(match_info, buf);
 			break;
 		case GAME_PLAYING:
-			text_info->is_gone = false;
+			match_info->is_gone = false;
 			sprintf(buf, "Round %d. Lap: %d", GAME->round, GAME->lap);
-			gfx_view_set_text(text_info, buf);
+			gfx_view_set_text(match_info, buf);
 			break;
 		case GAME_FINISHED:
 			players_title->is_gone = false;
 			players_list->is_gone  = false;
 			break;
 	}
+	ui->force_layout = true;
+}
+
+static void match_update_player_state(ui_t *ui) {
+	// update texts
+	player_state->is_gone = true;
+	ready_info->is_gone	  = true;
+	btn_player->is_gone	  = true;
+
+	player_t *local_player;
+	int players_count	 = 0;
+	int players_in_round = 0;
+	int players_ready	 = 0;
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			if ((player->state & PLAYER_IN_GAME_MASK) == 0)
+				continue;
+			players_count++;
+			if (player->is_in_round)
+				players_in_round++;
+			if (player->state == PLAYER_READY)
+				players_ready++;
+			if (player->is_local)
+				local_player = player;
+		}
+	}
+	if (local_player == NULL)
+		return;
+	if (local_player->state == PLAYER_PLAYING)
+		// no texts if we're still alive
+		return;
+
+	if (local_player->state == PLAYER_CRASHED) {
+		gfx_view_set_text(player_state, "You crashed!");
+		player_state->data.text.color = GFX_COLOR_BRIGHT_RED;
+		player_state->is_gone		  = false;
+	} else if (local_player->state == PLAYER_FINISHED) {
+		gfx_view_set_text(player_state, "You finished!");
+		player_state->data.text.color = GFX_COLOR_BRIGHT_GREEN;
+		player_state->is_gone		  = false;
+	}
+
+	char buf[64];
+	if (local_player->state != PLAYER_READY) {
+		gfx_view_set_text(ready_info, "Ready for the next round?\nPress <ENTER>");
+		ready_info->data.text.color = GFX_COLOR_BRIGHT_GREEN;
+		ready_info->is_gone			= false;
+		// activate the ready button
+		btn_player->is_gone	   = false;
+		btn_player->is_focused = true;
+	} else if (players_in_round) {
+		sprintf(buf, "%d player(s)\nstill playing.", players_in_round);
+		gfx_view_set_text(ready_info, buf);
+		ready_info->data.text.color = GFX_COLOR_BRIGHT_BLACK;
+		ready_info->is_gone			= false;
+	} else if (players_ready != players_count) {
+		sprintf(buf, "%d player(s)\nnot ready yet!", players_count - players_ready);
+		gfx_view_set_text(ready_info, buf);
+		ready_info->data.text.color = GFX_COLOR_WHITE;
+		ready_info->is_gone			= false;
+	}
+
 	ui->force_layout = true;
 }
 
@@ -207,6 +282,24 @@ static bool on_key_event(ui_t *ui, SDL_Scancode key, bool pressed) {
 	return true;
 }
 
+static bool on_btn_player(view_t *view, SDL_Event *e, ui_t *ui) {
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			if (!player->is_local)
+				continue;
+			player->state = PLAYER_READY;
+			game_request_send_update(GAME, false, player->id);
+			// deactivate the ready button
+			btn_player->is_gone	   = true;
+			btn_player->is_focused = false;
+			// update UI state
+			match_update_player_state(ui);
+		}
+	}
+	return false;
+}
+
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	pkt_t *pkt = NULL;
 	switch (e->type) {
@@ -244,12 +337,14 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					return true;
 				case MATCH_UPDATE_STATE:
 					match_update_state(ui);
+					match_update_player_state(ui);
 					match_update_players(ui, false);
 					return true;
 				case MATCH_UPDATE_STEP_PLAYERS:
 					match_update_players(ui, false);
 					return true;
 				case MATCH_UPDATE_REDRAW_PLAYERS:
+					match_update_player_state(ui);
 					match_update_players(ui, true);
 					return true;
 			}
@@ -259,6 +354,7 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 }
 
 static const view_inflate_on_event_t inflate_on_event[] = {
+	GFX_VIEW_ON_EVENT(on_btn_player),
 	GFX_VIEW_ON_EVENT_END(),
 };
 

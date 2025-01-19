@@ -362,6 +362,9 @@ static bool on_btn_ready(view_t *view, SDL_Event *e, ui_t *ui) {
 				continue;
 			player->state = PLAYER_READY;
 			game_request_send_update(GAME, false, player->id);
+			// post the ready state semaphore
+			SDL_SemPost(GAME->ready_sem);
+			// update UI state
 			ui_update_player(ui, player);
 			ui_update_status(ui);
 		}

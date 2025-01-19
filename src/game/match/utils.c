@@ -24,7 +24,7 @@ bool match_wait_ready(game_t *game) {
 		return true;
 	LT_I("Match (round %u): players are not ready", game->round);
 	do {
-		SDL_SemWait(game->ready_sem);
+		SDL_SemWaitTimeout(game->ready_sem, 500);
 	} while (!match_check_ready(game));
 	return true;
 }
