@@ -11,6 +11,7 @@ static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_e
 static bool process_pkt_game_start_round(game_t *game, pkt_game_start_round_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_new(game_t *game, pkt_player_new_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, net_endpoint_t *source);
+static bool process_pkt_player_keypress(game_t *game, pkt_player_keypress_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_request_send_data(game_t *game, pkt_request_send_data_t *recv_pkt, net_endpoint_t *source);
 static bool process_pkt_request_time_sync(game_t *game, pkt_request_time_sync_t *recv_pkt, net_endpoint_t *source);
@@ -30,7 +31,7 @@ const game_process_t process_list[] = {
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LIST
 	(game_process_t)process_pkt_player_new,		   // PKT_PLAYER_NEW
 	(game_process_t)process_pkt_player_data,	   // PKT_PLAYER_DATA
-	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_KEYPRESS
+	(game_process_t)process_pkt_player_keypress,   // PKT_PLAYER_KEYPRESS
 	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_UPDATE
 	(game_process_t)process_pkt_player_leave,	   // PKT_PLAYER_LEAVE
 	(game_process_t)process_pkt_request_send_data, // PKT_REQUEST_SEND_DATA
@@ -267,6 +268,30 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 	SDL_SemPost(game->ready_sem);
 
 	return true;
+}
+
+static bool process_pkt_player_keypress(game_t *game, pkt_player_keypress_t *recv_pkt, net_endpoint_t *source) {
+	if (game->state == GAME_IDLE)
+		// game is not running
+		return false;
+	if (!game->is_server && source->type == NET_ENDPOINT_PIPE)
+		// client: send packet to other endpoint
+		return true;
+
+	// find the associated player
+	player_t *player = NULL;
+	SDL_WITH_MUTEX(game->mutex) {
+		player = get_player_with_endpoint(game, recv_pkt->id, source);
+	}
+	if (player == NULL)
+		return false;
+
+	SDL_WITH_MUTEX(player->mutex) {
+		player_position_remote_keypress(player, recv_pkt->time, recv_pkt->direction);
+	}
+
+	// server: broadcast to other clients
+	return game->is_server;
 }
 
 static bool process_pkt_player_leave(game_t *game, pkt_player_leave_t *recv_pkt, net_endpoint_t *source) {

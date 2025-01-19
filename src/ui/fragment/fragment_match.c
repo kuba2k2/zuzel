@@ -164,21 +164,44 @@ static void on_error(ui_t *ui) {
 }
 
 static bool on_key_event(ui_t *ui, SDL_Scancode key, bool pressed) {
-	bool found = false;
+	unsigned int player_id			  = 0;
+	unsigned int player_time		  = 0;
+	player_pos_dir_t player_direction = 0;
+
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {
 			if (!player->is_local || player->state != PLAYER_PLAYING || player->turn_key != key)
 				continue;
-			found = true;
 			SDL_WITH_MUTEX(player->mutex) {
-				player->pos[0].direction = pressed ? PLAYER_POS_LEFT : PLAYER_POS_FORWARD;
-				player->pos[0].confirmed = true;
+				player_id		 = player->id;
+				player_direction = pressed ? PLAYER_POS_LEFT : PLAYER_POS_FORWARD;
+				player_time		 = player->pos[0].time;
+				if (player->pos[0].direction != player_direction) {
+					// direction changed, assign to the local player
+					player->pos[0].direction = player_direction;
+					player->pos[0].confirmed = true;
+				} else {
+					// direction unchanged, avoid sending keypress packets
+					player_id = 0;
+				}
 			}
 			break;
 		}
 	}
-	return found;
+	// local player with this turn_key not found
+	// or their direction has not changed
+	if (player_id == 0)
+		return false;
+	// send player keypress packet to server
+	pkt_player_keypress_t pkt = {
+		.hdr.type  = PKT_PLAYER_KEYPRESS,
+		.id		   = player_id,
+		.time	   = player_time,
+		.direction = player_direction,
+	};
+	net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
+	return true;
 }
 
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {

@@ -143,6 +143,38 @@ crash:
 	return true;
 }
 
+/**
+ * Process a keypress event from a remote player.
+ * Apply the new direction to the player's position.
+ * If 'time' points to any of the previous positions, recalculate.
+ * Mark all positions older than 'time' as confirmed.
+ */
+void player_position_remote_keypress(player_t *player, unsigned int time, player_pos_dir_t direction) {
+	if (player->is_local)
+		// ignore key events for local players
+		return;
+	player_pos_t *modified_pos = NULL;
+
+	if (player->pos[0].time == time) {
+		// keypress time is in the latest player position, no need for recalculation
+		modified_pos			= &player->pos[0];
+		modified_pos->direction = direction;
+	} else {
+		// keypress time points to an older position, find it and recalculate all following positions
+		LT_I("Older position at %d", time);
+	}
+
+	if (modified_pos == NULL)
+		return;
+	modified_pos->confirmed = true;
+	// mark all older positions as confirmed
+	while (++modified_pos < player->pos + PLAYER_POS_NUM) {
+		if (modified_pos->confirmed)
+			break;
+		modified_pos->confirmed = true;
+	}
+}
+
 bool player_loop(player_t *player) {
 	if (!player_position_shift(player))
 		// position unchanged - player is already gone
