@@ -3,7 +3,7 @@
 #include "match.h"
 
 static int match_thread(game_t *game);
-static int match_run(game_t *game);
+static void match_run(game_t *game);
 
 static const unsigned int ping_timeout		= 2000;
 static const unsigned int speed_to_delay[9] = {40, 32, 25, 17, 11, 7, 4, 2, 0};
@@ -72,7 +72,7 @@ static int match_thread(game_t *game) {
 	return 0;
 }
 
-static int match_run(game_t *game) {
+static void match_run(game_t *game) {
 	LT_I("Match (round %u): initializing round", game->round);
 
 	SDL_WITH_MUTEX(game->mutex) {
@@ -122,12 +122,13 @@ static int match_run(game_t *game) {
 				net_endpoint_close(endpoint);
 			}
 			if (game->match_stop)
-				return 0;
+				return;
 		}
 
 		if (endpoints_ok == 0) {
 			LT_W("Match (round %u): no endpoints responded! Stopping the thread", game->round);
-			return 1;
+			game->match_stop = true;
+			return;
 		}
 
 		LT_I("Match (round %u): all clients' ping check finished", game->round);
@@ -149,7 +150,7 @@ static int match_run(game_t *game) {
 		// client: wait for 'start_at' packet from server
 		SDL_SemWait(game->start_at_sem);
 		if (game->match_stop)
-			return 0;
+			return;
 		count_at = game->count_at;
 		start_at = game->start_at;
 	}
@@ -160,7 +161,7 @@ static int match_run(game_t *game) {
 	if (count_at > local_time) {
 		SDL_Delay(count_at - local_time);
 		if (game->match_stop)
-			return 0;
+			return;
 	} else {
 		LT_W("Match (round %u): system clock is behind count_at time!", game->round);
 	}
@@ -181,7 +182,7 @@ static int match_run(game_t *game) {
 		int to_start = start_at - local_time;
 		SDL_Delay(min(to_start, 1000));
 		if (game->match_stop)
-			return 0;
+			return;
 	} while (--game->start_in);
 
 	// wait until the synchronized match start
@@ -190,7 +191,7 @@ static int match_run(game_t *game) {
 	if (start_at > local_time) {
 		SDL_Delay(start_at - local_time);
 		if (game->match_stop)
-			return 0;
+			return;
 	} else {
 		LT_W("Match (round %u): system clock is behind start_at time!", game->round);
 	}
@@ -262,6 +263,4 @@ static int match_run(game_t *game) {
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 
 	LT_I("Match (round %u): finished", game->round);
-
-	return 0;
 }

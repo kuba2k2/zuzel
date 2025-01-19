@@ -8,11 +8,12 @@ bool match_check_ready(game_t *game) {
 	player_t *player;
 	SDL_WITH_MUTEX(game->mutex) {
 		DL_FOREACH(game->players, player) {
-			if (player->state == PLAYER_SPECTATING || player->state == PLAYER_DISCONNECTED)
+			if (player->state == PLAYER_SPECTATING)
 				// ignore spectating and disconnected players - they can't set READY
 				continue;
 			players_count++;
-			if (player->state == PLAYER_READY || player->state == PLAYER_PLAYING)
+			if (player->state == PLAYER_READY || player->state == PLAYER_PLAYING ||
+				player->state == PLAYER_DISCONNECTED)
 				ready_count++;
 		}
 	}
