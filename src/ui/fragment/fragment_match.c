@@ -148,7 +148,10 @@ static void match_update_player_state(ui_t *ui) {
 
 	char buf[64];
 	if (local_player->state != PLAYER_READY) {
-		gfx_view_set_text(ready_info, "Ready for the next round?\nPress <ENTER>");
+		if (GAME->round > GAME->rounds || (GAME->round == GAME->rounds && players_in_round))
+			gfx_view_set_text(ready_info, "Game finished. To go back,\npress <ENTER>");
+		else
+			gfx_view_set_text(ready_info, "Ready for the next round?\nPress <ENTER>");
 		ready_info->data.text.color = GFX_COLOR_BRIGHT_GREEN;
 		ready_info->is_gone			= false;
 		// activate the ready button
@@ -160,7 +163,10 @@ static void match_update_player_state(ui_t *ui) {
 		ready_info->data.text.color = GFX_COLOR_BRIGHT_BLACK;
 		ready_info->is_gone			= false;
 	} else if (players_ready != players_count) {
-		sprintf(buf, "%d player(s)\nnot ready yet!", players_count - players_ready);
+		if (GAME->round > GAME->rounds)
+			sprintf(buf, "Waiting for\n%d player(s)...", players_count - players_ready);
+		else
+			sprintf(buf, "%d player(s)\nnot ready yet!", players_count - players_ready);
 		gfx_view_set_text(ready_info, buf);
 		ready_info->data.text.color = GFX_COLOR_WHITE;
 		ready_info->is_gone			= false;

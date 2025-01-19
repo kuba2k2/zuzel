@@ -54,7 +54,7 @@ static int match_thread(game_t *game) {
 		player->match_points = 0;
 	}
 
-	for (game->round = 1; game->round <= 15 && !game->match_stop;) {
+	for (game->round = 1; game->round <= game->rounds && !game->match_stop;) {
 		match_run(game);
 		game->round++;
 		match_wait_ready(game);

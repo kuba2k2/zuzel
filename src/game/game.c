@@ -23,6 +23,7 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 		game->is_public = false;
 		game->speed		= SETTINGS->game_speed;
 		game->state		= GAME_IDLE;
+		game->rounds	= 15;
 
 		if (pkt_data == NULL) {
 			// new game created, set the server's default options
