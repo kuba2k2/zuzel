@@ -317,6 +317,10 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 			game_request_send_update(GAME, true, 0);
 			ui_update_game(ui);
 			ui_update_status(ui);
+			// save to settings
+			FREE_NULL(SETTINGS->game_name);
+			SETTINGS->game_name = strdup(value);
+			settings_save();
 			break;
 
 		case DIALOG_GAME_QUIT:
@@ -336,6 +340,10 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 			// update the UI
 			ui_update_player(ui, player);
 			ui_update_status(ui);
+			// save to settings
+			FREE_NULL(SETTINGS->player_name);
+			SETTINGS->player_name = strdup(value);
+			settings_save();
 			break;
 
 		case DIALOG_PLAYER_BAN: {
@@ -496,6 +504,11 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 					ui_update_status(ui);
 					break;
 				case PKT_GAME_START:
+					// save last game speed to settings
+					if (SETTINGS->game_speed != GAME->speed) {
+						SETTINGS->game_speed = GAME->speed;
+						settings_save();
+					}
 					ui_state_set(ui, UI_STATE_MATCH);
 					break;
 				case PKT_GAME_STOP:
