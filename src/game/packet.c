@@ -166,6 +166,7 @@ static bool process_pkt_game_start_round(game_t *game, pkt_game_start_round_t *r
 	}
 
 	// client: post start_at to match thread
+	game->count_at = recv_pkt->count_at;
 	game->start_at = recv_pkt->start_at;
 	SDL_SemPost(game->start_at_sem);
 	return false;

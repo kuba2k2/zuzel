@@ -72,7 +72,7 @@ static int match_run(game_t *game) {
 	game->state = GAME_STARTING;
 	match_send_sdl_event(game, MATCH_UPDATE_REDRAW_ALL);
 
-	unsigned long long start_at = 0;
+	unsigned long long count_at = 0, start_at = 0;
 
 	if (game->is_server) {
 		// server: ping all clients
@@ -89,11 +89,12 @@ static int match_run(game_t *game) {
 		game_request_time_sync(game);
 		// wait for all clients to report their RTT
 		int endpoints_ok = 0;
+		int max_rtt		 = 0;
 		DL_FOREACH_SAFE(game->endpoints, endpoint, tmp) {
 			if (endpoint->type == NET_ENDPOINT_PIPE)
 				continue;
 			if (SDL_SemWaitTimeout(endpoint->ping_sem, ping_timeout) == 0) {
-				start_at = max(start_at, endpoint->ping_rtt);
+				max_rtt = max(max_rtt, endpoint->ping_rtt);
 				endpoints_ok++;
 			} else {
 				// endpoint didn't respond, disconnect it
@@ -114,44 +115,65 @@ static int match_run(game_t *game) {
 
 		LT_I("Match (round %u): all clients' ping check finished", game->round);
 
-		// 'start_at' is the max RTT of the endpoints
-		// calculate the local timestamp based on that
-		start_at += millis();
+		// calculate the local timestamp based on max RTT of all endpoints
 		// add 100 ms (overhead)
-		start_at += 100;
+		count_at = millis() + max_rtt + 100;
+		// calculate the actual match start timestamp
+		// add the countdown timer
+		start_at = count_at + GAME_COUNTDOWN_SEC * 1000;
 		// send to clients
 		pkt_game_start_round_t pkt = {
 			.hdr.type = PKT_GAME_START_ROUND,
+			.count_at = count_at,
 			.start_at = start_at,
 		};
 		net_pkt_send_pipe(game->endpoints, (pkt_t *)&pkt);
 	} else {
 		// client: wait for 'start_at' packet from server
 		SDL_SemWait(game->start_at_sem);
+		count_at = game->count_at;
 		start_at = game->start_at;
 	}
 
-	LT_I("Match (round %u): starting at %llu...", game->round, start_at);
+	// wait until the synchronized countdown
+	LT_I("Match (round %u): counting at %llu...", game->round, count_at);
 	unsigned long long local_time = millis();
-	if (start_at > local_time) {
-		SDL_Delay(start_at - local_time);
+	if (count_at > local_time) {
+		SDL_Delay(count_at - local_time);
 	} else {
-		LT_W("Match (round %u): clock is behind match time!", game->round);
+		LT_W("Match (round %u): system clock is behind count_at time!", game->round);
 	}
-	LT_I("Match (round %u): starting now!", game->round);
 
+	// run the countdown with approximate delays
 	game->state	   = GAME_COUNTING;
-	game->start_in = 3;
+	game->start_in = GAME_COUNTDOWN_SEC;
 	do {
 		// update UI state
 		match_send_sdl_event(game, MATCH_UPDATE_STATE);
-		SDL_Delay(1000);
+		// the last delay is unnecessary
+		if (game->start_in == 1)
+			break;
+		// wait for at most 1000 ms
+		local_time = millis();
+		if (local_time >= start_at)
+			break;
+		int to_start = start_at - local_time;
+		SDL_Delay(min(to_start, 1000));
 	} while (--game->start_in);
+
+	// wait until the synchronized match start
+	LT_I("Match (round %u): starting at %llu...", game->round, start_at);
+	local_time = millis();
+	if (start_at > local_time) {
+		SDL_Delay(start_at - local_time);
+	} else {
+		LT_W("Match (round %u): system clock is behind start_at time!", game->round);
+	}
+
 	game->state = GAME_PLAYING;
-
-	LT_I("Match (round %u): countdown finished!", game->round);
-
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);
+
+	LT_I("Match (round %u): starting now!", game->round);
 
 	// calculate performance delays
 	uint64_t perf_freq		 = SDL_GetPerformanceFrequency();
@@ -160,6 +182,8 @@ static int match_run(game_t *game) {
 	uint64_t perf_loop_next	 = perf_cur + perf_loop_delay;
 	uint64_t perf_ui_delay	 = perf_freq * 16 / 1000;
 	uint64_t perf_ui_next	 = perf_cur + perf_ui_delay;
+
+	LT_D("Match (round %u): performance frequency: %" PRIu64, game->round, perf_freq);
 
 	// run the main game loop
 	bool any_in_round		= false;
@@ -202,6 +226,8 @@ static int match_run(game_t *game) {
 		if (perf_cur < perf_loop_next) {
 			uint64_t perf_diff = perf_loop_next - perf_cur;
 			SDL_Delay(perf_diff * 1000 / perf_freq);
+		} else {
+			LT_W("Match (round %u): can't keep up! %" PRIu64 " >= %" PRIu64, game->round, perf_cur, perf_loop_next);
 		}
 		// increment the next loop timestamp
 		perf_loop_next += perf_loop_delay;

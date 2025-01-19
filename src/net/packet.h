@@ -93,6 +93,7 @@ typedef struct __attribute__((packed)) pkt_game_stop_t {
 
 typedef struct __attribute__((packed)) pkt_game_start_round_t {
 	pkt_hdr_t hdr;
+	uint64_t count_at;
 	uint64_t start_at;
 } pkt_game_start_round_t;
 

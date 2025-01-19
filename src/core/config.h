@@ -28,7 +28,8 @@
 
 #define GFX_MAX_FONTS 10
 
-#define GAME_NAME_LEN	24
-#define GAME_KEY_LEN	6
-#define PLAYER_NAME_LEN 24
-#define PLAYER_POS_NUM	100
+#define GAME_NAME_LEN	   24
+#define GAME_KEY_LEN	   6
+#define GAME_COUNTDOWN_SEC 3
+#define PLAYER_NAME_LEN	   24
+#define PLAYER_POS_NUM	   100
