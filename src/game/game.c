@@ -108,6 +108,8 @@ void game_free(game_t *game) {
 			DL_DELETE(game_list, game);
 		}
 	}
+	// stop the match thread
+	match_stop(game);
 	// close and free all endpoints
 	SDL_WITH_MUTEX(game->mutex) {
 		net_endpoint_t *endpoint, *tmp;
@@ -163,15 +165,21 @@ static int game_thread(game_t *game) {
 		if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
 			// start the match
 			game->state = GAME_STARTING;
-			if (!match_init(game)) {
-				// if failed, send an error to everyone
+			if (game->match_thread != NULL) {
+				// if there is a running match thread, quit
 				game_send_error(game, NULL, GAME_ERR_SERVER_ERROR);
-				game->state = GAME_IDLE;
+				goto cleanup;
+			}
+			if (!match_init(game)) {
+				// if thread creation failed, quit
+				game_send_error(game, NULL, GAME_ERR_SERVER_ERROR);
+				goto cleanup;
 			}
 		}
 	}
 
 cleanup:
+	game->stop = true;
 	if (!game->is_server) {
 		// send game stop event to UI
 		SDL_Event event = {
@@ -182,6 +190,7 @@ cleanup:
 	}
 	LT_I("Game: stopping '%s' (key: %s)", game->name, game->key);
 	game_free(game);
+	LT_I("Game: thread stopped '%s' (key: %s)", game->name, game->key);
 	return 0;
 }
 

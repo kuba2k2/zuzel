@@ -131,17 +131,24 @@ static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_e
 	if (game->state == GAME_IDLE)
 		// game is already stopped
 		return false;
+
 	game->state = GAME_IDLE;
+	// stop the match
+	match_stop(game);
+	// check all players
+	player_t *player, *tmp;
+	DL_FOREACH_SAFE(game->players, player, tmp) {
+		if (player->state == PLAYER_DISCONNECTED)
+			// delete disconnected players
+			game_del_player(game, player);
+		else
+			// force player states to IDLE
+			player->state = PLAYER_IDLE;
+	}
+
 	if (game->is_server)
 		// server: send to all clients if received on pipe - otherwise ignore
 		return source->type == NET_ENDPOINT_PIPE;
-
-	// client: force player states to IDLE
-	player_t *player;
-	DL_FOREACH(game->players, player) {
-		player->state = PLAYER_IDLE;
-	}
-
 	// client: send event to UI
 	return true;
 }

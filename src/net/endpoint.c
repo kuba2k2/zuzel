@@ -239,6 +239,9 @@ void net_endpoint_close(net_endpoint_t *endpoint) {
 		if (endpoint->pipe.event != NULL)
 			WSASetEvent(endpoint->pipe.event);
 #endif
+
+		if (endpoint->ping_sem != NULL)
+			SDL_SemPost(endpoint->ping_sem);
 	}
 }
 
@@ -267,6 +270,9 @@ void net_endpoint_free(net_endpoint_t *endpoint) {
 		if (endpoint->type <= NET_ENDPOINT_TLS)
 			WSACleanup();
 #endif
+
+		if (endpoint->ping_sem != NULL)
+			SDL_DestroySemaphore(endpoint->ping_sem);
 	}
 }
 

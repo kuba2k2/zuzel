@@ -11,14 +11,26 @@ static const unsigned int speed_to_delay[9] = {40, 32, 25, 17, 11, 7, 4, 2, 0};
 bool match_init(game_t *game) {
 	// reset the 'start_at' semaphore
 	SDL_SemReset(game->start_at_sem);
+	game->match_stop = false;
 
 	// start the match thread
 	SDL_Thread *thread = SDL_CreateThread((SDL_ThreadFunction)match_thread, "match", game);
-	SDL_DetachThread(thread);
+	game->match_thread = thread;
 	if (thread == NULL)
 		SDL_ERROR("SDL_CreateThread()", return false);
 
 	return true;
+}
+
+void match_stop(game_t *game) {
+	if (game->match_thread == NULL)
+		return;
+	// wake up the match thread, wait for it to quit
+	game->match_stop = true;
+	SDL_SemPost(game->start_at_sem);
+	SDL_SemPost(game->ready_sem);
+	SDL_WaitThread(game->match_thread, NULL);
+	game->match_thread = NULL;
 }
 
 static int match_thread(game_t *game) {
@@ -42,7 +54,7 @@ static int match_thread(game_t *game) {
 		player->match_points = 0;
 	}
 
-	for (game->round = 1; game->round <= 15;) {
+	for (game->round = 1; game->round <= 15 && !game->match_stop;) {
 		match_run(game);
 		game->round++;
 		match_wait_ready(game);
@@ -109,6 +121,8 @@ static int match_run(game_t *game) {
 				);
 				net_endpoint_close(endpoint);
 			}
+			if (game->match_stop)
+				return 0;
 		}
 
 		if (endpoints_ok == 0) {
@@ -134,6 +148,8 @@ static int match_run(game_t *game) {
 	} else {
 		// client: wait for 'start_at' packet from server
 		SDL_SemWait(game->start_at_sem);
+		if (game->match_stop)
+			return 0;
 		count_at = game->count_at;
 		start_at = game->start_at;
 	}
@@ -143,6 +159,8 @@ static int match_run(game_t *game) {
 	unsigned long long local_time = millis();
 	if (count_at > local_time) {
 		SDL_Delay(count_at - local_time);
+		if (game->match_stop)
+			return 0;
 	} else {
 		LT_W("Match (round %u): system clock is behind count_at time!", game->round);
 	}
@@ -162,6 +180,8 @@ static int match_run(game_t *game) {
 			break;
 		int to_start = start_at - local_time;
 		SDL_Delay(min(to_start, 1000));
+		if (game->match_stop)
+			return 0;
 	} while (--game->start_in);
 
 	// wait until the synchronized match start
@@ -169,6 +189,8 @@ static int match_run(game_t *game) {
 	local_time = millis();
 	if (start_at > local_time) {
 		SDL_Delay(start_at - local_time);
+		if (game->match_stop)
+			return 0;
 	} else {
 		LT_W("Match (round %u): system clock is behind start_at time!", game->round);
 	}
@@ -234,9 +256,9 @@ static int match_run(game_t *game) {
 		}
 		// increment the next loop timestamp
 		perf_loop_next += perf_loop_delay;
-	} while (any_in_round);
+	} while (!game->match_stop && any_in_round);
 
-	game->state = GAME_FINISHED;
+	game->state = game->match_stop ? GAME_IDLE : GAME_FINISHED;
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 
 	LT_I("Match (round %u): finished", game->round);

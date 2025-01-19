@@ -50,6 +50,8 @@ typedef struct game_t {
 	unsigned int start_in;		 //!< Round start countdown (seconds)
 	unsigned int round;			 //!< Round number, 1..15
 	unsigned int lap;			 //!< Lap number, 1..4
+	SDL_Thread *match_thread;	 //!< Match thread handle
+	bool match_stop;			 //!< Whether to stop the match thread
 
 	struct game_t *prev, *next;
 } game_t;

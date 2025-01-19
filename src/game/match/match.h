@@ -8,6 +8,7 @@ typedef struct game_t game_t;
 
 // match.c
 bool match_init(game_t *game);
+void match_stop(game_t *game);
 
 // utils.c
 bool match_check_ready(game_t *game);
