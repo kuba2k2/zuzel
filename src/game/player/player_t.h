@@ -21,17 +21,19 @@ typedef enum player_state_t {
 #define PLAYER_IN_GAME_MASK	  (PLAYER_READY | PLAYER_PLAYING | PLAYER_CRASHED | PLAYER_FINISHED)
 #define PLAYER_IN_MATCH_MASK  (PLAYER_PLAYING | PLAYER_CRASHED | PLAYER_FINISHED)
 
-typedef enum player_pos_state_t {
-	PLAYER_POS_UNCONFIRMED = 0, //!< Position is subject to recalculation
-	PLAYER_POS_FORWARD	   = 1, //!< Player is moving in a straight line
-	PLAYER_POS_TURNING	   = 2, //!< Player is turning left
-} player_pos_state_t;
+typedef enum player_pos_dir_t {
+	PLAYER_POS_FORWARD = 0, //!< Player is moving in a straight line
+	PLAYER_POS_LEFT	   = 1, //!< Player is turning left
+} player_pos_dir_t;
 
 typedef struct player_pos_t {
-	unsigned int time;		  //!< Position timestamp (ticks)
-	double x;				  //!< Point X
-	double y;				  //!< Point Y
-	player_pos_state_t state; //!< Type of the position
+	unsigned int time;	//!< Position timestamp (ticks)
+	unsigned int angle; //!< Turning angle, 0..359, CCW (0: left)
+	double speed;		//!< Moving speed, 1.0..7.0
+	double x;			//!< Position X
+	double y;			//!< Position Y
+	int direction;		//!< Movement direction for the next position
+	bool confirmed;		//!< Whether the remote player's movement direction is confirmed
 } player_pos_t;
 
 typedef struct player_t {
@@ -54,11 +56,8 @@ typedef struct player_t {
 	// round state, controlled by the match thread
 	unsigned int time;				  //!< Total playing time (ticks)
 	player_pos_t pos[PLAYER_POS_NUM]; //!< Position history
-	unsigned int angle;				  //!< Turning angle, 0..359, CCW (0: left)
-	double speed;					  //!< Moving speed, 1.0..7.0
 	unsigned int lap;				  //!< Lap number, 1..4
 	bool lap_can_advance;			  //!< Whether the player moved through half a lap
-	int finished_at;				  //!< Winning/losing position
 
 	// scores, controlled by the match thread
 	int round_points; //!< Points in the current round

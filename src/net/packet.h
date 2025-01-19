@@ -120,7 +120,7 @@ typedef struct __attribute__((packed)) pkt_player_keypress_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 	uint32_t time;
-	player_pos_state_t pos_state : 32;
+	player_pos_dir_t direction : 32;
 } pkt_player_keypress_t;
 
 typedef struct __attribute__((packed)) pkt_player_leave_t {

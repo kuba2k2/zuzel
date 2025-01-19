@@ -62,98 +62,131 @@ void player_free(player_t *player) {
 	free(player);
 }
 
-static void player_add_position(player_t *player, double x, double y) {
-	if (player->pos[99].x != player->pos[0].x || player->pos[99].y != player->pos[0].y) {
-		for (int i = 99; i >= 1; i--) {
-			player->pos[i].x = player->pos[i - 1].x;
-			player->pos[i].y = player->pos[i - 1].y;
+/**
+ * Shift the player position history by 1.
+ * Position 0 is not modified (will equal position 1).
+ * Last position is removed from the list.
+ *
+ * The positions are not shifted if the player's head is the same
+ * as their tail (player crashed/finished, and has already disappeared).
+ *
+ * @return whether positions were shifted
+ */
+bool player_position_shift(player_t *player) {
+	if (player->pos[PLAYER_POS_NUM - 1].x == player->pos[0].x && player->pos[PLAYER_POS_NUM - 1].y == player->pos[0].y)
+		return false;
+	memmove(&player->pos[1], &player->pos[0], sizeof(*player->pos) * (PLAYER_POS_NUM - 1));
+	return true;
+}
+
+/**
+ * (Re)calculate player positions, starting at 'start'.
+ * The starting position is not modified, but used to calculate
+ * all following positions (higher time/lower index).
+ * 'start' must point to player->pos[1] through player->pos[PLAYER_POS_NUM-1].
+ */
+void player_position_calculate(player_t *player, player_pos_t *start) {
+	for (player_pos_t *next = start - 1; next >= player->pos; next--) {
+		player_pos_t *prev = next + 1;
+
+		next->time	= prev->time + 5;
+		next->angle = prev->angle;
+		next->speed = prev->speed;
+		if (prev->direction == PLAYER_POS_LEFT) {
+			next->angle += 2;
+			if (next->angle > 359)
+				next->angle -= 360;
+			if (next->speed > 3.0)
+				next->speed -= 0.048;
+		} else {
+			if (next->speed < 7.0)
+				next->speed += 0.052;
 		}
-		player->pos[0].x = x;
-		player->pos[0].y = y;
+
+		double angle_rad = next->angle * M_PI / 180.0;
+		next->x			 = prev->x + cos(angle_rad) * next->speed;
+		next->y			 = prev->y - sin(angle_rad) * next->speed;
+		next->direction	 = prev->direction;
+		next->confirmed	 = player->is_local;
 	}
 }
 
-void player_loop(game_t *game, player_t *player) {
-	double head_x = player->pos[0].x;
-	double head_y = player->pos[0].y;
-
-	const uint8_t *keyboard_state = SDL_GetKeyboardState(NULL);
-
-	if (player->state == PLAYER_PLAYING) {
-		if (keyboard_state[SDL_SCANCODE_RSHIFT]) {
-			player->angle += 2;
-			if (player->angle > 359)
-				player->angle -= 360;
-			if (player->speed > 3.0)
-				player->speed -= 0.048;
-		} else {
-			if (player->speed < 7.0)
-				player->speed += 0.052;
-		}
-
-		// calculate new head X and Y
-		double angle_rad = (double)player->angle * M_PI / 180.0;
-		head_x			 = head_x + cos(angle_rad) * player->speed;
-		head_y			 = head_y - sin(angle_rad) * player->speed;
-		// increment playing time
-		player->time += 5;
-		bool check_collision = true;
-
-		// check if the player moves through half a lap
-		if (!player->lap_can_advance && player->pos[0].y > 240.0 && head_y <= 240.0) {
-			player->lap_can_advance = true;
-			LT_I("Player: #%u not stuck anymore @ %u", player->id, player->time);
-		}
-
-		// check if the player finishes a lap
-		if (player->pos[0].x <= 319.0 && head_x > 319.0) {
-			if (player->lap == 4) {
-				player->state	   = PLAYER_FINISHED;
-				game->update_state = true;
-				check_collision	   = false;
-				LT_I("Player: #%u finished the race @ %u", player->id, player->time);
-			} else if (!player->lap_can_advance) {
-				player->state	   = PLAYER_CRASHED;
-				game->update_state = true;
-				check_collision	   = false;
-				LT_I("Player: #%u tried to pass the finish line @ %u", player->id, player->time);
-			} else {
-				player->lap++;
-				LT_I("Player: #%u advanced to lap %d @ %u", player->id, player->lap, player->time);
-				// update game lap number
-				if (player->lap > game->lap) {
-					game->update_state = true;
-					game->lap		   = player->lap;
-				}
-			}
-		}
-
-		// check if the player crashes into the wall (if still playing)
-		if (check_collision) {
-			bool colliding = false;
-			if (head_y <= 92.0 || head_y >= 388.0 ||
-				(head_x >= 150.0 && head_x <= 489.0 && head_y >= 188.0 && head_y <= 292.0)) {
-				colliding = true;
-			} else if (head_x <= 150.0) {
-				double dx	= head_x - 150.0;
-				double dy	= head_y - 240.0;
-				double dist = sqrt(dx * dx + dy * dy);
-				if (dist <= 52.0 || dist >= 148.0)
-					colliding = true;
-			} else if (head_x >= 489.0) {
-				double dx2		 = head_x - 489.0;
-				double dy		 = head_y - 240.0;
-				double distance2 = sqrt(dx2 * dx2 + dy * dy);
-				if (distance2 <= 52.0 || distance2 >= 148.0)
-					colliding = true;
-			}
-			if (colliding) {
-				player->state	   = PLAYER_CRASHED;
-				game->update_state = true;
-				LT_I("Player: #%u crashed into the wall @ %u", player->id, player->time);
-			}
-		}
+/**
+ * Check if the player advances to another lap, finishes the race
+ * or crashes by passing the finish line incorrectly.
+ * Update the player state if any of these happen.
+ */
+bool player_position_check_lap(player_t *player, player_pos_t *prev, player_pos_t *next) {
+	// check if the player moves through half a lap
+	if (!player->lap_can_advance && prev->y > 240.0 && next->y <= 240.0) {
+		player->lap_can_advance = true;
+		LT_I("Player: #%u not stuck anymore @ %u", player->id, next->time);
 	}
 
-	player_add_position(player, head_x, head_y);
+	// check if the player finishes a lap
+	if (prev->x <= 319.0 && next->x > 319.0) {
+		if (player->lap == 4) {
+			player->state = PLAYER_FINISHED;
+			LT_I("Player: #%u finished the race @ %u", player->id, next->time);
+			return true;
+		}
+		if (!player->lap_can_advance) {
+			player->state = PLAYER_CRASHED;
+			LT_I("Player: #%u tried to pass the finish line @ %u", player->id, next->time);
+			return true;
+		}
+		player->lap++;
+		LT_I("Player: #%u advanced to lap %d @ %u", player->id, player->lap, next->time);
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Check if the position collides with a wall.
+ * Update the player state if the player crashes.
+ */
+bool player_position_check_collision(player_t *player, player_pos_t *pos) {
+	if (pos->y <= 92.0 || pos->y >= 388.0 ||
+		(pos->x >= 150.0 && pos->x <= 489.0 && pos->y >= 188.0 && pos->y <= 292.0)) {
+		goto crash;
+	}
+	double dy = pos->y - 240.0;
+	if (pos->x <= 150.0) {
+		double dx	= pos->x - 150.0;
+		double dist = sqrt(dx * dx + dy * dy);
+		if (dist <= 52.0 || dist >= 148.0)
+			goto crash;
+	} else if (pos->x >= 489.0) {
+		double dx	= pos->x - 489.0;
+		double dist = sqrt(dx * dx + dy * dy);
+		if (dist <= 52.0 || dist >= 148.0)
+			goto crash;
+	}
+	return false;
+crash:
+	player->state = PLAYER_CRASHED;
+	LT_I("Player: #%u crashed into the wall @ %u", player->id, pos->time);
+	return true;
+}
+
+bool player_loop(player_t *player) {
+	if (!player_position_shift(player))
+		// position unchanged - player is already gone
+		return false;
+	bool changed = false;
+
+	player_pos_t *next = &player->pos[0];
+	player_pos_t *prev = &player->pos[1];
+
+	if (player->state == PLAYER_PLAYING) {
+		player_position_calculate(player, prev);
+		if (player_position_check_lap(player, prev, next))
+			changed = true;
+		else if (player_position_check_collision(player, next))
+			changed = true;
+		player->time = next->time;
+	}
+
+	return changed;
 }

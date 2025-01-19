@@ -143,6 +143,8 @@ static int match_run(game_t *game) {
 	} while (--game->start_in);
 	game->state = GAME_PLAYING;
 
+	LT_I("Match: countdown finished!");
+
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 
 	// calculate performance delays
@@ -164,7 +166,8 @@ static int match_run(game_t *game) {
 				if ((player->state & PLAYER_IN_MATCH_MASK) == 0)
 					continue;
 				SDL_WITH_MUTEX(player->mutex) {
-					player_loop(game, player);
+					if (player_loop(player))
+						game->update_redraw_players = true;
 					if (player->state == PLAYER_PLAYING)
 						playing = true;
 				}
