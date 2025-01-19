@@ -98,7 +98,7 @@ static void match_update_players(ui_t *ui, bool redraw) {
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {
-			if ((player->state & PLAYER_IN_MATCH_MASK) == 0)
+			if (!player->is_in_round)
 				continue;
 			SDL_WITH_MUTEX(player->mutex) {
 				SDL_SetRenderTarget(ui->renderer, player->texture);

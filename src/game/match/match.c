@@ -41,8 +41,9 @@ static int match_thread(game_t *game) {
 		player->match_points = 0;
 	}
 
-	for (game->round = 1; game->round <= 15; game->round++) {
+	for (game->round = 1; game->round <= 15;) {
 		match_run(game);
+		game->round++;
 		match_wait_ready(game);
 	}
 
@@ -95,17 +96,22 @@ static int match_run(game_t *game) {
 				endpoints_ok++;
 			} else {
 				// endpoint didn't respond, disconnect it
-				LT_W("Match: ping timed out after %u ms - disconnecting %s", ping_timeout, net_endpoint_str(endpoint));
+				LT_W(
+					"Match (round %u): ping timed out after %u ms - disconnecting %s",
+					game->round,
+					ping_timeout,
+					net_endpoint_str(endpoint)
+				);
 				net_endpoint_close(endpoint);
 			}
 		}
 
 		if (endpoints_ok == 0) {
-			LT_W("Match: no endpoints responded! Stopping the thread");
+			LT_W("Match (round %u): no endpoints responded! Stopping the thread", game->round);
 			return 1;
 		}
 
-		LT_I("Match: all clients' ping check finished");
+		LT_I("Match (round %u): all clients' ping check finished", game->round);
 
 		// 'start_at' is the max RTT of the endpoints
 		// calculate the local timestamp based on that
@@ -124,14 +130,14 @@ static int match_run(game_t *game) {
 		start_at = game->start_at;
 	}
 
-	LT_I("Match: starting at %llu...", start_at);
+	LT_I("Match (round %u): starting at %llu...", game->round, start_at);
 	unsigned long long local_time = millis();
 	if (start_at > local_time) {
 		SDL_Delay(start_at - local_time);
 	} else {
-		LT_W("Match: clock is behind match time!");
+		LT_W("Match (round %u): clock is behind match time!", game->round);
 	}
-	LT_I("Match: starting now!");
+	LT_I("Match (round %u): starting now!", game->round);
 
 	game->state	   = GAME_COUNTING;
 	game->start_in = 3;
@@ -142,7 +148,7 @@ static int match_run(game_t *game) {
 	} while (--game->start_in);
 	game->state = GAME_PLAYING;
 
-	LT_I("Match: countdown finished!");
+	LT_I("Match (round %u): countdown finished!", game->round);
 
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 
@@ -201,8 +207,9 @@ static int match_run(game_t *game) {
 	} while (any_in_round);
 
 	game->state = GAME_FINISHED;
+	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 
-	LT_I("Match: finished");
+	LT_I("Match (round %u): finished", game->round);
 
 	return 0;
 }

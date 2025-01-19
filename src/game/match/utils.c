@@ -22,7 +22,7 @@ bool match_check_ready(game_t *game) {
 bool match_wait_ready(game_t *game) {
 	if (match_check_ready(game))
 		return true;
-	LT_I("Match: players are not ready");
+	LT_I("Match (round %u): players are not ready", game->round);
 	do {
 		SDL_SemWait(game->ready_sem);
 	} while (!match_check_ready(game));
