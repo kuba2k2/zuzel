@@ -112,10 +112,10 @@ static void match_update_player_state(ui_t *ui) {
 	ready_info->is_gone	  = true;
 	btn_player->is_gone	  = true;
 
-	player_t *local_player;
-	int players_count	 = 0;
-	int players_in_round = 0;
-	int players_ready	 = 0;
+	player_t *local_player = NULL;
+	int players_count	   = 0;
+	int players_in_round   = 0;
+	int players_ready	   = 0;
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {

@@ -92,7 +92,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 			break;
 	}
 
-	player_t *local_player;
+	player_t *local_player = NULL;
 	SDL_WITH_MUTEX(GAME->mutex) {
 		// find a locally-controlled player
 		DL_SEARCH_SCALAR(GAME->players, local_player, is_local, true);
