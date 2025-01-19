@@ -13,6 +13,8 @@ game_t *game_init(pkt_game_data_t *pkt_data) {
 	game_t *game;
 	MALLOC(game, sizeof(*game), goto cleanup);
 
+	srand(time(NULL));
+
 	SDL_WITH_MUTEX(game->mutex) {
 		// create an expiry timer (initially 5000 ms)
 		game->expiry_timer = SDL_AddTimer(5000, (SDL_TimerCallback)game_expiry_cb, game);

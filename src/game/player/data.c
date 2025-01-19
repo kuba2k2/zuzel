@@ -82,8 +82,14 @@ void player_reset_round(game_t *game) {
 		return;
 
 	// generate Y positions
-	player_0		   = game->players;
-	player_0->pos[0].y = 310.0 + (rand() % 4) * 20.0;
+	player_0 = game->players;
+	// generate a pseudo-random starting position that's the same for every connected client
+	uint32_t seed = (player_0->id * game->round * game->speed * 10) * 1103515245 + 12345;
+	seed		  = (uint32_t)(seed / 65536) % 32768;
+	// apply the position
+	player_0->pos[0].y = 310.0 + (seed % 4) * 20.0;
+	LT_I("Player #%u starting Y position: %f", player_0->id, player_0->pos[0].y);
+
 	if (player_count > 2) {
 		int player_idx = 1;
 		DL_FOREACH(game->players, player) {

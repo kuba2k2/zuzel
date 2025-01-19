@@ -6,6 +6,8 @@ player_t *player_init(game_t *game, char *name) {
 	player_t *player;
 	MALLOC(player, sizeof(*player), goto cleanup);
 
+	srand(time(NULL));
+
 	SDL_WITH_MUTEX(player->mutex) {
 		player->game  = game;
 		player->state = PLAYER_IDLE;
