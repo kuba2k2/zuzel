@@ -178,14 +178,21 @@ bool player_position_remote_keypress(player_t *player, unsigned int time, player
 		player_pos->direction = direction;
 	} else {
 		// keypress time points to an older position, find it and recalculate all following positions
+		int max_time = 0;
 		for (int i = 1; i < PLAYER_POS_NUM; i++) {
+			max_time = max(max_time, player->pos[i].time);
 			if (player->pos[i].time != time)
 				continue;
 			player_pos = &player->pos[i];
 			break;
 		}
-		if (player_pos == NULL || player_pos->confirmed)
-			// position not found or already confirmed, nothing to do
+		if (player_pos == NULL) {
+			// position not found, that's a problem
+			LT_W("Player: #%u keypress @ %u - game time is %u", player->id, time, max_time);
+			return false;
+		}
+		if (player_pos->confirmed)
+			// position already confirmed, nothing to do
 			return false;
 		// set the player's direction starting in the position at 'time'
 		player_pos->direction = direction;

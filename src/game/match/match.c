@@ -60,6 +60,8 @@ static int match_thread(game_t *game) {
 }
 
 static int match_run(game_t *game) {
+	LT_I("Match (round %u): initializing round", game->round);
+
 	SDL_WITH_MUTEX(game->mutex) {
 		// initialize match state and clear player data
 		game->delay = speed_to_delay[game->speed];

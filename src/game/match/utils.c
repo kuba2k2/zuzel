@@ -12,7 +12,7 @@ bool match_check_ready(game_t *game) {
 				// ignore spectating and disconnected players - they can't set READY
 				continue;
 			players_count++;
-			if (player->state == PLAYER_READY)
+			if (player->state == PLAYER_READY || player->state == PLAYER_PLAYING)
 				ready_count++;
 		}
 	}
