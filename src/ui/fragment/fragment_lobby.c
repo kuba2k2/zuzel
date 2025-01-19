@@ -208,6 +208,30 @@ static void ui_update_player(ui_t *ui, player_t *player) {
 	gfx_view_set_text(row_status, status);
 	row_status->data.text.color = color;
 
+	switch (player->turn_key) {
+		case SDL_SCANCODE_RSHIFT:
+			status = "Right Shift";
+			break;
+		case SDL_SCANCODE_LSHIFT:
+			status = "Left Shift";
+			break;
+		case SDL_SCANCODE_RCTRL:
+			status = "Right Ctrl";
+			break;
+		case SDL_SCANCODE_LCTRL:
+			status = "Left Ctrl";
+			break;
+		case SDL_SCANCODE_RALT:
+			status = "Right Alt";
+			break;
+		case SDL_SCANCODE_LALT:
+			status = "Left Alt";
+			break;
+		default:
+			break;
+	}
+	gfx_view_set_text(row_you_text, status);
+
 	ui->force_layout = true;
 }
 
