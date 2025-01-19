@@ -93,7 +93,8 @@ void game_del_player(game_t *game, player_t *player) {
 		// player is in game; mark as disconnected
 		// keep the player in game_t*
 		LT_I("Game: player disconnected #%d '%s'", player->id, player->name);
-		player->state = PLAYER_DISCONNECTED;
+		player->state		= PLAYER_DISCONNECTED;
+		player->is_in_round = false;
 		if (game->is_server) {
 			// only servers send player list updates
 			game_request_send_update(game, false, player->id);

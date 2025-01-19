@@ -31,6 +31,7 @@ void match_stop(game_t *game) {
 	SDL_SemPost(game->ready_sem);
 	SDL_WaitThread(game->match_thread, NULL);
 	game->match_thread = NULL;
+	game->match_stop   = false;
 }
 
 static int match_thread(game_t *game) {
@@ -213,6 +214,7 @@ static void match_run(game_t *game) {
 
 	// run the main game loop
 	bool any_in_round		= false;
+	bool any_playing		= false;
 	bool match_update_state = false;
 	do {
 		// process all players
@@ -229,8 +231,10 @@ static void match_run(game_t *game) {
 						// save the leading player's lap number
 						game->lap = max(game->lap, player->pos[0].lap);
 					}
-					if (player->is_in_round)
+					if (player->is_in_round) {
 						any_in_round = true;
+						any_playing	 = true;
+					}
 				}
 			}
 		}
@@ -258,6 +262,12 @@ static void match_run(game_t *game) {
 		// increment the next loop timestamp
 		perf_loop_next += perf_loop_delay;
 	} while (!game->match_stop && any_in_round);
+
+	if (!any_playing) {
+		// stop the match if no player was ever playing in this round
+		LT_I("Match (round %u): played with no players! Stopping the match...", game->round);
+		game->match_stop = true;
+	}
 
 	game->state = game->match_stop ? GAME_IDLE : GAME_FINISHED;
 	match_send_sdl_event(game, MATCH_UPDATE_STATE);

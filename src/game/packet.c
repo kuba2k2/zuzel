@@ -128,10 +128,6 @@ static bool process_pkt_game_start(game_t *game, pkt_game_start_t *recv_pkt, net
 }
 
 static bool process_pkt_game_stop(game_t *game, pkt_game_stop_t *recv_pkt, net_endpoint_t *source) {
-	if (game->state == GAME_IDLE)
-		// game is already stopped
-		return false;
-
 	game->state = GAME_IDLE;
 	// stop the match
 	match_stop(game);
@@ -233,7 +229,7 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		LT_I(
 			"Game client: created %s player #%d '%s'",
 			recv_pkt->is_local ? "local" : "remote",
-			player->id,
+			recv_pkt->id,
 			player->name
 		);
 		is_new_player = true;

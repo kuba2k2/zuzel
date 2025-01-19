@@ -163,16 +163,19 @@ static int game_thread(game_t *game) {
 			SDL_Delay(100);
 
 		// server: check if all players are ready now
-		if (game->is_server && game->state == GAME_IDLE && match_check_ready(game)) {
+		if (game->is_server && game->state == GAME_IDLE && match_check_ready(game) && !game->match_stop &&
+			!game->stop) {
 			// start the match
 			game->state = GAME_STARTING;
 			if (game->match_thread != NULL) {
 				// if there is a running match thread, quit
+				LT_E("Game: match thread already running");
 				game_send_error(game, NULL, GAME_ERR_SERVER_ERROR);
 				goto cleanup;
 			}
 			if (!match_init(game)) {
 				// if thread creation failed, quit
+				LT_E("Game: match thread creation failed");
 				game_send_error(game, NULL, GAME_ERR_SERVER_ERROR);
 				goto cleanup;
 			}
