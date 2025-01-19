@@ -113,7 +113,7 @@ int ui_run(ui_t *ui) {
 					net_client_stop(), net_server_stop(), ui_state_prev(ui);
 				else if (e.key.keysym.sym == SDLK_F12)
 					SETTINGS->net_slowdown = !SETTINGS->net_slowdown;
-				break;
+				// intentional fall-through
 
 			default:
 				if (fragment == NULL)

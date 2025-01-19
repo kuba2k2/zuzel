@@ -163,9 +163,32 @@ static void on_error(ui_t *ui) {
 	ui_state_set(ui, UI_STATE_ERROR);
 }
 
+static bool on_key_event(ui_t *ui, SDL_Scancode key, bool pressed) {
+	bool found = false;
+	SDL_WITH_MUTEX(GAME->mutex) {
+		player_t *player;
+		DL_FOREACH(GAME->players, player) {
+			if (!player->is_local || player->state != PLAYER_PLAYING || player->turn_key != key)
+				continue;
+			found = true;
+			SDL_WITH_MUTEX(player->mutex) {
+				player->pos[0].direction = pressed ? PLAYER_POS_LEFT : PLAYER_POS_FORWARD;
+				player->pos[0].confirmed = true;
+			}
+			break;
+		}
+	}
+	return found;
+}
+
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	pkt_t *pkt = NULL;
 	switch (e->type) {
+		case SDL_KEYDOWN:
+			return on_key_event(ui, e->key.keysym.scancode, true);
+		case SDL_KEYUP:
+			return on_key_event(ui, e->key.keysym.scancode, false);
+
 		case SDL_USEREVENT_GAME:
 			if (e->user.data1 != NULL)
 				LT_E("Unexpected new game packet received");
