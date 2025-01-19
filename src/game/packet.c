@@ -228,6 +228,8 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 			player->name
 		);
 		is_new_player = true;
+		if (recv_pkt->is_local)
+			player_set_key(game, player);
 	}
 
 	if (game->is_server) {

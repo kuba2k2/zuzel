@@ -45,8 +45,8 @@ typedef struct player_t {
 	player_state_t state;	  //!< Current player state
 
 	// client-only parameters
-	bool is_local; //!< Whether player is controlled on this device
-	int turn_key;  //!< Key (or touch position) for turning left (local only)
+	bool is_local;		   //!< Whether player is controlled on this device
+	SDL_Scancode turn_key; //!< Key (or touch position) for turning left (local only)
 
 	// player options
 	unsigned int id;				//!< Unique ID within the game
