@@ -176,13 +176,17 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 			// update texts
 			gfx_view_set_text(row_name, pkt->game_data.name);
 			gfx_view_set_text(row_key, pkt->game_data.key);
-			snprintf(
-				buf,
-				sizeof(buf),
-				"%s \x07 Players: %d",
-				pkt->game_data.state == GAME_IDLE ? "In Lobby" : "In Game",
-				pkt->game_data.players
-			);
+			if (pkt->game_data.state == GAME_IDLE)
+				snprintf(buf, sizeof(buf), "In Lobby \x07 Players: %d", pkt->game_data.players);
+			else
+				snprintf(
+					buf,
+					sizeof(buf),
+					"In Game \x07 Players: %d \x07 Round: %u of %u",
+					pkt->game_data.players,
+					pkt->game_data.round,
+					pkt->game_data.rounds
+				);
 			gfx_view_set_text(row_line1, buf);
 			snprintf(buf, sizeof(buf), "Game Speed: %d", pkt->game_data.speed);
 			gfx_view_set_text(row_line2, buf);

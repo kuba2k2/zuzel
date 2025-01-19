@@ -55,6 +55,8 @@ void game_fill_data_pkt(game_t *game, pkt_game_data_t *pkt) {
 	pkt->speed	   = game->speed;
 	pkt->state	   = game->state;
 	pkt->players   = game_get_player_count(game);
+	pkt->round	   = min(game->round, game->rounds);
+	pkt->rounds	   = game->rounds;
 	memcpy(pkt->key, game->key, min(sizeof(pkt->key), sizeof(game->key)));
 	memcpy(pkt->name, game->name, min(sizeof(pkt->name), sizeof(game->name)));
 }

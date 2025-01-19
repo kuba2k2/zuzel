@@ -81,6 +81,8 @@ typedef struct __attribute__((packed)) pkt_game_data_t {
 	uint32_t speed;
 	game_state_t state : 32;
 	uint32_t players;
+	uint32_t round;
+	uint32_t rounds;
 } pkt_game_data_t;
 
 typedef struct __attribute__((packed)) pkt_game_start_t {
