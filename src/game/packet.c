@@ -157,12 +157,14 @@ static bool process_pkt_game_start_round(game_t *game, pkt_game_start_round_t *r
 		if (source->type != NET_ENDPOINT_PIPE)
 			// server: ignore if not received on pipe
 			return false;
-		// server: send to all clients, while adjusting their 'start_at' timestamp
+		// server: send to all clients, while adjusting their 'count_at' and 'start_at' timestamps
+		unsigned long long count_at = recv_pkt->count_at;
 		unsigned long long start_at = recv_pkt->start_at;
 		net_endpoint_t *endpoint;
 		DL_FOREACH(game->endpoints, endpoint) {
 			if (endpoint == source)
 				continue;
+			recv_pkt->count_at = count_at - endpoint->time_delta - endpoint->ping_rtt / 2;
 			recv_pkt->start_at = start_at - endpoint->time_delta - endpoint->ping_rtt / 2;
 			net_pkt_send(endpoint, (pkt_t *)recv_pkt);
 		}
