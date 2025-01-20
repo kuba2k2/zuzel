@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 	SDL_RenderSetScale(renderer, (float)SETTINGS->screen.scale, (float)SETTINGS->screen.scale);
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-	ui_t *ui = ui_init(renderer);
+	ui_t *ui = ui_init(window, renderer);
 	if (ui == NULL)
 		LT_ERR(F, ret = 4; goto free_renderer, "UI initialization failed");
 

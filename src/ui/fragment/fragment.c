@@ -25,6 +25,7 @@ static void fragment_inflate(fragment_t *fragment, void *param) {
 
 bool fragment_init_all(fragment_t **fragments, void *param) {
 	DEFINE_FRAGMENT(main, MAIN);
+	DEFINE_FRAGMENT(settings, SETTINGS);
 	DEFINE_FRAGMENT(server_new, SERVER_NEW);
 	DEFINE_FRAGMENT(server_join, SERVER_JOIN);
 	DEFINE_FRAGMENT(connecting, CONNECTING);

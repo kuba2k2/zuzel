@@ -22,6 +22,7 @@ typedef struct fragment_t {
 } fragment_t;
 
 extern fragment_t fragment_main;
+extern fragment_t fragment_settings;
 extern fragment_t fragment_server_join;
 extern fragment_t fragment_server_new;
 extern fragment_t fragment_connecting;

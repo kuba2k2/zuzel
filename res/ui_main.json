@@ -134,10 +134,10 @@
 						"type": "button",
 						"w": "match_parent",
 						"m": 4,
-						"is_disabled": true,
 						"text": {
 							"text": "Settings"
-						}
+						},
+						"on_press": "on_btn_settings"
 					},
 					{
 						"type": "button",

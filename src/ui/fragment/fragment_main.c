@@ -16,6 +16,11 @@ static bool on_btn_join_game(view_t *view, SDL_Event *e, ui_t *ui) {
 	return true;
 }
 
+static bool on_btn_settings(view_t *view, SDL_Event *e, ui_t *ui) {
+	ui_state_set(ui, UI_STATE_SETTINGS);
+	return true;
+}
+
 static bool on_btn_exit(view_t *view, SDL_Event *e, ui_t *i) {
 	SDL_Event quit = {
 		.quit.type		= SDL_QUIT,
@@ -29,6 +34,7 @@ static const view_inflate_on_event_t inflate_on_event[] = {
 	GFX_VIEW_ON_EVENT(on_btn_quick_play),
 	GFX_VIEW_ON_EVENT(on_btn_new_game),
 	GFX_VIEW_ON_EVENT(on_btn_join_game),
+	GFX_VIEW_ON_EVENT(on_btn_settings),
 	GFX_VIEW_ON_EVENT(on_btn_exit),
 	GFX_VIEW_ON_EVENT_END(),
 };

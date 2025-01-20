@@ -9,11 +9,12 @@ static unsigned long long fps_last = 0;
 static int fps_delays[50]		   = {0};
 static int fps_index			   = 0;
 
-ui_t *ui_init(SDL_Renderer *renderer) {
+ui_t *ui_init(SDL_Window *window, SDL_Renderer *renderer) {
 	ui_t *ui;
 	MALLOC(ui, sizeof(*ui), return NULL);
 
 	// initialize SDL for the UI
+	ui->window	 = window;
 	ui->renderer = renderer;
 	ui->texture	 = SDL_CreateTexture(
 		 ui->renderer,

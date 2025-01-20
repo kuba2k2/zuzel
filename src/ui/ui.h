@@ -11,6 +11,7 @@ typedef struct net_t net_t;
 
 typedef enum {
 	UI_STATE_MAIN = 0,
+	UI_STATE_SETTINGS,
 	UI_STATE_SERVER_NEW,
 	UI_STATE_SERVER_JOIN,
 	UI_STATE_CONNECTING,
@@ -31,6 +32,7 @@ typedef enum {
 } ui_connect_type_t;
 
 typedef struct ui_t {
+	SDL_Window *window;		//!< SDL window
 	SDL_Renderer *renderer; //!< SDL renderer
 	SDL_Texture *texture;	//!< SDL texture
 
@@ -52,7 +54,7 @@ typedef struct ui_t {
 	game_t *game;
 } ui_t;
 
-ui_t *ui_init(SDL_Renderer *renderer);
+ui_t *ui_init(SDL_Window *window, SDL_Renderer *renderer);
 int ui_run(ui_t *ui);
 void ui_free(ui_t *ui);
 

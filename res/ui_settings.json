@@ -1,0 +1,82 @@
+[
+	{
+		"type": "box",
+		"w": "wrap_content",
+		"h": "match_parent",
+		"gravity": "center_horizontal",
+		"children": [
+			{
+				"type": "text",
+				"mt": 25,
+				"mb": 10,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "Settings",
+					"size": 7
+				}
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 32,
+				"text": {
+					"text": "Player Name",
+					"color": "#A0A0A0",
+					"size": 7
+				}
+			},
+			{
+				"id": "input_player_name",
+				"type": "input",
+				"w": 400,
+				"m": 4,
+				"placeholder": {
+					"text": "Your Name Here"
+				},
+				"max_length": 24
+			},
+			{
+				"type": "text",
+				"m": 8,
+				"mt": 32,
+				"text": {
+					"text": "Public Server Address",
+					"color": "#A0A0A0",
+					"size": 7
+				}
+			},
+			{
+				"id": "input_public_server_address",
+				"type": "input",
+				"w": 400,
+				"m": 4,
+				"placeholder": {
+					"text": "example.com:5678"
+				},
+				"max_length": 24
+			},
+			{
+				"id": "btn_ui_scale",
+				"type": "button",
+				"m": 4,
+				"mt": 32,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "UI Scale: 1"
+				},
+				"on_press": "on_btn_ui_scale"
+			},
+			{
+				"type": "button",
+				"w": 200,
+				"m": 4,
+				"mb": 32,
+				"gravity": "bottom|center_horizontal",
+				"text": {
+					"text": "Back"
+				},
+				"on_press": "on_btn_back"
+			}
+		]
+	}
+]
