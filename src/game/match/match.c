@@ -6,7 +6,17 @@ static int match_thread(game_t *game);
 static void match_run(game_t *game);
 
 static const unsigned int ping_timeout		= 2000;
-static const unsigned int speed_to_delay[9] = {40, 32, 25, 17, 11, 7, 4, 2, 0};
+static const unsigned int speed_to_delay[9] = {
+	40 * 1.5, // Speed 1
+	32 * 1.5, // Speed 2
+	25 * 1.5, // Speed 3
+	17 * 1.6, // Speed 4
+	11 * 2,	  // Speed 5
+	7 * 2.7,  // Speed 6
+	4 * 3.6,  // Speed 7
+	2 * 5,	  // Speed 8
+	0 + 8,	  // Speed 9
+};
 
 bool match_init(game_t *game) {
 	// reset the 'start_at' semaphore
