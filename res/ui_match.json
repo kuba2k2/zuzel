@@ -2,8 +2,9 @@
 	{
 		"id": "canvas",
 		"type": "canvas",
-		"w": "match_parent",
-		"h": "match_parent"
+		"w": 640,
+		"h": 480,
+		"gravity": "center"
 	},
 	{
 		"id": "text_top",

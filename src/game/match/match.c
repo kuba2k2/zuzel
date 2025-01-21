@@ -67,7 +67,6 @@ static int match_thread(game_t *game) {
 
 	for (game->round = 1; game->round <= game->rounds && !game->match_stop;) {
 		match_run(game);
-		game->round++;
 		match_wait_ready(game);
 	}
 
@@ -279,8 +278,8 @@ static void match_run(game_t *game) {
 		game->match_stop = true;
 	}
 
-	game->state = game->match_stop ? GAME_IDLE : GAME_FINISHED;
-	match_send_sdl_event(game, MATCH_UPDATE_STATE);
-
 	LT_I("Match (round %u): finished", game->round);
+	game->state = game->match_stop ? GAME_IDLE : GAME_FINISHED;
+	game->round++;
+	match_send_sdl_event(game, MATCH_UPDATE_STATE);
 }

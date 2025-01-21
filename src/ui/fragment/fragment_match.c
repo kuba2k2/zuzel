@@ -201,13 +201,8 @@ static void on_draw(SDL_Renderer *renderer, view_t *view) {
 	if (first_draw) {
 		first_draw = false;
 		SDL_DestroyTexture(canvas->data.canvas.texture);
-		canvas->data.canvas.texture = SDL_CreateTexture(
-			renderer,
-			SDL_PIXELFORMAT_RGBA8888,
-			SDL_TEXTUREACCESS_TARGET,
-			SETTINGS->screen.width,
-			SETTINGS->screen.height
-		);
+		canvas->data.canvas.texture =
+			SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
 		SDL_SetTextureBlendMode(canvas->data.canvas.texture, SDL_BLENDMODE_BLEND);
 
 		player_t *player;
@@ -215,13 +210,7 @@ static void on_draw(SDL_Renderer *renderer, view_t *view) {
 			if ((player->state & PLAYER_IN_GAME_MASK) == 0)
 				continue;
 			SDL_DestroyTexture(player->texture);
-			player->texture = SDL_CreateTexture(
-				renderer,
-				SDL_PIXELFORMAT_RGBA8888,
-				SDL_TEXTUREACCESS_TARGET,
-				SETTINGS->screen.width,
-				SETTINGS->screen.height
-			);
+			player->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
 			SDL_SetTextureBlendMode(player->texture, SDL_BLENDMODE_BLEND);
 		}
 
@@ -230,12 +219,12 @@ static void on_draw(SDL_Renderer *renderer, view_t *view) {
 	}
 
 	SDL_SetRenderTarget(renderer, NULL);
-	SDL_RenderCopy(renderer, canvas->data.canvas.texture, NULL, NULL);
+	SDL_RenderCopy(renderer, canvas->data.canvas.texture, NULL, &view->rect);
 	player_t *player;
 	DL_FOREACH(GAME->players, player) {
 		if (player->texture == NULL)
 			continue;
-		SDL_RenderCopy(renderer, player->texture, NULL, NULL);
+		SDL_RenderCopy(renderer, player->texture, NULL, &view->rect);
 	}
 }
 
