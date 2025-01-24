@@ -54,7 +54,7 @@ static int net_client_connect(char *address) {
 	if (client == NULL)
 		return -1;
 	lt_log_set_thread_name("client");
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 #if WIN32
 	WSADATA wsa_data;

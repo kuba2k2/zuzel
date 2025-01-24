@@ -2,7 +2,7 @@
 
 #include "net.h"
 
-static const int pkt_len_list[] = {
+static const unsigned int pkt_len_list[] = {
 	0,
 	sizeof(pkt_ping_t),
 	sizeof(pkt_success_t),

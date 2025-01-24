@@ -16,7 +16,7 @@ static void *tls_read_pem(char *buf, pem_func_t func) {
 }
 
 int main(int argc, char *argv[]) {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	MALLOC(SETTINGS, sizeof(*SETTINGS), return 1);
 	settings_load();

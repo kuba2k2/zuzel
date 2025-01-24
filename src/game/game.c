@@ -144,7 +144,7 @@ static int game_thread(game_t *game) {
 	char thread_name[19];
 	snprintf(thread_name, sizeof(thread_name), "game-%s-%s", game->is_server ? "server" : "client", game->key);
 	lt_log_set_thread_name(thread_name);
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	LT_I("Game: starting '%s' (key: %s)", game->name, game->key);
 

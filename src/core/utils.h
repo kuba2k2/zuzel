@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <stdlib.h>
+
 #define STRUCT_PADDING(field, len) char _padding_##field[4 - (len) % 4]
 #define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
 
@@ -53,18 +55,29 @@
 	})
 #endif
 
+#ifdef __GNUC__
+#define PACK(__Declaration__) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef MSVC
+#define PACK(__Declaration__) __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
+#endif
+
 #include "include.h"
 
 typedef struct view_text_t view_text_t;
 typedef struct view_inflate_on_event_t view_inflate_on_event_t;
 
 void hexdump(const void *buf, size_t len);
+#if MSVC
+int gettimeofday(struct timeval *tp, void *tzp);
+#endif
 unsigned long long millis();
 void SDL_SemReset(SDL_sem *sem);
 char *strncpy2(char *dest, const char *src, size_t count);
 char *file_read_data(const char *filename);
 cJSON *file_read_json(const char *filename);
-bool file_write_data(const char *filename, const char *data, int length);
+bool file_write_data(const char *filename, const char *data, size_t length);
 bool file_write_json(const char *filename, cJSON *json);
 void json_read_string(cJSON *json, const char *key, char **value);
 void json_read_uint(cJSON *json, const char *key, unsigned int *value);

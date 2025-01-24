@@ -29,47 +29,48 @@ typedef enum {
 	PKT_MAX,
 } pkt_type_t;
 
-typedef struct __attribute__((packed)) pkt_hdr_t {
+typedef PACK(struct pkt_hdr_t {
 	uint8_t protocol;
 	STRUCT_PADDING(protocol, sizeof(uint8_t));
 	pkt_type_t type : 32;
 	uint32_t len;
 	uint32_t reserved;
-} pkt_hdr_t;
+}) pkt_hdr_t;
 
-typedef struct __attribute__((packed)) pkt_ping_t {
+typedef PACK(struct pkt_ping_t {
 	pkt_hdr_t hdr;
 	uint64_t send_time;
 	uint64_t recv_time;
-} pkt_ping_t;
+}) pkt_ping_t;
 
-typedef struct __attribute__((packed)) pkt_success_t {
+typedef PACK(struct pkt_success_t {
 	pkt_hdr_t hdr;
-} pkt_success_t;
+	//
+}) pkt_success_t;
 
-typedef struct __attribute__((packed)) pkt_error_t {
+typedef PACK(struct pkt_error_t {
 	pkt_hdr_t hdr;
 	game_err_t error : 32;
-} pkt_error_t;
+}) pkt_error_t;
 
-typedef struct __attribute__((packed)) pkt_game_list_t {
+typedef PACK(struct pkt_game_list_t {
 	pkt_hdr_t hdr;
 	uint32_t page;
 	uint32_t per_page;
 	uint32_t total_count;
-} pkt_game_list_t;
+}) pkt_game_list_t;
 
-typedef struct __attribute__((packed)) pkt_game_new_t {
+typedef PACK(struct pkt_game_new_t {
 	pkt_hdr_t hdr;
 	uint32_t is_public;
-} pkt_game_new_t;
+}) pkt_game_new_t;
 
-typedef struct __attribute__((packed)) pkt_game_join_t {
+typedef PACK(struct pkt_game_join_t {
 	pkt_hdr_t hdr;
 	char key[GAME_KEY_LEN + 1];
-} pkt_game_join_t;
+}) pkt_game_join_t;
 
-typedef struct __attribute__((packed)) pkt_game_data_t {
+typedef PACK(struct pkt_game_data_t {
 	pkt_hdr_t hdr;
 	uint32_t is_list;
 	char key[GAME_KEY_LEN + 1];
@@ -83,33 +84,35 @@ typedef struct __attribute__((packed)) pkt_game_data_t {
 	uint32_t players;
 	uint32_t round;
 	uint32_t rounds;
-} pkt_game_data_t;
+}) pkt_game_data_t;
 
-typedef struct __attribute__((packed)) pkt_game_start_t {
+typedef PACK(struct pkt_game_start_t {
 	pkt_hdr_t hdr;
-} pkt_game_start_t;
+	//
+}) pkt_game_start_t;
 
-typedef struct __attribute__((packed)) pkt_game_stop_t {
+typedef PACK(struct pkt_game_stop_t {
 	pkt_hdr_t hdr;
-} pkt_game_stop_t;
+	//
+}) pkt_game_stop_t;
 
-typedef struct __attribute__((packed)) pkt_game_start_round_t {
+typedef PACK(struct pkt_game_start_round_t {
 	pkt_hdr_t hdr;
 	uint64_t count_at;
 	uint64_t start_at;
-} pkt_game_start_round_t;
+}) pkt_game_start_round_t;
 
-typedef struct __attribute__((packed)) pkt_player_list_t {
+typedef PACK(struct pkt_player_list_t {
 	pkt_hdr_t hdr;
 	uint32_t total_count;
-} pkt_player_list_t;
+}) pkt_player_list_t;
 
-typedef struct __attribute__((packed)) pkt_player_new_t {
+typedef PACK(struct pkt_player_new_t {
 	pkt_hdr_t hdr;
 	char name[PLAYER_NAME_LEN + 1];
-} pkt_player_new_t;
+}) pkt_player_new_t;
 
-typedef struct __attribute__((packed)) pkt_player_data_t {
+typedef PACK(struct pkt_player_data_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 	char name[PLAYER_NAME_LEN + 1];
@@ -117,32 +120,33 @@ typedef struct __attribute__((packed)) pkt_player_data_t {
 	uint32_t color;
 	uint32_t is_local;
 	player_state_t state : 32;
-} pkt_player_data_t;
+}) pkt_player_data_t;
 
-typedef struct __attribute__((packed)) pkt_player_keypress_t {
+typedef PACK(struct pkt_player_keypress_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
 	uint32_t time;
 	player_pos_dir_t direction : 32;
-} pkt_player_keypress_t;
+}) pkt_player_keypress_t;
 
-typedef struct __attribute__((packed)) pkt_player_leave_t {
+typedef PACK(struct pkt_player_leave_t {
 	pkt_hdr_t hdr;
 	uint32_t id;
-} pkt_player_leave_t;
+}) pkt_player_leave_t;
 
-typedef struct __attribute__((packed)) pkt_request_send_data_t {
+typedef PACK(struct pkt_request_send_data_t {
 	pkt_hdr_t hdr;
 	uintptr_t join_endpoint; //!< Pointer to the endpoint that just joined
 	uint32_t updated_game;	 //!< Whether the game data was updated (0/1)
 	uint32_t updated_player; //!< ID of the player that was updated (or just left)
-} pkt_request_send_data_t;
+}) pkt_request_send_data_t;
 
-typedef struct __attribute__((packed)) pkt_request_time_sync_t {
+typedef PACK(struct pkt_request_time_sync_t {
 	pkt_hdr_t hdr;
-} pkt_request_time_sync_t;
+	//
+}) pkt_request_time_sync_t;
 
-typedef union __attribute__((packed)) pkt_t {
+typedef PACK(union pkt_t {
 	pkt_hdr_t hdr;
 	pkt_ping_t ping;
 	pkt_success_t success;
@@ -160,4 +164,4 @@ typedef union __attribute__((packed)) pkt_t {
 	pkt_player_leave_t player_leave;
 	pkt_request_send_data_t request_send_data;
 	pkt_request_time_sync_t request_time_sync;
-} pkt_t;
+}) pkt_t;

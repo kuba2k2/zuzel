@@ -48,7 +48,11 @@ void gfx_draw_rect_points(SDL_Renderer *renderer, SDL_Rect *rects, int count, in
  * @param width line thickness in pixels
  */
 void gfx_draw_half_circle(SDL_Renderer *renderer, int cx, int cy, int angle, int radius, int width) {
+#if MSVC
+	SDL_Rect *rects = _malloca(radius * 4 * sizeof(SDL_Rect));
+#else
 	SDL_Rect rects[radius * 4];
+#endif
 	const int diameter = (radius * 2);
 	int x			   = (radius - 1);
 	int y			   = 0;
@@ -111,7 +115,11 @@ void gfx_draw_half_circle(SDL_Renderer *renderer, int cx, int cy, int angle, int
 void gfx_draw_line(SDL_Renderer *renderer, int x1, int y1, int x2, int y2, int width) {
 	// calculate line length (+1 to be on the safe side)
 	int length = (int)round(sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))) + 1;
+#if MSVC
+	SDL_Rect *rects = _malloca(length * sizeof(SDL_Rect));
+#else
 	SDL_Rect rects[length];
+#endif
 
 	// https://gist.github.com/bert/1085538#file-plot_line-c
 	int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;

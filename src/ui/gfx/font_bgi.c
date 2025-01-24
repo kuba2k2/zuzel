@@ -7,7 +7,7 @@ int font_bgi_get_char_width(const font_t *font, char ch);
 int font_bgi_get_line_height(const font_t *font);
 
 font_t *font_bgi_load(FILE *file, const uint8_t *data, const uint8_t *hdr, size_t hdr_len) {
-	int header_pos = 0;
+	size_t header_pos = 0;
 	for (; header_pos < hdr_len; header_pos++) {
 		if (hdr[header_pos] == 0x1A)
 			break;

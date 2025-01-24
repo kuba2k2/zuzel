@@ -8,8 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
 #include <time.h>
+
+#if !MSVC
+#include <sys/time.h>
+#endif
 
 #include <SDL2/SDL.h>
 #include <cJSON.h>

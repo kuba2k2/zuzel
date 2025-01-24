@@ -56,7 +56,11 @@ error:
 int font_bmp_draw_char(SDL_Renderer *renderer, int xc, int yc, const font_t *font, char ch) {
 	int width  = font->bmp.font_hdr.width;
 	int height = font->bmp.font_hdr.height;
+#if MSVC
+	SDL_Point *points = _malloca(SCALE(width * height) * 2 * sizeof(SDL_Point));
+#else
 	SDL_Point points[SCALE(width * height) * 2];
+#endif
 	SDL_Point *point = points;
 
 	uint8_t *data = font->bmp.data[ch - font->bmp.font_hdr.char_start];

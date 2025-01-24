@@ -2,11 +2,25 @@ cmake_minimum_required(VERSION 3.20)
 
 project(zuzel C)
 
-set(CMAKE_C_STANDARD 11)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-add_compile_options(-fdata-sections -ffunction-sections)
-add_link_options(-Wl,--gc-sections)
+if (MSVC)
+    add_compile_definitions(MSVC=1)
+    # disable warnings
+    add_compile_options(
+            /wd4820 /wd4668 /wd4255 /wd4100 /wd4996 /wd5045 /wd4061 /wd4206 /wd4295 /wd4132 /wd4701 /wd4702
+            /wd4191 /wd4242 /wd4389 /wd4018 /wd4293 /wd4388 /wd4267 /wd4244 /wd4201
+    )
+    # remove unused code
+    add_compile_options(/Gy)
+else ()
+    set(CMAKE_C_STANDARD 11)
+    # disable warnings
+    add_compile_options(-Wno-attributes -Wno-dangling-pointer)
+    # remove unused code
+    add_compile_options(-fdata-sections -ffunction-sections)
+    add_link_options(-Wl,--gc-sections)
+endif ()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 if (UNIX)

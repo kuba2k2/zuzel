@@ -10,7 +10,9 @@ set(ENABLE_PUBLIC_SYMBOLS OFF)
 set(ENABLE_HIDDEN_SYMBOLS ON)
 add_subdirectory(cjson)
 target_include_directories(cjson-static INTERFACE "cjson/")
-target_compile_options(cjson-static PRIVATE -Wno-float-conversion)
+if (!MSVC)
+    target_compile_options(cjson-static PRIVATE -Wno-float-conversion)
+endif ()
 
 set(SDL_AUDIO OFF)
 set(SDL_POWER OFF)
@@ -34,4 +36,3 @@ FetchContent_Declare(
         URL https://github.com/libressl/portable/releases/download/v3.9.2/libressl-3.9.2.tar.gz
 )
 FetchContent_MakeAvailable(libressl)
-target_compile_options(crypto_obj PRIVATE -Wno-attributes)

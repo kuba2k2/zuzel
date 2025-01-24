@@ -48,7 +48,7 @@ static int match_thread(game_t *game) {
 	char thread_name[20];
 	snprintf(thread_name, sizeof(thread_name), "match-%s-%s", game->is_server ? "server" : "client", game->key);
 	lt_log_set_thread_name(thread_name);
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	LT_I("Match: starting match in game '%s' (%s)", game->name, game->key);
 
@@ -113,8 +113,8 @@ static void match_run(game_t *game) {
 		// request ping-based time sync for every endpoint
 		game_request_time_sync(game);
 		// wait for all clients to report their RTT
-		int endpoints_ok = 0;
-		int max_rtt		 = 0;
+		int endpoints_ok	 = 0;
+		unsigned int max_rtt = 0;
 		DL_FOREACH_SAFE(game->endpoints, endpoint, tmp) {
 			if (endpoint->type == NET_ENDPOINT_PIPE)
 				continue;
@@ -169,7 +169,7 @@ static void match_run(game_t *game) {
 	LT_I("Match (round %u): counting at %llu...", game->round, count_at);
 	unsigned long long local_time = millis();
 	if (count_at > local_time) {
-		SDL_Delay(count_at - local_time);
+		SDL_Delay((uint32_t)(count_at - local_time));
 		if (game->match_stop)
 			return;
 	} else {
@@ -199,7 +199,7 @@ static void match_run(game_t *game) {
 	LT_I("Match (round %u): starting at %llu...", game->round, start_at);
 	local_time = millis();
 	if (start_at > local_time) {
-		SDL_Delay(start_at - local_time);
+		SDL_Delay((uint32_t)(start_at - local_time));
 		if (game->match_stop)
 			return;
 	} else {
@@ -219,7 +219,7 @@ static void match_run(game_t *game) {
 	uint64_t perf_ui_delay	 = perf_freq * 16 / 1000;
 	uint64_t perf_ui_next	 = perf_cur + perf_ui_delay;
 
-	LT_D("Match (round %u): performance frequency: %" PRIu64, game->round, perf_freq);
+	LT_D("Match (round %u): performance frequency: %llu", game->round, (unsigned long long)perf_freq);
 
 	// run the main game loop
 	bool any_in_round		= false;
@@ -264,9 +264,14 @@ static void match_run(game_t *game) {
 		perf_cur = SDL_GetPerformanceCounter();
 		if (perf_cur < perf_loop_next) {
 			uint64_t perf_diff = perf_loop_next - perf_cur;
-			SDL_Delay(perf_diff * 1000 / perf_freq);
+			SDL_Delay((uint32_t)(perf_diff * 1000 / perf_freq));
 		} else {
-			LT_W("Match (round %u): can't keep up! %" PRIu64 " >= %" PRIu64, game->round, perf_cur, perf_loop_next);
+			LT_W(
+				"Match (round %u): can't keep up! %llu >= %llu",
+				game->round,
+				(unsigned long long)perf_cur,
+				(unsigned long long)perf_loop_next
+			);
 		}
 		// increment the next loop timestamp
 		perf_loop_next += perf_loop_delay;

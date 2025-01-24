@@ -4,14 +4,14 @@
 
 void hexdump(const void *buf, size_t len) {
 	SDL_LockMutex(log_mutex);
-	uint16_t pos = 0;
+	size_t pos = 0;
 	while (pos < len) {
 		// print hex offset
-		printf("%06x ", pos);
+		printf("%06x ", (unsigned int)pos);
 		// calculate current line width
-		uint8_t lineWidth = min(16, len - pos);
+		size_t lineWidth = min(16, len - pos);
 		// print hexadecimal representation
-		for (uint8_t i = 0; i < lineWidth; i++) {
+		for (size_t i = 0; i < lineWidth; i++) {
 			if (i % 8 == 0) {
 				putchar(' ');
 			}
@@ -20,7 +20,7 @@ void hexdump(const void *buf, size_t len) {
 		// print ascii representation
 		putchar(' ');
 		putchar('|');
-		for (uint8_t i = 0; i < lineWidth; i++) {
+		for (size_t i = 0; i < lineWidth; i++) {
 			uint8_t c = ((const uint8_t *)buf)[pos + i];
 			putchar((c >= 0x20 && c <= 0x7f) ? c : '.');
 		}
@@ -30,6 +30,29 @@ void hexdump(const void *buf, size_t len) {
 	fflush(stdout);
 	SDL_UnlockMutex(log_mutex);
 }
+
+#if MSVC
+// https://stackoverflow.com/a/26085827
+int gettimeofday(struct timeval *tp, void *tzp) {
+	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+	// This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
+	// until 00:00:00 January 1, 1970
+	static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
+
+	SYSTEMTIME system_time;
+	FILETIME file_time;
+	uint64_t time;
+
+	GetSystemTime(&system_time);
+	SystemTimeToFileTime(&system_time, &file_time);
+	time = ((uint64_t)file_time.dwLowDateTime);
+	time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+	tp->tv_sec	= (long)((time - EPOCH) / 10000000L);
+	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
+	return 0;
+}
+#endif
 
 unsigned long long millis() {
 	struct timeval tv;
@@ -85,7 +108,7 @@ cJSON *file_read_json(const char *filename) {
 	return json;
 }
 
-bool file_write_data(const char *filename, const char *data, int length) {
+bool file_write_data(const char *filename, const char *data, size_t length) {
 	FILE *file;
 	FOPEN(file, filename, "wb", return false);
 	FWRITE(file, data, length, goto error);

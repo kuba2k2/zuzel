@@ -170,7 +170,7 @@ static bool gfx_view_on_event_input(view_t *input, SDL_Event *e, void *param) {
 
 	char *text		= input->data.input.value;
 	size_t text_len = strlen(text);
-	int max_len		= input->data.input.max_length;
+	size_t max_len	= input->data.input.max_length;
 	size_t pos		= input->data.input.pos;
 	bool changed	= false;
 	char *chars		= NULL;

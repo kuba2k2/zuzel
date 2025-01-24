@@ -41,7 +41,7 @@ typedef struct log_thread_t {
 
 typedef struct log_error_t {
 	char *message;
-	unsigned int len;
+	size_t len;
 	struct log_error_t *next;
 	struct log_error_t *prev;
 } log_error_t;
@@ -87,14 +87,14 @@ void lt_log(const uint8_t level, const char *format, ...) {
 	printf(
 	// format:
 #if LT_LOGGER_COLOR
-		"\e[%c;3%cm"
+		"\x1B[%c;3%cm"
 #endif
 		"%c "
 #if LT_LOGGER_TIMESTAMP
 		"[%04d-%02d-%02d %02d:%02d:%02d.%03ld] "
 #endif
 #if LT_LOGGER_COLOR
-		"\e[0m"
+		"\x1B[0m"
 #endif
 #if LT_LOGGER_TASK
 		"[%s] "
@@ -172,7 +172,7 @@ static bool lt_log_append_error(const char *message) {
 	return true;
 }
 
-char *lt_log_get_errors(int wrap) {
+char *lt_log_get_errors(size_t wrap) {
 	// count the total length of messages
 	size_t errors_len = 0;
 	log_error_t *error, *tmp;

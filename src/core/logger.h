@@ -35,7 +35,7 @@ void lt_log(uint8_t level, const char *format, ...) __attribute__((format(printf
 #endif
 
 void lt_log_set_thread_name(const char *name);
-char *lt_log_get_errors(int wrap);
+char *lt_log_get_errors(size_t wrap);
 void lt_log_clear_errors();
 extern SDL_mutex *log_mutex;
 
