@@ -10,7 +10,9 @@
 
 const char *version_get_banner() {
 	char compiler[32];
-#if defined(__GNUC__)
+#if defined(__clang__)
+	snprintf(compiler, sizeof(compiler), "Clang %u.%u.%u", __clang_major__, __clang_minor__, __clang_patchlevel__);
+#elif defined(__GNUC__)
 	snprintf(compiler, sizeof(compiler), "GCC %u.%u.%u", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #elif defined(_MSC_VER)
 	snprintf(compiler, sizeof(compiler), "MSVC %u.%u", _MSC_VER / 100, _MSC_VER % 100);
@@ -31,4 +33,5 @@ const char *version_get_banner() {
 
 void version_print() {
 	LT_I("Zuzel %s", version_get_banner());
+	LT_I("Build type: " STRINGIFY_MACRO(CMAKE_BUILD_TYPE));
 }

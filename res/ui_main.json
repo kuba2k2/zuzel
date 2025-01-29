@@ -158,7 +158,8 @@
 		"m": 5,
 		"gravity": "left|bottom",
 		"text": {
-			"text": "v0.1.0"
+			"text": "v0.1.0",
+			"color": "#A0A0A0"
 		}
 	}
 ]

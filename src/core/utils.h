@@ -4,6 +4,9 @@
 
 #include <stdlib.h>
 
+#define STRINGIFY(x)	   #x
+#define STRINGIFY_MACRO(x) STRINGIFY(x)
+
 #define STRUCT_PADDING(field, len) char _padding_##field[4 - (len) % 4]
 #define BUILD_BUG_ON(condition)	   ((void)sizeof(char[1 - 2 * !!(condition)]))
 

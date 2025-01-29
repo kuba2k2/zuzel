@@ -6,6 +6,7 @@ add_library(${PROJECT_NAME}-common STATIC ${SOURCES})
 add_dependencies(${PROJECT_NAME}-common version)
 
 target_compile_options(${PROJECT_NAME}-common PUBLIC -Wall)
+target_compile_definitions(${PROJECT_NAME}-common PUBLIC CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
 target_include_directories(${PROJECT_NAME}-common PUBLIC "." "../res/")
 
 target_link_libraries(${PROJECT_NAME}-common PUBLIC SDL2::SDL2main SDL2::SDL2)

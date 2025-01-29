@@ -4,6 +4,11 @@
 
 #include "include.h"
 
+#if __APPLE__
+#undef FREAD
+#undef FWRITE
+#endif
+
 #define MALLOC(ptr, size, err)                                                                                         \
 	do {                                                                                                               \
 		ptr = malloc(size);                                                                                            \
