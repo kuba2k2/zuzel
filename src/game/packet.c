@@ -19,7 +19,6 @@ static bool process_pkt_request_time_sync(game_t *game, pkt_request_time_sync_t 
 const game_process_t process_list[] = {
 	NULL,
 	(game_process_t)process_pkt_ping,			   // PKT_PING
-	(game_process_t)send_err_invalid_state,		   // PKT_SUCCESS
 	NULL,										   // PKT_ERROR
 	(game_process_t)send_err_invalid_state,		   // PKT_GAME_LIST (server-only)
 	(game_process_t)send_err_invalid_state,		   // PKT_GAME_NEW (server-only)
@@ -28,11 +27,9 @@ const game_process_t process_list[] = {
 	(game_process_t)process_pkt_game_start,		   // PKT_GAME_START
 	(game_process_t)process_pkt_game_stop,		   // PKT_GAME_STOP
 	(game_process_t)process_pkt_game_start_round,  // PKT_GAME_START_ROUND
-	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_LIST
 	(game_process_t)process_pkt_player_new,		   // PKT_PLAYER_NEW
 	(game_process_t)process_pkt_player_data,	   // PKT_PLAYER_DATA
 	(game_process_t)process_pkt_player_keypress,   // PKT_PLAYER_KEYPRESS
-	(game_process_t)send_err_invalid_state,		   // PKT_PLAYER_UPDATE
 	(game_process_t)process_pkt_player_leave,	   // PKT_PLAYER_LEAVE
 	(game_process_t)process_pkt_request_send_data, // PKT_REQUEST_SEND_DATA
 	(game_process_t)process_pkt_request_time_sync, // PKT_REQUEST_TIME_SYNC
