@@ -16,3 +16,10 @@ bin2h(SOURCE_FILE "ui_browse.json" HEADER_FILE "fragment_res.h" VARIABLE_NAME "F
 bin2h(SOURCE_FILE "ui_lobby.json" HEADER_FILE "fragment_res.h" VARIABLE_NAME "FRAGMENT_LOBBY_JSON" NULL_TERMINATE APPEND)
 bin2h(SOURCE_FILE "ui_error.json" HEADER_FILE "fragment_res.h" VARIABLE_NAME "FRAGMENT_ERROR_JSON" NULL_TERMINATE APPEND)
 bin2h(SOURCE_FILE "ui_match.json" HEADER_FILE "fragment_res.h" VARIABLE_NAME "FRAGMENT_MATCH_JSON" NULL_TERMINATE APPEND)
+
+add_custom_target(version
+        ${CMAKE_COMMAND}
+        -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/version_res.h.in
+        -D DST=${CMAKE_CURRENT_SOURCE_DIR}/version_res.h
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/GenerateVersion.cmake
+)

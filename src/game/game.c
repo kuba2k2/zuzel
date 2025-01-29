@@ -194,7 +194,7 @@ cleanup:
 	}
 	LT_I("Game: stopping '%s' (key: %s)", game->name, game->key);
 	game_free(game);
-	LT_I("Game: thread stopped '%s' (key: %s)", game->name, game->key);
+	LT_I("Game: thread stopped");
 	return 0;
 }
 

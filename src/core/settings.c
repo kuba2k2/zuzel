@@ -3,6 +3,9 @@
 #include "settings.h"
 
 void settings_load() {
+	free(SETTINGS);
+	MALLOC(SETTINGS, sizeof(*SETTINGS), return);
+
 	// load defaults first
 	SETTINGS->loglevel				= LT_LEVEL_DEBUG;
 	SETTINGS->screen.width			= 640;
@@ -77,4 +80,4 @@ bool settings_save() {
 	return ret;
 }
 
-settings_t *SETTINGS;
+settings_t *SETTINGS = NULL;

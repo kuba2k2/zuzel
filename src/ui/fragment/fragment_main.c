@@ -2,6 +2,13 @@
 
 #include "fragment.h"
 
+static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
+	view_t *version;
+	GFX_VIEW_BIND(fragment->views, version, return false);
+	gfx_view_set_text(version, version_get_banner());
+	return true;
+}
+
 static bool on_btn_quick_play(view_t *view, SDL_Event *e, ui_t *ui) {
 	return true;
 }
@@ -40,5 +47,6 @@ static const view_inflate_on_event_t inflate_on_event[] = {
 };
 
 fragment_t fragment_main = {
+	.on_show		  = on_show,
 	.inflate_on_event = inflate_on_event,
 };

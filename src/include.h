@@ -40,6 +40,7 @@
 #include "core/logger.h"
 #include "core/settings.h"
 #include "core/utils.h"
+#include "core/version.h"
 
 #include "game/game.h"
 #include "game/match/match.h"

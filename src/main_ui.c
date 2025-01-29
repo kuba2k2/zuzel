@@ -7,7 +7,7 @@
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
-	MALLOC(SETTINGS, sizeof(*SETTINGS), return 1);
+	version_print();
 	settings_load();
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)

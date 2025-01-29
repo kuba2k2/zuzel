@@ -61,7 +61,7 @@ void lt_log(const uint8_t level, const char *format, ...) {
 	if (log_mutex == NULL)
 		log_mutex = SDL_CreateMutex();
 
-	if (level < SETTINGS->loglevel)
+	if (SETTINGS != NULL && level < SETTINGS->loglevel)
 		return;
 
 #if LT_LOGGER_TIMESTAMP

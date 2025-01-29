@@ -153,6 +153,7 @@
 		]
 	},
 	{
+		"id": "version",
 		"type": "text",
 		"m": 5,
 		"gravity": "left|bottom",
