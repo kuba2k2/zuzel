@@ -65,12 +65,16 @@
 
 #include "include.h"
 
+#if MSVC
+#define gettimeofday(tp, tzp) posix_gettimeofday(tp, tzp)
+#endif
+
 typedef struct view_text_t view_text_t;
 typedef struct view_inflate_on_event_t view_inflate_on_event_t;
 
 void hexdump(const void *buf, size_t len);
 #if MSVC
-int gettimeofday(struct timeval *tp, void *tzp);
+int posix_gettimeofday(struct timeval *tp, void *tzp);
 #endif
 unsigned long long millis();
 void SDL_SemReset(SDL_sem *sem);

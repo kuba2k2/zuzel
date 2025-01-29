@@ -23,7 +23,7 @@ else ()
 endif ()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
-if (UNIX)
+if (UNIX OR MSVC)
     set(BUILD_SHARED_LIBS OFF)
 endif ()
 

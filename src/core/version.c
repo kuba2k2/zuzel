@@ -18,6 +18,12 @@ const char *version_get_banner() {
 	strcpy(compiler, "unknown compiler");
 #endif
 
+#if defined(__CYGWIN__)
+	strcat(compiler, " - Cygwin");
+#elif defined(__MINGW64__)
+	strcat(compiler, " - MinGW "__MINGW64_VERSION_STR);
+#endif
+
 	static char banner[128];
 	snprintf(banner, sizeof(banner), GIT_VERSION " on %s (%s)", SDL_GetPlatform(), compiler);
 	return banner;

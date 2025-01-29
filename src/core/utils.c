@@ -33,7 +33,7 @@ void hexdump(const void *buf, size_t len) {
 
 #if MSVC
 // https://stackoverflow.com/a/26085827
-int gettimeofday(struct timeval *tp, void *tzp) {
+int posix_gettimeofday(struct timeval *tp, void *tzp) {
 	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
 	// This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
 	// until 00:00:00 January 1, 1970

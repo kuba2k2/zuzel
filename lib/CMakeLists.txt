@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 
 include(FetchContent)
 
+if (MSVC AND NOT BUILD_SHARED_LIBS)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    set(USE_STATIC_MSVC_RUNTIMES ON)
+    set(SDL_FORCE_STATIC_VCRT ON)
+    set(SDL_STATIC ON)
+    set(SDL_SHARED OFF)
+endif ()
+
 set(ENABLE_CJSON_UNINSTALL OFF)
 set(ENABLE_CJSON_TEST OFF)
 set(ENABLE_TARGET_EXPORT OFF)
@@ -10,7 +18,7 @@ set(ENABLE_PUBLIC_SYMBOLS OFF)
 set(ENABLE_HIDDEN_SYMBOLS ON)
 add_subdirectory(cjson)
 target_include_directories(cjson-static INTERFACE "cjson/")
-if (!MSVC)
+if (NOT MSVC)
     target_compile_options(cjson-static PRIVATE -Wno-float-conversion)
 endif ()
 
