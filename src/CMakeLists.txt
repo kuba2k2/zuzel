@@ -23,6 +23,17 @@ else ()
     target_link_libraries(${PROJECT_NAME}-common PUBLIC m dl)
 endif ()
 
+# configure release builds
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (MSVC)
+        target_link_options(${PROJECT_NAME}-common PUBLIC /SUBSYSTEM:WINDOWS)
+    elseif (WIN32)
+        target_link_options(${PROJECT_NAME}-common PUBLIC -mwindows)
+    else ()
+        target_link_options(${PROJECT_NAME}-common PUBLIC -static-libgcc)
+    endif ()
+endif ()
+
 # UI executable
 file(GLOB SOURCES "main_ui.c" "ui/*.c" "ui/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
