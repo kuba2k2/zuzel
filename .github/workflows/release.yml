@@ -1,0 +1,61 @@
+name: Release
+on:
+  push:
+    tags: ["v*.*.*"]
+jobs:
+  version:
+    name: Get version numbers
+    uses: kuba2k2/kuba2k2/.github/workflows/version.yml@master
+  lint-clang:
+    name: Run Clang lint
+    uses: kuba2k2/kuba2k2/.github/workflows/lint-clang.yml@master
+
+  build-cmake:
+    name: Build CMake project
+    needs:
+      - version
+      - lint-clang
+    uses: kuba2k2/kuba2k2/.github/workflows/build-cmake.yml@master
+    strategy:
+      matrix:
+        os:
+          - runs-on: windows-latest
+            generator: "Visual Studio 17 2022"
+            output-main: "cmake-build/src/MinSizeRel/zuzel.exe"
+            output-server: "cmake-build/src/MinSizeRel/zuzel-server.exe"
+            platform: "windows-x86_64"
+            suffix: ".exe"
+            pre-build: ""
+          - runs-on: ubuntu-latest
+            generator: "Unix Makefiles"
+            output-main: "cmake-build/src/zuzel"
+            output-server: "cmake-build/src/zuzel-server"
+            platform: "linux-x86_64"
+            suffix: ""
+            pre-build: "sudo apt-get install libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libdrm-dev libgbm-dev"
+    with:
+      runs-on: ${{ matrix.os.runs-on }}
+      args: -G "${{ matrix.os.generator }}" -DCMAKE_BUILD_TYPE=MinSizeRel
+      args-build: --config MinSizeRel
+      cache-key: ${{ matrix.os.platform }}
+      pre-build: |
+        ${{ matrix.os.pre-build }}
+        git submodule update --init --recursive
+      post-build: |
+        cp ${{ matrix.os.output-main }} zuzel-v${{ needs.version.outputs.tag }}-${{ matrix.os.platform }}${{ matrix.os.suffix }}
+        cp ${{ matrix.os.output-server }} zuzel-server-v${{ needs.version.outputs.tag }}-${{ matrix.os.platform }}${{ matrix.os.suffix }}
+      files: |
+        zuzel*${{ matrix.os.suffix }}
+      output-artifact: cmake-build-${{ matrix.os.platform }}
+
+  gh-release:
+    name: Publish GitHub release
+    needs:
+      - version
+      - build-cmake
+    uses: kuba2k2/kuba2k2/.github/workflows/gh-release.yml@master
+    permissions:
+      contents: write
+    with:
+      artifact: cmake-build-*
+      name: v${{ needs.version.outputs.tag }}
