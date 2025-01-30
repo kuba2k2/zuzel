@@ -259,6 +259,10 @@ static bool process_pkt_player_data(game_t *game, pkt_player_data_t *recv_pkt, n
 		player->is_local = true;
 	}
 
+	// client: update remote player lap number
+	if (!game->is_server && !player->is_local)
+		player->pos[0].lap = recv_pkt->lap;
+
 	// client: add to players list
 	if (is_new_player)
 		game_add_player(game, player);

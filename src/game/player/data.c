@@ -61,6 +61,7 @@ void player_fill_data_pkt(game_t *game, player_t *player, pkt_player_data_t *pkt
 	pkt->id	   = player->id;
 	pkt->color = player->color;
 	pkt->state = player->state;
+	pkt->lap   = player->pos[0].lap;
 	strcpy(pkt->name, player->name);
 }
 

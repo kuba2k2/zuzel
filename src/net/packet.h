@@ -109,6 +109,7 @@ typedef PACK(struct pkt_player_data_t {
 	uint32_t color;
 	uint32_t is_local;
 	player_state_t state : 32;
+	uint32_t lap;
 }) pkt_player_data_t;
 
 typedef PACK(struct pkt_player_keypress_t {

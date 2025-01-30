@@ -177,60 +177,61 @@ static void ui_update_player(ui_t *ui, player_t *player) {
 
 	row_you_icon->is_gone = row_you_text->is_gone = !player->is_local;
 
-	const char *status = NULL;
+	char status[24];
 	unsigned int color = 0xA0A0A0;
 	switch (player->state) {
 		case PLAYER_IDLE:
-			status = "Not Ready";
+			strcpy(status, "Not Ready");
 			break;
 		case PLAYER_READY:
-			status = "Ready";
-			color  = GFX_COLOR_BRIGHT_GREEN;
+			strcpy(status, "Ready");
+			color = GFX_COLOR_BRIGHT_GREEN;
 			break;
 		case PLAYER_PLAYING:
-			status = "In Game";
+			snprintf(status, sizeof(status), "In Game \x07 Lap %u/4", player->pos[0].lap);
 			break;
 		case PLAYER_CRASHED:
-			status = "Crashed!";
-			color  = GFX_COLOR_BRIGHT_RED;
+			strcpy(status, "Crashed!");
+			color = GFX_COLOR_BRIGHT_RED;
 			break;
 		case PLAYER_FINISHED:
-			status = "Finished!";
-			color  = GFX_COLOR_BRIGHT_GREEN;
+			strcpy(status, "Finished!");
+			color = GFX_COLOR_BRIGHT_GREEN;
 			break;
 		case PLAYER_DISCONNECTED:
-			status = "Disconnected";
+			strcpy(status, "Disconnected");
 			break;
 		case PLAYER_SPECTATING:
-			status = "Spectating";
+			strcpy(status, "Spectating");
 			break;
 	}
 	gfx_view_set_text(row_status, status);
 	row_status->data.text.color = color;
 
+	const char *keycode;
 	switch (player->turn_key) {
 		case SDL_SCANCODE_RSHIFT:
-			status = "Right Shift";
+			keycode = "Right Shift";
 			break;
 		case SDL_SCANCODE_LSHIFT:
-			status = "Left Shift";
+			keycode = "Left Shift";
 			break;
 		case SDL_SCANCODE_RCTRL:
-			status = "Right Ctrl";
+			keycode = "Right Ctrl";
 			break;
 		case SDL_SCANCODE_LCTRL:
-			status = "Left Ctrl";
+			keycode = "Left Ctrl";
 			break;
 		case SDL_SCANCODE_RALT:
-			status = "Right Alt";
+			keycode = "Right Alt";
 			break;
 		case SDL_SCANCODE_LALT:
-			status = "Left Alt";
+			keycode = "Left Alt";
 			break;
 		default:
 			break;
 	}
-	gfx_view_set_text(row_you_text, status);
+	gfx_view_set_text(row_you_text, keycode);
 
 	ui->force_layout = true;
 }

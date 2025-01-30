@@ -153,7 +153,7 @@ Packet data structures can be viewed in [`src/net/packet.h`](src/net/packet.h). 
 | `GAME_STOP`          | 8    | 16 B   | Server match thread stopped    |
 | `GAME_START_ROUND`   | 9    | 32 B   | Round start timestamp          |
 | `PLAYER_NEW`         | 10   | 44 B   | New player request             |
-| `PLAYER_DATA`        | 11   | 60 B   | Player data                    |
+| `PLAYER_DATA`        | 11   | 64 B   | Player data                    |
 | `PLAYER_KEYPRESS`    | 12   | 28 B   | Player keypress information    |
 | `PLAYER_LEAVE`       | 13   | 20 B   | Player leave event             |
 | `REQUEST_SEND_DATA`* | 14   | 32 B   | Request to broadcast game data |
