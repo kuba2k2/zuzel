@@ -37,6 +37,13 @@ typedef struct player_pos_t {
 	bool confirmed;		//!< Whether the remote player's movement direction is confirmed
 } player_pos_t;
 
+typedef struct player_keypress_t {
+	unsigned int time;			//!< Position timestamp (ticks)
+	player_pos_dir_t direction; //!< Movement direction for the next position
+
+	struct player_keypress_t *prev, *next;
+} player_keypress_t;
+
 typedef struct player_t {
 	SDL_mutex *mutex;	  //!< Mutex locking this player's data
 	SDL_Texture *texture; //!< SDL texture
@@ -57,6 +64,7 @@ typedef struct player_t {
 	// round state, controlled by the match thread
 	unsigned int time;				  //!< Total playing time (ticks)
 	player_pos_t pos[PLAYER_POS_NUM]; //!< Position history
+	player_keypress_t *keypress;	  //!< Linked list for future keypress events
 	bool lap_can_advance;			  //!< Whether the player moved through half a lap
 	bool is_in_round;				  //!< Whether the player is playing in this round (not crashed, not finished)
 

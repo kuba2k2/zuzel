@@ -16,7 +16,9 @@ bool player_position_shift(player_t *player);
 bool player_position_calculate(player_t *player, player_pos_t *start);
 bool player_position_check_lap(player_t *player, player_pos_t *prev, player_pos_t *next);
 bool player_position_check_collision(player_t *player, player_pos_t *pos);
+bool player_position_process_direction(player_t *player, unsigned int time, player_pos_dir_t direction);
 bool player_position_remote_keypress(player_t *player, unsigned int time, player_pos_dir_t direction);
+bool player_position_future_keypress(player_t *player);
 bool player_loop(player_t *player);
 
 // data.c

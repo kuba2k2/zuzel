@@ -131,5 +131,11 @@ void player_reset_round(game_t *game) {
 			player->pos[i]	 = player->pos[0];
 			player->pos[i].x = 300;
 		}
+		// reset all future keypress events
+		player_keypress_t *keypress, *tmp;
+		DL_FOREACH_SAFE(player->keypress, keypress, tmp) {
+			DL_DELETE(player->keypress, keypress);
+			free(keypress);
+		}
 	}
 }

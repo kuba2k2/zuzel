@@ -156,19 +156,15 @@ crash:
 }
 
 /**
- * Process a keypress event from a remote player.
+ * Process a keypress event.
  * Apply the new direction to the player's position.
  * If 'time' points to any of the previous positions, recalculate.
  * Mark all positions older than 'time' as confirmed.
  *
- * @return whether the player positions have been recalculated
+ * @return whether an unconfirmed position was found by the specified time
  */
-bool player_position_remote_keypress(player_t *player, unsigned int time, player_pos_dir_t direction) {
-	if (player->is_local)
-		// ignore key events for local players
-		return false;
+bool player_position_process_direction(player_t *player, unsigned int time, player_pos_dir_t direction) {
 	player_pos_t *player_pos = NULL;
-	bool redraw_player		 = false;
 
 	if (player->pos[0].time == time) {
 		// keypress time is in the latest player position, no need for recalculation
@@ -184,13 +180,7 @@ bool player_position_remote_keypress(player_t *player, unsigned int time, player
 			player_pos = &player->pos[i];
 			break;
 		}
-		if (player_pos == NULL) {
-			// position not found, that's a problem
-			LT_W("Player: #%u keypress @ %u - game time is %u", player->id, time, max_time);
-			return false;
-		}
-		if (player_pos->confirmed)
-			// position already confirmed, nothing to do
+		if (player_pos == NULL || player_pos->confirmed)
 			return false;
 		// set the player's direction starting in the position at 'time'
 		player_pos->direction = direction;
@@ -199,7 +189,6 @@ bool player_position_remote_keypress(player_t *player, unsigned int time, player
 		// recalculate all positions following this one
 		// will also reassign player state
 		player_position_calculate(player, player_pos);
-		redraw_player = true;
 	}
 
 	player_pos->confirmed = true;
@@ -209,15 +198,70 @@ bool player_position_remote_keypress(player_t *player, unsigned int time, player
 			break;
 		player_pos->confirmed = true;
 	}
-	return redraw_player;
+	return true;
+}
+
+/**
+ * Process a keypress event from a remote player.
+ * If 'time' points to a yet-non-existent position, save the keypress
+ * event for future recalculation.
+ *
+ * @return whether an unconfirmed position was found by the specified time
+ */
+bool player_position_remote_keypress(player_t *player, unsigned int time, player_pos_dir_t direction) {
+	if (player->is_local)
+		// ignore key events for local players
+		return false;
+
+	if (player_position_process_direction(player, time, direction))
+		// keypress event processed, nothing else to do
+		return true;
+
+	// position not found, the client's loop must be running too quickly
+	player_keypress_t *keypress;
+	MALLOC(keypress, sizeof(*keypress), return false);
+	// save the 'future' keypress in the player's structure
+	keypress->time		= time;
+	keypress->direction = direction;
+	DL_APPEND(player->keypress, keypress);
+
+	return false;
+}
+
+/**
+ * Process any future keypress events saved for this player.
+ *
+ * @return whether any future keypress events were used to update the player's position(s)
+ */
+bool player_position_future_keypress(player_t *player) {
+	if (player->is_local)
+		// ignore key events for local players
+		return false;
+
+	bool processed = false;
+	player_keypress_t *keypress, *tmp;
+	DL_FOREACH_SAFE(player->keypress, keypress, tmp) {
+		if (player_position_process_direction(player, keypress->time, keypress->direction) == false)
+			// keypress not processed
+			continue;
+		// keypress processed, remove from the list
+		DL_DELETE(player->keypress, keypress);
+		free(keypress);
+		processed = true;
+	}
+	return processed;
 }
 
 bool player_loop(player_t *player) {
+	// process any future keypress events *before* shifting the position history
+	player_position_future_keypress(player);
+
 	if (!player_position_shift(player))
 		// position unchanged - player is already gone
 		return false;
-	bool changed = false;
 
+	// calculate positions for players that are still alive
+	bool changed = false;
 	if (player->state == PLAYER_PLAYING) {
 		changed		 = player_position_calculate(player, &player->pos[1]);
 		player->time = player->pos[0].time;
