@@ -4,14 +4,16 @@
 
 #define PER_PAGE 5
 
-static view_t *list			= NULL; // UI-owned
-static view_t *cloned_row	= NULL; // fragment-owned ("freed" in on_hide)
-static view_t *btn_prev		= NULL;
-static view_t *btn_next		= NULL;
-static view_t *btn_join		= NULL;
-static view_t *text_summary = NULL;
-static int current_page		= 0;
-static bool is_joining		= false;
+static view_t *list			 = NULL; // UI-owned
+static view_t *cloned_row	 = NULL; // fragment-owned ("freed" in on_hide)
+static view_t *text_no_games = NULL;
+static view_t *btn_new_game	 = NULL;
+static view_t *btn_prev		 = NULL;
+static view_t *btn_next		 = NULL;
+static view_t *btn_join		 = NULL;
+static view_t *text_summary	 = NULL;
+static int current_page		 = 0;
+static bool is_joining		 = false;
 
 static void on_error(ui_t *ui);
 
@@ -24,9 +26,11 @@ static void get_game_list(ui_t *ui, int page) {
 	list->children = NULL;
 
 	// reset the views
-	btn_prev->is_disabled = true;
-	btn_next->is_disabled = true;
-	btn_join->is_disabled = true;
+	text_no_games->is_gone = true;
+	btn_new_game->is_gone  = true;
+	btn_prev->is_disabled  = true;
+	btn_next->is_disabled  = true;
+	btn_join->is_disabled  = true;
 	gfx_view_set_text(text_summary, "Loading...");
 	ui->force_layout = true;
 
@@ -45,6 +49,8 @@ static void get_game_list(ui_t *ui, int page) {
 static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	// find necessary views
 	GFX_VIEW_BIND(fragment->views, list, goto error);
+	GFX_VIEW_BIND(fragment->views, text_no_games, goto error);
+	GFX_VIEW_BIND(fragment->views, btn_new_game, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_prev, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_next, goto error);
 	GFX_VIEW_BIND(fragment->views, btn_join, goto error);
@@ -121,6 +127,25 @@ static bool on_btn_join(view_t *view, SDL_Event *e, ui_t *ui) {
 	return true;
 }
 
+static bool on_btn_new_game(view_t *view, SDL_Event *e, ui_t *ui) {
+	if (ui->client == NULL)
+		return false;
+
+	btn_new_game->is_disabled = true;
+	gfx_view_set_text(text_summary, "Joining...");
+	ui->force_layout = true;
+
+	// send a new game request
+	pkt_game_new_t pkt = {
+		.hdr.type  = PKT_GAME_NEW,
+		.is_public = true,
+	};
+	is_joining = true;
+	if (net_pkt_send_pipe(ui->client, (pkt_t *)&pkt) != NET_ERR_OK)
+		on_error(ui);
+	return true;
+}
+
 static bool on_btn_prev(view_t *view, SDL_Event *e, ui_t *ui) {
 	get_game_list(ui, current_page - 1);
 	return true;
@@ -152,6 +177,8 @@ static void on_packet(ui_t *ui, pkt_t *pkt) {
 				pkt->game_list.total_count
 			);
 			gfx_view_set_text(text_summary, buf);
+			text_no_games->is_gone = pkt->game_list.total_count != 0;
+			btn_new_game->is_gone  = pkt->game_list.total_count != 0;
 			return;
 
 		case PKT_GAME_DATA:
@@ -247,6 +274,7 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 static const view_inflate_on_event_t inflate_on_event[] = {
 	GFX_VIEW_ON_EVENT(on_btn_row),
 	GFX_VIEW_ON_EVENT(on_btn_join),
+	GFX_VIEW_ON_EVENT(on_btn_new_game),
 	GFX_VIEW_ON_EVENT(on_btn_prev),
 	GFX_VIEW_ON_EVENT(on_btn_next),
 	GFX_VIEW_ON_EVENT(on_btn_back),

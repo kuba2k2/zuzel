@@ -127,6 +127,27 @@
 								]
 							}
 						]
+					},
+					{
+						"id": "text_no_games",
+						"type": "text",
+						"gravity": "center",
+						"mb": 50,
+						"text": {
+							"text": "No public games found.",
+							"size": 7,
+							"color": "#A0A0A0"
+						}
+					},
+					{
+						"id": "btn_new_game",
+						"type": "button",
+						"gravity": "center",
+						"mt": 50,
+						"text": {
+							"text": "Create a New Game"
+						},
+						"on_press": "on_btn_new_game"
 					}
 				]
 			},
