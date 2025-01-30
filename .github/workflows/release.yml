@@ -10,49 +10,54 @@ jobs:
     name: Run Clang lint
     uses: kuba2k2/kuba2k2/.github/workflows/lint-clang.yml@master
 
-  build-cmake:
-    name: Build CMake project
+  build-cmake-windows-x86_64:
+    name: Build CMake project (windows-x86_64)
     needs:
       - version
       - lint-clang
     uses: kuba2k2/kuba2k2/.github/workflows/build-cmake.yml@master
-    strategy:
-      matrix:
-        os:
-          - runs-on: windows-latest
-            generator: "Visual Studio 17 2022"
-            output-main: "cmake-build/src/MinSizeRel/zuzel.exe"
-            output-server: "cmake-build/src/MinSizeRel/zuzel-server.exe"
-            platform: "windows-x86_64"
-            suffix: ".exe"
-            pre-build: ""
-          - runs-on: ubuntu-latest
-            generator: "Unix Makefiles"
-            output-main: "cmake-build/src/zuzel"
-            output-server: "cmake-build/src/zuzel-server"
-            platform: "linux-x86_64"
-            suffix: ""
-            pre-build: "sudo apt-get install libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libdrm-dev libgbm-dev"
     with:
-      runs-on: ${{ matrix.os.runs-on }}
-      args: -G "${{ matrix.os.generator }}" -DCMAKE_BUILD_TYPE=MinSizeRel
+      runs-on: windows-latest
+      args: -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=MinSizeRel
       args-build: --config MinSizeRel
-      cache-key: ${{ matrix.os.platform }}
+      cache-key: windows-x86_64
       pre-build: |
-        ${{ matrix.os.pre-build }}
         git submodule update --init --recursive
       post-build: |
-        cp ${{ matrix.os.output-main }} zuzel-v${{ needs.version.outputs.tag }}-${{ matrix.os.platform }}${{ matrix.os.suffix }}
-        cp ${{ matrix.os.output-server }} zuzel-server-v${{ needs.version.outputs.tag }}-${{ matrix.os.platform }}${{ matrix.os.suffix }}
-      files: |
-        zuzel*${{ matrix.os.suffix }}
-      output-artifact: cmake-build-${{ matrix.os.platform }}
+        cp cmake-build/src/MinSizeRel/zuzel.exe zuzel-v${{ needs.version.outputs.tag }}-windows-x86_64.exe
+        cp cmake-build/src/MinSizeRel/zuzel-server.exe zuzel-server-v${{ needs.version.outputs.tag }}-windows-x86_64.exe
+      files: zuzel*.exe
+      output-artifact: cmake-build-windows-x86_64
+
+  build-cmake-linux-x86_64:
+    name: Build CMake project (linux-x86_64)
+    needs:
+      - version
+      - lint-clang
+    uses: kuba2k2/kuba2k2/.github/workflows/build-cmake.yml@master
+    with:
+      runs-on: ubuntu-latest
+      runs-on-alpine: true
+      alpine-packages: |
+        git cmake make gcc musl-dev
+        libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libdrm-dev
+      args: -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=MinSizeRel
+      args-build: --config MinSizeRel
+      cache-key: linux-alpine-x86_64
+      pre-build: |
+        git submodule update --init --recursive
+      post-build: |
+        cp cmake-build/src/zuzel zuzel-v${{ needs.version.outputs.tag }}-linux-x86_64
+        cp cmake-build/src/zuzel-server zuzel-server-v${{ needs.version.outputs.tag }}-linux-x86_64
+      files: zuzel*
+      output-artifact: cmake-build-linux-alpine-x86_64
 
   gh-release:
     name: Publish GitHub release
     needs:
       - version
-      - build-cmake
+      - build-cmake-windows-x86_64
+      - build-cmake-linux-x86_64
     uses: kuba2k2/kuba2k2/.github/workflows/gh-release.yml@master
     permissions:
       contents: write
