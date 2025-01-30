@@ -222,31 +222,52 @@ static void match_run(game_t *game) {
 	LT_D("Match (round %u): performance frequency: %llu", game->round, (unsigned long long)perf_freq);
 
 	// run the main game loop
-	bool any_in_round		= false;
-	bool any_playing		= false;
-	bool match_update_state = false;
+	bool any_playing = false;
 	do {
-		// process all players
-		SDL_WITH_MUTEX(game->mutex) {
-			player_t *player;
-			any_in_round = false;
-			DL_FOREACH(game->players, player) {
-				if (!player->is_in_round)
-					continue;
-				SDL_WITH_MUTEX(player->mutex) {
-					if (player_loop(player)) {
-						// player state changed (lap advanced, crashed, finished, etc.)
-						match_update_state = true;
-						// save the leading player's lap number
-						game->lap = max(game->lap, player->pos[0].lap);
-					}
-					if (player->is_in_round) {
-						any_in_round = true;
-						any_playing	 = true;
-					}
-				}
+		player_t *player;
+		bool match_update_state = false;
+		bool any_in_round		= false;
+		bool any_spectating		= false;
+
+		// lock the game
+		SDL_LOCK_MUTEX(game->mutex);
+
+		// check if there are any spectators
+		DL_FOREACH(game->players, player) {
+			if (player->state == PLAYER_SPECTATING) {
+				any_spectating = true;
+				break;
 			}
 		}
+
+		// process all players
+		DL_FOREACH(game->players, player) {
+			if (!player->is_in_round)
+				continue;
+			SDL_LOCK_MUTEX(player->mutex);
+			bool player_changed = false;
+			if (player_loop(player)) {
+				// player state changed (lap advanced, crashed, finished, etc.)
+				player_changed	   = true;
+				match_update_state = true;
+				// save the leading player's lap number
+				game->lap = max(game->lap, player->pos[0].lap);
+			}
+			// check if anyone is still playing
+			if (player->is_in_round) {
+				any_in_round = true;
+				any_playing	 = true;
+			}
+			// server: send player state updates to spectators
+			// (if any player changed state, or the game just started - tick 5)
+			if (game->is_server && any_spectating && (player_changed || player->time == 5)) {
+				game_request_send_update(game, false, player->id);
+			}
+			SDL_UNLOCK_MUTEX(player->mutex);
+		}
+
+		// unlock the game
+		SDL_UNLOCK_MUTEX(game->mutex);
 
 		// client: update the UI
 		perf_cur = SDL_GetPerformanceCounter();
@@ -275,7 +296,10 @@ static void match_run(game_t *game) {
 		}
 		// increment the next loop timestamp
 		perf_loop_next += perf_loop_delay;
-	} while (!game->match_stop && any_in_round);
+
+		if (!any_in_round)
+			break;
+	} while (!game->match_stop);
 
 	if (!any_playing) {
 		// stop the match if no player was ever playing in this round
