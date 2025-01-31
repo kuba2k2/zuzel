@@ -97,6 +97,7 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 		// find a locally-controlled player
 		DL_SEARCH_SCALAR(GAME->players, local_player, is_local, true);
 	}
+
 	if (local_player == NULL) {
 		// create a player if not yet added
 		pkt_player_new_t pkt = {
@@ -343,11 +344,15 @@ static void ui_dialog_cb(ui_t *ui, int dialog_id, const char *value) {
 static bool on_btn_ready(view_t *view, SDL_Event *e, ui_t *ui) {
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
+		bool ready_changed = false;
 		DL_FOREACH(GAME->players, player) {
 			if (!player->is_local || player->state != PLAYER_IDLE)
 				continue;
 			player->state = PLAYER_READY;
 			game_request_send_update(GAME, false, player->id);
+			ready_changed = true;
+		}
+		if (ready_changed) {
 			// post the ready state semaphore
 			SDL_SemPost(GAME->ready_sem);
 			// update UI state
@@ -394,6 +399,16 @@ static bool on_btn_player_ban(view_t *view, SDL_Event *e, ui_t *ui) {
 	return true;
 }
 
+static bool on_btn_player_new(view_t *view, SDL_Event *e, ui_t *ui) {
+	// create a new local player
+	pkt_player_new_t pkt = {
+		.hdr.type = PKT_PLAYER_NEW,
+	};
+	strncpy2(pkt.name, SETTINGS->player_name, PLAYER_NAME_LEN);
+	net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
+	return true;
+}
+
 static bool on_btn_game_rename(view_t *view, SDL_Event *e, ui_t *ui) {
 	dialog_show_edit(ui, DIALOG_GAME_RENAME, ui_dialog_cb, "Rename Game", GAME->name, GAME_NAME_LEN);
 	return false;
@@ -424,8 +439,10 @@ static bool on_speed_change(view_t *view, SDL_Event *e, ui_t *ui) {
 }
 
 static bool on_btn_quit(view_t *view, SDL_Event *e, ui_t *ui) {
-	if (game_get_player_count(GAME) == 1) {
-		// don't ask if we're the only player
+	int player_count	   = game_get_player_count(GAME);
+	int player_count_local = game_get_player_count_local(GAME);
+	if (player_count == 1 || player_count == player_count_local) {
+		// don't ask if we're the only player (or all players are local)
 		on_quit(ui);
 		return true;
 	}
@@ -507,6 +524,7 @@ static const view_inflate_on_event_t inflate_on_event[] = {
 	GFX_VIEW_ON_EVENT(on_btn_row),
 	GFX_VIEW_ON_EVENT(on_btn_player_rename),
 	GFX_VIEW_ON_EVENT(on_btn_player_ban),
+	GFX_VIEW_ON_EVENT(on_btn_player_new),
 	GFX_VIEW_ON_EVENT(on_btn_game_rename),
 	GFX_VIEW_ON_EVENT(on_btn_game_private),
 	GFX_VIEW_ON_EVENT(on_btn_game_public),

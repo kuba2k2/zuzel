@@ -111,9 +111,11 @@ static void match_update_player_state(ui_t *ui) {
 	ready_info->is_gone	  = true;
 
 	player_t *local_player = NULL;
-	int players_count	   = 0;
-	int players_in_round   = 0;
-	int players_ready	   = 0;
+	int local_state		   = 0;
+
+	int players_count	 = 0;
+	int players_in_round = 0;
+	int players_ready	 = 0;
 	SDL_WITH_MUTEX(GAME->mutex) {
 		player_t *player;
 		DL_FOREACH(GAME->players, player) {
@@ -124,14 +126,19 @@ static void match_update_player_state(ui_t *ui) {
 				players_in_round++;
 			if (player->state == PLAYER_READY)
 				players_ready++;
-			if (player->is_local)
+			if (player->is_local) {
 				local_player = player;
+				if (local_state == 0)
+					local_state = player->state;
+				else if (local_state != player->state)
+					local_state = -1;
+			}
 		}
 	}
 	if (local_player == NULL)
 		return;
-	if (local_player->state == PLAYER_PLAYING)
-		// no texts if we're still alive
+	if (local_player->state == PLAYER_PLAYING || local_state == -1)
+		// no texts if we're still alive, or the local player states are not all the same
 		return;
 
 	if (local_player->state == PLAYER_CRASHED) {

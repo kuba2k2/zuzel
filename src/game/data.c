@@ -24,6 +24,18 @@ int game_get_player_count(game_t *game) {
 	return players;
 }
 
+int game_get_player_count_local(game_t *game) {
+	int players = 0;
+	SDL_WITH_MUTEX(game->mutex) {
+		player_t *item;
+		DL_FOREACH(game->players, item) {
+			if (item->is_local)
+				players++;
+		}
+	}
+	return players;
+}
+
 player_t *game_get_player_by_id(game_t *game, unsigned int id) {
 	player_t *player = NULL;
 	// find player by ID

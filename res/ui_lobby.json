@@ -181,6 +181,18 @@
 						"on_press": "on_btn_player_ban"
 					}
 				]
+			},
+			{
+				"type": "button",
+				"w": 132,
+				"h": 25,
+				"mt": 2,
+				"gravity": "center_horizontal",
+				"text": {
+					"text": "New Player",
+					"size": 4
+				},
+				"on_press": "on_btn_player_new"
 			}
 		]
 	},
