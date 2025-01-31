@@ -49,11 +49,30 @@ void player_set_key(game_t *game, player_t *player) {
 			player_t *out;
 			DL_SEARCH_SCALAR(game->players, out, turn_key, key);
 			if (out == NULL) {
-				// player with this color not found, use it
+				// player with this key not found, use it
 				player->turn_key = key;
 				break;
 			}
 		}
+	}
+}
+
+const char *player_get_key_name(player_t *player) {
+	switch (player->turn_key) {
+		case SDL_SCANCODE_RSHIFT:
+			return "Right Shift";
+		case SDL_SCANCODE_LSHIFT:
+			return "Left Shift";
+		case SDL_SCANCODE_RCTRL:
+			return "Right Ctrl";
+		case SDL_SCANCODE_LCTRL:
+			return "Left Ctrl";
+		case SDL_SCANCODE_RALT:
+			return "Right Alt";
+		case SDL_SCANCODE_LALT:
+			return "Left Alt";
+		default:
+			return "Unknown Key";
 	}
 }
 

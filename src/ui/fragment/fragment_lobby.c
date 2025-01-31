@@ -208,30 +208,7 @@ static void ui_update_player(ui_t *ui, player_t *player) {
 	gfx_view_set_text(row_status, status);
 	row_status->data.text.color = color;
 
-	const char *keycode;
-	switch (player->turn_key) {
-		case SDL_SCANCODE_RSHIFT:
-			keycode = "Right Shift";
-			break;
-		case SDL_SCANCODE_LSHIFT:
-			keycode = "Left Shift";
-			break;
-		case SDL_SCANCODE_RCTRL:
-			keycode = "Right Ctrl";
-			break;
-		case SDL_SCANCODE_LCTRL:
-			keycode = "Left Ctrl";
-			break;
-		case SDL_SCANCODE_RALT:
-			keycode = "Right Alt";
-			break;
-		case SDL_SCANCODE_LALT:
-			keycode = "Left Alt";
-			break;
-		default:
-			break;
-	}
-	gfx_view_set_text(row_you_text, keycode);
+	gfx_view_set_text(row_you_text, player_get_key_name(player));
 
 	ui->force_layout = true;
 }

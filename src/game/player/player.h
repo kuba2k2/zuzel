@@ -24,5 +24,6 @@ bool player_loop(player_t *player);
 // data.c
 void player_set_color(game_t *game, player_t *player);
 void player_set_key(game_t *game, player_t *player);
+const char *player_get_key_name(player_t *player);
 void player_fill_data_pkt(game_t *game, player_t *player, pkt_player_data_t *pkt);
 void player_reset_round(game_t *game);
