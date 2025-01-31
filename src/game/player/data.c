@@ -111,12 +111,18 @@ void player_reset_round(game_t *game) {
 	LT_I("Player #%u starting Y position: %f", player_0->id, player_0->pos[0].y);
 
 	if (player_count > 2) {
-		int player_idx = 1;
+		int player_idx = 0;
 		DL_FOREACH(game->players, player) {
 			if (player->state != PLAYER_READY)
 				continue;
+			if (player_idx == 0) {
+				player_idx++;
+				continue;
+			}
 			player->pos[0].y = player_0->pos[0].y + (double)player_idx * 20.0;
-			if (player->pos[0].y > 370.0)
+			if (player_idx >= 4)
+				player->pos[0].y += 10.0;
+			while (player->pos[0].y > 370.0)
 				player->pos[0].y -= 80.0;
 			player_idx++;
 		}
