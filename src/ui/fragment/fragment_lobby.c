@@ -268,7 +268,7 @@ static void ui_update_status(ui_t *ui) {
 		gfx_view_set_text(text_status, "There's nobody\nhere...");
 		btn_ready->is_disabled = false;
 		gfx_view_set_text(btn_ready, "Play Alone");
-	} else if (ready_count < players_count - local_count) {
+	} else if (ready_count < players_count - local_count || players_count == local_count) {
 		gfx_view_set_text(text_status, "Are you\nready?");
 		btn_ready->is_disabled = false;
 		gfx_view_set_text(btn_ready, "READY");

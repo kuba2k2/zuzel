@@ -21,6 +21,7 @@ static const SDL_Scancode player_keys[] = {
 	SDL_SCANCODE_LCTRL,
 	SDL_SCANCODE_RALT,
 	SDL_SCANCODE_LALT,
+	SDL_SCANCODE_LEFT,
 };
 
 void player_set_color(game_t *game, player_t *player) {
@@ -71,6 +72,8 @@ const char *player_get_key_name(player_t *player) {
 			return "Right Alt";
 		case SDL_SCANCODE_LALT:
 			return "Left Alt";
+		case SDL_SCANCODE_LEFT:
+			return "Left Arrow";
 		default:
 			return "Unknown Key";
 	}
