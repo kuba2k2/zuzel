@@ -3,6 +3,7 @@
 #include "fragment.h"
 
 #include "ui/match/match_gfx.h"
+#include "ui/match/match_input.h"
 
 #define GAME (ui->game)
 
@@ -13,7 +14,6 @@ static view_t *players_title = NULL;
 static view_t *players_list	 = NULL;
 static view_t *player_state	 = NULL;
 static view_t *ready_info	 = NULL;
-static view_t *btn_player	 = NULL;
 
 static bool first_draw = false;
 
@@ -38,7 +38,6 @@ static bool on_show(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	GFX_VIEW_BIND(fragment->views, players_list, goto error);
 	GFX_VIEW_BIND(fragment->views, player_state, goto error);
 	GFX_VIEW_BIND(fragment->views, ready_info, goto error);
-	GFX_VIEW_BIND(fragment->views, btn_player, goto error);
 
 	first_draw	 = true;
 	canvas->draw = on_draw;
@@ -110,7 +109,6 @@ static void match_update_player_state(ui_t *ui) {
 	// update texts
 	player_state->is_gone = true;
 	ready_info->is_gone	  = true;
-	btn_player->is_gone	  = true;
 
 	player_t *local_player = NULL;
 	int players_count	   = 0;
@@ -154,9 +152,6 @@ static void match_update_player_state(ui_t *ui) {
 			gfx_view_set_text(ready_info, "Ready for the next round?\nPress <ENTER>");
 		ready_info->data.text.color = GFX_COLOR_BRIGHT_GREEN;
 		ready_info->is_gone			= false;
-		// activate the ready button
-		btn_player->is_gone	   = false;
-		btn_player->is_focused = true;
 	} else if (players_in_round) {
 		sprintf(buf, "%d player(s)\nstill playing.", players_in_round);
 		gfx_view_set_text(ready_info, buf);
@@ -236,72 +231,36 @@ static void on_error(ui_t *ui) {
 	ui_state_set(ui, UI_STATE_ERROR);
 }
 
-static bool on_key_event(ui_t *ui, SDL_Scancode key, bool pressed) {
-	unsigned int player_id			  = 0;
-	unsigned int player_time		  = 0;
-	player_pos_dir_t player_direction = 0;
-
-	SDL_WITH_MUTEX(GAME->mutex) {
-		player_t *player;
-		DL_FOREACH(GAME->players, player) {
-			if (!player->is_local || player->state != PLAYER_PLAYING || player->turn_key != key)
-				continue;
-			SDL_WITH_MUTEX(player->mutex) {
-				player_id		 = player->id;
-				player_direction = pressed ? PLAYER_POS_LEFT : PLAYER_POS_FORWARD;
-				player_time		 = player->pos[0].time;
-				if (player->pos[0].direction != player_direction) {
-					// direction changed, assign to the local player
-					player->pos[0].direction = player_direction;
-					player->pos[0].confirmed = true;
-				} else {
-					// direction unchanged, avoid sending keypress packets
-					player_id = 0;
-				}
-			}
-			break;
-		}
-	}
-	// local player with this turn_key not found
-	// or their direction has not changed
-	if (player_id == 0)
-		return false;
-	// send player keypress packet to server
-	pkt_player_keypress_t pkt = {
-		.hdr.type  = PKT_PLAYER_KEYPRESS,
-		.id		   = player_id,
-		.time	   = player_time,
-		.direction = player_direction,
-	};
-	net_pkt_send_pipe(GAME->endpoints, (pkt_t *)&pkt);
-	return true;
-}
-
-static bool on_btn_player(view_t *view, SDL_Event *e, ui_t *ui) {
-	SDL_WITH_MUTEX(GAME->mutex) {
-		player_t *player;
-		DL_FOREACH(GAME->players, player) {
-			if (!player->is_local)
-				continue;
-			player->state = PLAYER_READY;
-			game_request_send_update(GAME, false, player->id);
-			// deactivate the ready button
-			btn_player->is_gone	   = true;
-			btn_player->is_focused = false;
-			// update UI state
-			match_update_player_state(ui);
-		}
-	}
-	return false;
+static void on_quit(ui_t *ui) {
+	ui_state_prev(ui);
 }
 
 static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	pkt_t *pkt = NULL;
 	switch (e->type) {
 		case SDL_KEYDOWN:
-			return on_key_event(ui, e->key.keysym.scancode, true);
+			return match_input_process_key_event(ui, e->key.keysym.scancode, true, match_update_player_state, on_quit);
 		case SDL_KEYUP:
-			return on_key_event(ui, e->key.keysym.scancode, false);
+			return match_input_process_key_event(ui, e->key.keysym.scancode, false, match_update_player_state, on_quit);
+
+		case SDL_MOUSEBUTTONDOWN:
+			return match_input_process_mouse_event(
+				ui,
+				e->button.x,
+				e->button.y,
+				true,
+				match_update_player_state,
+				on_quit
+			);
+		case SDL_MOUSEBUTTONUP:
+			return match_input_process_mouse_event(
+				ui,
+				e->button.x,
+				e->button.y,
+				false,
+				match_update_player_state,
+				on_quit
+			);
 
 		case SDL_USEREVENT_GAME:
 			if (e->user.data1 != NULL)
@@ -348,13 +307,7 @@ static bool on_event(ui_t *ui, fragment_t *fragment, SDL_Event *e) {
 	return false;
 }
 
-static const view_inflate_on_event_t inflate_on_event[] = {
-	GFX_VIEW_ON_EVENT(on_btn_player),
-	GFX_VIEW_ON_EVENT_END(),
-};
-
 fragment_t fragment_match = {
-	.on_show		  = on_show,
-	.on_event		  = on_event,
-	.inflate_on_event = inflate_on_event,
+	.on_show  = on_show,
+	.on_event = on_event,
 };

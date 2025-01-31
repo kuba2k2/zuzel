@@ -81,19 +81,5 @@
 			"font": 1,
 			"align": "center"
 		}
-	},
-	{
-		"id": "btn_player",
-		"type": "button",
-		"w": "match_parent",
-		"h": "match_parent",
-		"is_invisible": true,
-		"text": {
-			"text": "Player",
-			"size": 6,
-			"font": 1
-		},
-		"is_flat": true,
-		"on_press": "on_btn_player"
 	}
 ]
