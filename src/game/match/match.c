@@ -165,6 +165,14 @@ static void match_run(game_t *game) {
 		start_at = game->start_at;
 	}
 
+	// after all endpoints are synchronized to start the match, mark players as PLAYING
+	player_t *player;
+	DL_FOREACH(game->players, player) {
+		if (player->state != PLAYER_READY)
+			continue;
+		player->state = PLAYER_PLAYING;
+	}
+
 	// wait until the synchronized countdown
 	LT_I("Match (round %u): counting at %llu...", game->round, count_at);
 	unsigned long long local_time = millis();
@@ -224,7 +232,6 @@ static void match_run(game_t *game) {
 	// run the main game loop
 	bool any_playing = false;
 	do {
-		player_t *player;
 		bool match_update_state = false;
 		bool any_in_round		= false;
 		bool any_spectating		= false;

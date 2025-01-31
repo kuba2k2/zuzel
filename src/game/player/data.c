@@ -131,7 +131,6 @@ void player_reset_round(game_t *game) {
 		if (player->state != PLAYER_READY)
 			continue;
 		// reset player data
-		player->state			= PLAYER_PLAYING;
 		player->lap_can_advance = false;
 		player->is_in_round		= true;
 		player->round_points	= 0;
